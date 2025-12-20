@@ -3,6 +3,7 @@ use poise::{
     Framework, FrameworkOptions, PrefixFrameworkOptions, builtins, command,
     serenity_prelude as serenity,
 };
+use songbird::{SerenityInit, input::YoutubeDl};
 use tokio::main;
 
 struct Data {}
@@ -10,10 +11,51 @@ struct Data {}
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-/// Displays your or another user's account creation date
 #[command(slash_command, prefix_command, rename = "play", aliases("p"))]
-async fn age(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> {
-    ctx.say(format!("Searching for {query}")).await?;
+pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> {
+    let do_search = !query.starts_with("http");
+
+    let guild_id = match ctx.guild_id() {
+        Some(id) => id,
+        None => {
+            ctx.say("This command only works in servers.").await?;
+            return Ok(());
+        }
+    };
+
+    let voice_channel = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+        g.voice_states
+            .get(&ctx.author().id)
+            .and_then(|vs| vs.channel_id)
+    });
+
+    let Some(channel_id) = voice_channel else {
+        ctx.say("You must be in a voice channel!").await?;
+        return Ok(());
+    };
+
+    let manager = songbird::get(ctx.serenity_context())
+        .await
+        .expect("Songbird Voice client missing")
+        .clone();
+
+    let handler_lock = manager.join(guild_id, channel_id).await?;
+    let mut handler = handler_lock.lock().await;
+
+    // create a reqwest client (share it if you're making many requests)
+    let client = reqwest::Client::new();
+
+    // Build YoutubeDl source (note: takes Client + url)
+    let source = if do_search {
+        YoutubeDl::new_search(client, query).into()
+    } else {
+        YoutubeDl::new(client, query).into()
+    };
+
+    // enqueue (songbird 0.5 uses `enqueue`)
+    handler.enqueue(source).await;
+
+    ctx.say("▶️ Added to queue!").await?;
     Ok(())
 }
 
@@ -32,9 +74,9 @@ async fn main() {
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![age()],
+            commands: vec![play()],
             prefix_options: PrefixFrameworkOptions {
-                prefix: Some("!".into()),
+                prefix: Some("-".into()),
                 ..Default::default()
             },
             ..Default::default()
@@ -49,6 +91,7 @@ async fn main() {
 
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
+        .register_songbird()
         .await;
 
     client.unwrap().start().await.unwrap();
