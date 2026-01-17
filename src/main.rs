@@ -59,6 +59,98 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
     Ok(())
 }
 
+#[command(slash_command, prefix_command, rename = "stop", aliases("st"))]
+pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
+    let guild_id = match ctx.guild_id() {
+        Some(id) => id,
+        None => {
+            ctx.say("This command only works in servers.").await?;
+            return Ok(());
+        }
+    };
+
+    let manager = songbird::get(ctx.serenity_context())
+        .await
+        .expect("Songbird Voice client missing")
+        .clone();
+
+    let handler_lock = manager.get(guild_id);
+
+    if let Some(handler_lock) = handler_lock {
+        let mut handler = handler_lock.lock().await;
+
+        handler.stop();
+
+        ctx.say("⏹ Stopped playback!").await?;
+    } else {
+        ctx.say("Not in a voice channel!").await?;
+    }
+
+    Ok(())
+}
+
+#[command(slash_command, prefix_command, rename = "skip", aliases("s"))]
+pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
+    let guild_id = match ctx.guild_id() {
+        Some(id) => id,
+        None => {
+            ctx.say("This command only works in servers.").await?;
+            return Ok(());
+        }
+    };
+
+    let voice_channel = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+        g.voice_states
+            .get(&ctx.author().id)
+            .and_then(|vs| vs.channel_id)
+    });
+
+    let client_channel = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+        g.voice_states
+            .get(&ctx.serenity_context().cache.current_user().id)
+            .and_then(|vs| vs.channel_id)
+    });
+
+    match (Some(voice_channel), Some(client_channel)) {
+        (Some(user_ch), Some(bot_ch)) if user_ch == bot_ch => {
+            let manager = songbird::get(ctx.serenity_context())
+                .await
+                .expect("Songbird Voice client missing")
+                .clone();
+
+            let handler_lock = manager.get(guild_id);
+
+            if let Some(handler_lock) = handler_lock {
+                let handler = handler_lock.lock().await;
+                let queue = handler.queue();
+
+                match queue.skip() {
+                    Ok(_) => ctx.say("skipped").await?,
+                    Err(_) => ctx.say("failed to skip").await?,
+                };
+            } else {
+                ctx.say("Not in a voice channel!").await?;
+            };
+        }
+
+        (None, _) => {
+            // user not in voice
+            ctx.say("User is not in any voice channel").await?;
+        }
+        (_, None) => {
+            // bot not in voice
+            ctx.say("Bot is not in any voice channel").await?;
+        }
+
+        (Some(_), Some(_)) => {
+            // both in voice but different channels
+            ctx.say("Both in voice, but different channels").await?;
+        }
+    }
+
+    Ok(())
+}
+
 #[main]
 async fn main() {
     let token = dotenv::var("CLIENT_TOKEN").unwrap();
@@ -74,7 +166,7 @@ async fn main() {
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![play()],
+            commands: vec![play(), stop(), skip()],
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("-".into()),
                 ..Default::default()
