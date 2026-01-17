@@ -99,54 +99,55 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
         }
     };
 
-    let voice_channel = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let user_ch = match ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
         g.voice_states
             .get(&ctx.author().id)
             .and_then(|vs| vs.channel_id)
-    });
+    }) {
+        Some(ch) => ch,
+        None => {
+            ctx.say("you must be in a voice channel").await?;
+            return Ok(());
+        }
+    };
 
-    let client_channel = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let client_ch = match ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
         g.voice_states
             .get(&ctx.serenity_context().cache.current_user().id)
             .and_then(|vs| vs.channel_id)
-    });
-
-    match (Some(voice_channel), Some(client_channel)) {
-        (Some(user_ch), Some(bot_ch)) if user_ch == bot_ch => {
-            let manager = songbird::get(ctx.serenity_context())
-                .await
-                .expect("Songbird Voice client missing")
-                .clone();
-
-            let handler_lock = manager.get(guild_id);
-
-            if let Some(handler_lock) = handler_lock {
-                let handler = handler_lock.lock().await;
-                let queue = handler.queue();
-
-                match queue.skip() {
-                    Ok(_) => ctx.say("skipped").await?,
-                    Err(_) => ctx.say("failed to skip").await?,
-                };
-            } else {
-                ctx.say("Not in a voice channel!").await?;
-            };
+    }) {
+        Some(ch) => ch,
+        None => {
+            ctx.say("I'm not in any channel").await?;
+            return Ok(());
         }
+    };
 
-        (None, _) => {
-            // user not in voice
-            ctx.say("User is not in any voice channel").await?;
-        }
-        (_, None) => {
-            // bot not in voice
-            ctx.say("Bot is not in any voice channel").await?;
-        }
-
-        (Some(_), Some(_)) => {
-            // both in voice but different channels
-            ctx.say("Both in voice, but different channels").await?;
-        }
+    if client_ch != user_ch {
+        ctx.say("You must be in the same voice channel").await?;
+        return Ok(());
     }
+
+    let manager = songbird::get(ctx.serenity_context())
+        .await
+        .expect("Songbird Voice client missing")
+        .clone();
+
+    let handler_lock = match manager.get(guild_id) {
+        Some(handler) => handler,
+        None => {
+            ctx.say("Not in a voice channel!").await?;
+            return Ok(());
+        }
+    };
+
+    let handler = handler_lock.lock().await;
+    let queue = handler.queue();
+
+    match queue.skip() {
+        Ok(_) => ctx.say("skipped").await?,
+        Err(_) => ctx.say("failed to skip").await?,
+    };
 
     Ok(())
 }
