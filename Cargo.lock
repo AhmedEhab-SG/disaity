@@ -548,6 +548,8 @@ dependencies = [
  "songbird",
  "symphonia",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

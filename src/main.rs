@@ -154,6 +154,8 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
 
 #[main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
     let token = dotenv::var("CLIENT_TOKEN").unwrap();
 
     let intents = GatewayIntents::non_privileged()
