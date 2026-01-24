@@ -4,7 +4,6 @@ use poise::{
     serenity_prelude as serenity,
 };
 use songbird::{SerenityInit, input::YoutubeDl};
-use tokio::main;
 
 struct Data {}
 
@@ -34,10 +33,13 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
         return Ok(());
     };
 
-    let manager = songbird::get(ctx.serenity_context())
-        .await
-        .expect("Songbird Voice client missing")
-        .clone();
+    let manager = match songbird::get(ctx.serenity_context()).await {
+        Some(m) => m,
+        None => {
+            ctx.say("failed to mount songbird").await?;
+            return Ok(());
+        }
+    };
 
     let handler_lock = manager.join(guild_id, channel_id).await?;
     let mut handler = handler_lock.lock().await;
@@ -69,22 +71,28 @@ pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
         }
     };
 
-    let manager = songbird::get(ctx.serenity_context())
-        .await
-        .expect("Songbird Voice client missing")
-        .clone();
+    let manager = match songbird::get(ctx.serenity_context()).await {
+        Some(m) => m,
+        None => {
+            ctx.say("failed to mount songbird").await?;
+            return Ok(());
+        }
+    };
 
     let handler_lock = manager.get(guild_id);
 
     if let Some(handler_lock) = handler_lock {
+        dbg!(&handler_lock);
         let mut handler = handler_lock.lock().await;
 
         handler.stop();
 
         ctx.say("⏹ Stopped playback!").await?;
-    } else {
-        ctx.say("Not in a voice channel!").await?;
+
+        return Ok(());
     }
+
+    ctx.say("Not in a voice channel!").await?;
 
     Ok(())
 }
@@ -98,6 +106,11 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
             return Ok(());
         }
     };
+
+    // let Some(guild_id) = ctx.guild_id() else {
+    //     ctx.say("this commad ont works in servers.").await?;
+    //     return Ok(());
+    // };
 
     let user_ch = match ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
         g.voice_states
@@ -128,10 +141,13 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
         return Ok(());
     }
 
-    let manager = songbird::get(ctx.serenity_context())
-        .await
-        .expect("Songbird Voice client missing")
-        .clone();
+    let manager = match songbird::get(ctx.serenity_context()).await {
+        Some(m) => m,
+        None => {
+            ctx.say("failed to mount songbird").await?;
+            return Ok(());
+        }
+    };
 
     let handler_lock = match manager.get(guild_id) {
         Some(handler) => handler,
@@ -152,11 +168,45 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[main]
-async fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     tracing_subscriber::fmt::init();
 
-    let token = dotenv::var("CLIENT_TOKEN").unwrap();
+    #[cfg(any(target_os = "windows", target_family = "unix"))]
+    {
+        use std::env;
+
+        let current_dir = env::current_dir()?;
+        let bin_path = current_dir.join("bin");
+
+        if let Some(path) = env::var_os("PATH") {
+            let mut paths = env::split_paths(&path).collect::<Vec<_>>();
+            paths.insert(0, bin_path);
+            let new_path = env::join_paths(paths)?;
+
+            unsafe {
+                env::set_var("PATH", &new_path);
+            }
+        }
+    }
+
+    let check = std::process::Command::new("ffmpeg")
+        .arg("-version")
+        .output();
+    match check {
+        Ok(_) => println!("✅ FFmpeg is ready to go!"),
+        Err(_) => println!("❌ FFmpeg NOT FOUND. Install it or check /bin folder."),
+    }
+
+    let check_yt = std::process::Command::new("yt-dlp")
+        .arg("-version")
+        .output();
+    match check_yt {
+        Ok(_) => println!("✅ yt-dlp is ready to go!"),
+        Err(_) => println!("❌ yt-dlp NOT FOUND. Install it or check /bin folder."),
+    }
+
+    let token = dotenv::var("CLIENT_TOKEN")?;
 
     let intents = GatewayIntents::non_privileged()
         | GatewayIntents::GUILDS
@@ -189,5 +239,7 @@ async fn main() {
         .register_songbird()
         .await;
 
-    client.unwrap().start().await.unwrap();
+    client?.start().await?;
+
+    Ok(())
 }
