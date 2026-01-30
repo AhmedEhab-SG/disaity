@@ -3,16 +3,18 @@ pub fn load_bin() {
     {
         use std::env;
 
-        let current_dir = env::current_dir().unwrap();
-        let bin_path = current_dir.join("bin");
+        if let Ok(mut exe_path) = std::env::current_exe() {
+            exe_path.pop();
+            let bin_path = exe_path.join("bin");
 
-        if let Some(path) = env::var_os("PATH") {
-            let mut paths = env::split_paths(&path).collect::<Vec<_>>();
-            paths.insert(0, bin_path);
-            let new_path = env::join_paths(paths).unwrap();
+            if let Some(path) = env::var_os("PATH") {
+                let mut paths = env::split_paths(&path).collect::<Vec<_>>();
+                paths.insert(0, bin_path);
+                let new_path = env::join_paths(paths).unwrap();
 
-            unsafe {
-                env::set_var("PATH", &new_path);
+                unsafe {
+                    env::set_var("PATH", &new_path);
+                }
             }
         }
     }
