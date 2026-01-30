@@ -2,8 +2,8 @@ use poise::command;
 
 use crate::core::{Context, Error};
 
-#[command(slash_command, prefix_command, rename = "pause", aliases("ps"))]
-pub async fn pause(ctx: Context<'_>) -> Result<(), Error> {
+#[command(slash_command, prefix_command, rename = "clear", aliases("c"))]
+pub async fn clear(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = match ctx.guild_id() {
         Some(id) => id,
         None => {
@@ -59,20 +59,17 @@ pub async fn pause(ctx: Context<'_>) -> Result<(), Error> {
 
     let handler = handler_lock.lock().await;
 
-    if let Some(track_handle) = handler.queue().current() {
-        let info = track_handle.get_info().await?;
+    let queue = handler.queue();
 
-        if info.playing == songbird::tracks::PlayMode::Pause {
-            ctx.say("The music is already paused!").await?;
-            return Ok(());
-        }
-
-        track_handle.pause()?;
-        ctx.say("⏸️ Paused").await?;
+    if queue.is_empty() {
+        ctx.say("The queue is already empty!").await?;
         return Ok(());
-    };
+    }
 
-    ctx.say("Nothing is playing right now").await?;
+    queue.modify_queue(|q| {
+        q.clear();
+    });
 
+    ctx.say("🗑️ Queue cleared!").await?;
     Ok(())
 }
