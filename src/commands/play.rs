@@ -37,14 +37,21 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
     let handler_lock = manager.join(guild_id, channel_id).await?;
     let mut handler = handler_lock.lock().await;
 
-    // create a reqwest client (share it if you're making many requests)
+    let user_args = vec![
+        "--extractor-args".to_string(),
+        "youtube:player_client=android,skip=webpage".to_string(),
+        "-f".to_string(),
+        "bestaudio[ext=webm]/bestaudio/best".to_string(),
+    ];
+
     let client = reqwest::Client::new();
 
-    // Build YoutubeDl source (note: takes Client + url)
     let source = if do_search {
-        YoutubeDl::new_search(client, query).into()
+        YoutubeDl::new_search(client, query)
+            .user_args(user_args.clone())
+            .into()
     } else {
-        YoutubeDl::new(client, query).into()
+        YoutubeDl::new(client, query).user_args(user_args).into()
     };
 
     // enqueue (songbird 0.5 uses `enqueue`)
