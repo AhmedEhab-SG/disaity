@@ -42,21 +42,12 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
 
     let defer_msg = ctx.say("🔎 Searching...").await?;
 
-    let user_args = vec![
-        // "--extractor-args".to_string(),
-        // "youtube:player_client=android,skip=webpage".to_string(),
-        // "-f".to_string(),
-        // "bestaudio[ext=webm]/bestaudio/best".to_string(),
-    ];
-
     let client = reqwest::Client::new();
 
     let mut src: songbird::input::Input = if do_search {
-        YoutubeDl::new_search(client, query)
-            .user_args(user_args.clone())
-            .into()
+        YoutubeDl::new_search(client, query).into()
     } else {
-        YoutubeDl::new(client, query).user_args(user_args).into()
+        YoutubeDl::new(client, query).into()
     };
 
     let metadata = match src.aux_metadata().await {
