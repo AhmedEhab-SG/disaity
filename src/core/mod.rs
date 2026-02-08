@@ -8,7 +8,8 @@ use poise::{
 use songbird::SerenityInit;
 
 use crate::commands::{
-    clear::clear, pause::pause, play::play, resume::resume, skip::skip, stop::stop,
+    music::{clear::clear, pause::pause, play::play, resume::resume, skip::skip, stop::stop},
+    others::help::help,
 };
 
 pub struct Data {}
@@ -30,7 +31,7 @@ pub async fn core() -> Result<(), Error> {
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![play(), pause(), stop(), skip(), clear(), resume()],
+            commands: vec![play(), pause(), stop(), skip(), clear(), resume(), help()],
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("-".into()),
                 ..Default::default()
