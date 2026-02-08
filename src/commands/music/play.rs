@@ -1,10 +1,24 @@
-use poise::{
-    command,
-    serenity_prelude::{CreateEmbed, CreateEmbedFooter},
-};
-use songbird::input::YoutubeDl;
+use std::sync::Arc;
 
-use crate::core::{Context, Error};
+use poise::command;
+use songbird::{input::YoutubeDl, tracks::Track};
+
+use crate::{
+    core::{Context, Error},
+    handlers::{SongMetadata, playing::TrackStartNotifier},
+};
+
+fn format_duration(d: Option<std::time::Duration>) -> String {
+    match d {
+        Some(d) => {
+            let seconds = d.as_secs();
+            let minutes = seconds / 60;
+            let rem_seconds = seconds % 60;
+            format!("{:02}:{:02}", minutes, rem_seconds)
+        }
+        None => "Live/Unknown".to_string(),
+    }
+}
 
 #[command(slash_command, prefix_command, rename = "play", aliases("p"))]
 pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> {
@@ -58,50 +72,56 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
         }
     };
 
-    let embed = CreateEmbed::new()
-        .title(metadata.title.as_deref().unwrap_or("Unknown Title"))
-        .url(
-            metadata
-                .source_url
-                .as_deref()
-                .unwrap_or("https://youtube.com"),
-        )
-        .thumbnail(metadata.thumbnail.as_deref().unwrap_or(""))
-        .color(0xFF0000)
-        .field("Duration", format_duration(metadata.duration), true)
-        .field(
-            "Channel",
-            metadata.channel.as_deref().unwrap_or("Unknown"),
-            true,
-        )
-        .footer(CreateEmbedFooter::new(format!(
-            "Requested by {}",
-            ctx.author().name
-        )));
+    let song_info = SongMetadata {
+        title: metadata.title.clone().unwrap_or("Unknown".to_string()),
+        url: metadata
+            .source_url
+            .clone()
+            .unwrap_or("https://youtube.com".to_string()),
+        thumbnail: metadata.thumbnail.clone().unwrap_or_default(),
+        duration: metadata.duration,
+    };
+
+    let track = Track::new_with_data(src.into(), Arc::new(song_info.clone()));
+
+    // let embed = CreateEmbed::new()
+    //     .title(metadata.title.as_deref().unwrap_or("Unknown Title"))
+    //     .url(
+    //         metadata
+    //             .source_url
+    //             .as_deref()
+    //             .unwrap_or("https://youtube.com"),
+    //     )
+    //     .thumbnail(metadata.thumbnail.as_deref().unwrap_or(""))
+    //     .color(0xFF0000)
+    //     .field("Duration", format_duration(metadata.duration), true)
+    //     .field(
+    //         "Channel",
+    //         metadata.channel.as_deref().unwrap_or("Unknown"),
+    //         true,
+    //     )
+    //     .footer(CreateEmbedFooter::new(format!(
+    //         "Requested by {}",
+    //         ctx.author().name
+    //     )));
 
     // enqueue (songbird 0.5 uses `enqueue`)
-    handler.enqueue(src.into()).await;
+    handler.enqueue(track).await;
+
+    let _ = handler.add_global_event(
+        songbird::Event::Track(songbird::TrackEvent::Play),
+        TrackStartNotifier {
+            channel_id: ctx.channel_id(),
+            http: ctx.serenity_context().http.clone(),
+        },
+    );
 
     defer_msg
         .edit(
             ctx,
-            poise::CreateReply::default()
-                .content("▶️ **Added to queue**") // Clear the "Searching" text
-                .embed(embed),
+            poise::CreateReply::default().content(format!("Added to queue: {}", song_info.title)),
         )
         .await?;
 
     Ok(())
-}
-
-fn format_duration(d: Option<std::time::Duration>) -> String {
-    match d {
-        Some(d) => {
-            let seconds = d.as_secs();
-            let minutes = seconds / 60;
-            let rem_seconds = seconds % 60;
-            format!("{:02}:{:02}", minutes, rem_seconds)
-        }
-        None => "Live/Unknown".to_string(),
-    }
 }

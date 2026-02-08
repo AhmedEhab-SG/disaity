@@ -9,7 +9,7 @@ use songbird::SerenityInit;
 
 use crate::commands::{
     music::{clear::clear, pause::pause, play::play, resume::resume, skip::skip, stop::stop},
-    others::help::help,
+    others::{help::help, join::join, leave::leave},
 };
 
 pub struct Data {}
@@ -31,7 +31,17 @@ pub async fn core() -> Result<(), Error> {
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![play(), pause(), stop(), skip(), clear(), resume(), help()],
+            commands: vec![
+                play(),
+                pause(),
+                stop(),
+                skip(),
+                clear(),
+                resume(),
+                help(),
+                join(),
+                leave(),
+            ],
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("-".into()),
                 ..Default::default()
