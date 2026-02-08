@@ -17,15 +17,10 @@ impl EventHandler for TrackStartNotifier {
     async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
         if let EventContext::Track(track_listen) = ctx {
             for (_, handle) in track_listen.iter() {
-                if let Ok(data) = handle.data::<SongMetadata>() {
+                if let data = handle.data::<SongMetadata>() {
                     let embed = CreateEmbed::new()
-                        .title(data.title.as_deref().unwrap_or("Unknown Title"))
-                        .url(
-                            metadata
-                                .source_url
-                                .as_deref()
-                                .unwrap_or("https://youtube.com"),
-                        )
+                        .title(data.title)
+                        .url(data.url)
                         .thumbnail(metadata.thumbnail.as_deref().unwrap_or(""))
                         .color(0xFF0000)
                         .field("Duration", format_duration(metadata.duration), true)
