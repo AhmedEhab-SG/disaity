@@ -31,6 +31,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
             CreateEmbedFooter::new("build with love")
                 .icon_url("https://i.ibb.co/hFNhYk2/AES-solid-colors-512.png")
         );
+
     ctx.send(CreateReply::default().embed(embed)).await?;
 
     Ok(())
