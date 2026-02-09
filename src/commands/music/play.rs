@@ -1,24 +1,14 @@
 use std::sync::Arc;
 
+use crate::uitls::get_or_join_voice;
+
 use poise::command;
 use songbird::{input::YoutubeDl, tracks::Track};
 
 use crate::{
     core::{Context, Error},
-    handlers::{SongMetadata, playing::TrackStartNotifier},
+    handlers::SongMetadata,
 };
-
-fn format_duration(d: Option<std::time::Duration>) -> String {
-    match d {
-        Some(d) => {
-            let seconds = d.as_secs();
-            let minutes = seconds / 60;
-            let rem_seconds = seconds % 60;
-            format!("{:02}:{:02}", minutes, rem_seconds)
-        }
-        None => "Live/Unknown".to_string(),
-    }
-}
 
 #[command(slash_command, prefix_command, rename = "play", aliases("p"))]
 pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> {
@@ -51,8 +41,15 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
         }
     };
 
-    let handler_lock = manager.join(guild_id, channel_id).await?;
-    let mut handler = handler_lock.lock().await;
+    let call = get_or_join_voice(
+        &manager,
+        guild_id,
+        channel_id,
+        ctx.serenity_context().http.clone(),
+    )
+    .await?;
+
+    let mut handler = call.lock().await;
 
     let defer_msg = ctx.say("🔎 Searching...").await?;
 
@@ -80,41 +77,12 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
             .unwrap_or("https://youtube.com".to_string()),
         thumbnail: metadata.thumbnail.clone().unwrap_or_default(),
         duration: metadata.duration,
+        request_by: ctx.author().name.clone(),
     };
 
     let track = Track::new_with_data(src.into(), Arc::new(song_info.clone()));
 
-    // let embed = CreateEmbed::new()
-    //     .title(metadata.title.as_deref().unwrap_or("Unknown Title"))
-    //     .url(
-    //         metadata
-    //             .source_url
-    //             .as_deref()
-    //             .unwrap_or("https://youtube.com"),
-    //     )
-    //     .thumbnail(metadata.thumbnail.as_deref().unwrap_or(""))
-    //     .color(0xFF0000)
-    //     .field("Duration", format_duration(metadata.duration), true)
-    //     .field(
-    //         "Channel",
-    //         metadata.channel.as_deref().unwrap_or("Unknown"),
-    //         true,
-    //     )
-    //     .footer(CreateEmbedFooter::new(format!(
-    //         "Requested by {}",
-    //         ctx.author().name
-    //     )));
-
-    // enqueue (songbird 0.5 uses `enqueue`)
     handler.enqueue(track).await;
-
-    let _ = handler.add_global_event(
-        songbird::Event::Track(songbird::TrackEvent::Play),
-        TrackStartNotifier {
-            channel_id: ctx.channel_id(),
-            http: ctx.serenity_context().http.clone(),
-        },
-    );
 
     defer_msg
         .edit(
