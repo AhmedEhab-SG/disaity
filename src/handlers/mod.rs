@@ -6,4 +6,5 @@ pub struct SongMetadata {
     pub url: String,
     pub thumbnail: String,
     pub duration: Option<std::time::Duration>,
+    pub request_by: String,
 }
