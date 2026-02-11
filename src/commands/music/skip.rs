@@ -65,10 +65,7 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
     let handler = handler_lock.lock().await;
     let queue = handler.queue();
 
-    match queue.skip() {
-        Ok(_) => ctx.say("skipped").await?,
-        Err(_) => ctx.say("failed to skip").await?,
-    };
+    queue.skip().ok();
 
     Ok(())
 }
