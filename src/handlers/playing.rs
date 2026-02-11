@@ -1,6 +1,6 @@
 use crate::handlers::SongMetadata;
 use serenity::{
-    all::{ChannelId, CreateEmbed, CreateEmbedFooter, Http},
+    all::{ChannelId, CreateEmbed, CreateEmbedFooter, CreateMessage, Http},
     async_trait,
 };
 use songbird::{Event, EventContext, EventHandler};
@@ -22,6 +22,7 @@ fn format_duration(d: Option<std::time::Duration>) -> String {
         None => "Live/Unknown".to_string(),
     }
 }
+
 #[async_trait]
 impl EventHandler for TrackStartNotifier {
     async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
@@ -40,10 +41,10 @@ impl EventHandler for TrackStartNotifier {
                         data.request_by
                     )));
 
-                let _ = self
-                    .channel_id
-                    .send_message(&self.http, serenity::all::CreateMessage::new().embed(embed))
-                    .await;
+                self.channel_id
+                    .send_message(&self.http, CreateMessage::new().embed(embed))
+                    .await
+                    .ok();
             }
         }
 

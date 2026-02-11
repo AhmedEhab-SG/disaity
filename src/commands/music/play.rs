@@ -45,6 +45,7 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
         &manager,
         guild_id,
         channel_id,
+        ctx.channel_id(),
         ctx.serenity_context().http.clone(),
     )
     .await?;
