@@ -8,7 +8,10 @@ use poise::{
 use songbird::SerenityInit;
 
 use crate::commands::{
-    music::{clear::clear, pause::pause, play::play, resume::resume, skip::skip, stop::stop},
+    music::{
+        clear::clear, jump::jump, pause::pause, play::play, queue::queue, repeat::repeat,
+        resume::resume, skip::skip, stop::stop,
+    },
     others::{help::help, join::join, leave::leave},
 };
 
@@ -41,6 +44,9 @@ pub async fn core() -> Result<(), Error> {
                 help(),
                 join(),
                 leave(),
+                jump(),
+                repeat(),
+                queue(),
             ],
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("-".into()),
