@@ -10,14 +10,21 @@ use serenity::all::{
 
 #[command(slash_command, prefix_command, rename = "queue", aliases("q"))]
 pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
-    let guild_id = ctx.guild_id().ok_or("Not in a guild")?;
+    let Some(guild_id) = ctx.guild_id() else {
+        ctx.say("This command only works in servers.").await?;
+        return Ok(());
+    };
 
-    // 1. Get Songbird Manager
-    let manager = songbird::get(ctx.serenity_context())
-        .await
-        .ok_or("Songbird not initialized")?;
+    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
+        ctx.say("This command only works in servers.").await?;
+        return Ok(());
+    };
 
-    let handler_lock = manager.get(guild_id).ok_or("I'm not in a voice channel")?;
+    let Some(handler_lock) = manager.get(guild_id) else {
+        ctx.say("couldnt summon manager").await?;
+        return Ok(());
+    };
+
     let handler = handler_lock.lock().await;
 
     // 2. Get the current queue
