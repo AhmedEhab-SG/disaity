@@ -5,41 +5,27 @@ use crate::core::{Context, Error};
 
 #[command(slash_command, prefix_command, rename = "repeat", aliases("rp"))]
 pub async fn repeat(ctx: Context<'_>, #[rest] state: Option<String>) -> Result<(), Error> {
-    let guild_id = match ctx.guild_id() {
-        Some(id) => id,
-        None => {
-            ctx.say("This command only works in servers.").await?;
-            return Ok(());
-        }
+    let Some(guild_id) = ctx.guild_id() else {
+        ctx.say("this commad ont works in servers.").await?;
+        return Ok(());
     };
 
-    // let Some(guild_id) = ctx.guild_id() else {
-    //     ctx.say("this commad ont works in servers.").await?;
-    //     return Ok(());
-    // };
-
-    let user_ch = match ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let Some(user_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
         g.voice_states
             .get(&ctx.author().id)
             .and_then(|vs| vs.channel_id)
-    }) {
-        Some(ch) => ch,
-        None => {
-            ctx.say("you must be in a voice channel").await?;
-            return Ok(());
-        }
+    }) else {
+        ctx.say("you must be in a voice channel").await?;
+        return Ok(());
     };
 
-    let client_ch = match ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let Some(client_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
         g.voice_states
             .get(&ctx.serenity_context().cache.current_user().id)
             .and_then(|vs| vs.channel_id)
-    }) {
-        Some(ch) => ch,
-        None => {
-            ctx.say("I'm not in any channel").await?;
-            return Ok(());
-        }
+    }) else {
+        ctx.say("I'm not in any channel").await?;
+        return Ok(());
     };
 
     if client_ch != user_ch {

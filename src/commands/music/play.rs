@@ -33,12 +33,9 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
         return Ok(());
     };
 
-    let manager = match songbird::get(ctx.serenity_context()).await {
-        Some(m) => m,
-        None => {
-            ctx.say("failed to mount songbird").await?;
-            return Ok(());
-        }
+    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
+        ctx.say("failed to mount songbird").await?;
+        return Ok(());
     };
 
     let call = get_or_join_voice(
@@ -62,12 +59,9 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
         YoutubeDl::new(client, query).into()
     };
 
-    let metadata = match src.aux_metadata().await {
-        Ok(m) => m,
-        Err(_e) => {
-            ctx.say("Could not fetch song metadata.").await?;
-            return Ok(());
-        }
+    let Ok(metadata) = src.aux_metadata().await else {
+        ctx.say("Could not fetch song metadata.").await?;
+        return Ok(());
     };
 
     let song_info = SongMetadata {
