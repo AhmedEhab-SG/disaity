@@ -33,20 +33,14 @@ pub async fn repeat(ctx: Context<'_>, #[rest] state: Option<String>) -> Result<(
         return Ok(());
     }
 
-    let manager = match songbird::get(ctx.serenity_context()).await {
-        Some(m) => m,
-        None => {
-            ctx.say("failed to mount songbird").await?;
-            return Ok(());
-        }
+    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
+        ctx.say("failed to mount songbird").await?;
+        return Ok(());
     };
 
-    let call = match manager.get(guild_id) {
-        Some(handler) => handler,
-        None => {
-            ctx.say("Not in a voice channel!").await?;
-            return Ok(());
-        }
+    let Some(call) = manager.get(guild_id) else {
+        ctx.say("Not in a voice channel!").await?;
+        return Ok(());
     };
 
     let handler = call.lock().await;
