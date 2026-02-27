@@ -37,7 +37,11 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
         }
     }
 
-    manager.join(guild_id, voice_channel_id).await?;
+    let call = manager.join(guild_id, voice_channel_id).await?;
+
+    let mut handler = call.lock().await;
+
+    // handler.deafen(true).await?;
 
     ctx.say("Yes?").await?;
 
