@@ -49,6 +49,8 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
 
     let mut handler = call.lock().await;
 
+    // handler.deafen(true).await?;
+
     let defer_msg = ctx.say("🔎 Searching...").await?;
 
     let client = reqwest::Client::new();

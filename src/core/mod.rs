@@ -10,7 +10,7 @@ use songbird::SerenityInit;
 use crate::commands::{
     music::{
         clear::clear, jump::jump, pause::pause, play::play, queue::queue, repeat::repeat,
-        resume::resume, skip::skip, stop::stop,
+        resume::resume, seek::seek, shuffle::shuffle, skip::skip, stop::stop,
     },
     others::{help::help, join::join, leave::leave},
 };
@@ -47,6 +47,8 @@ pub async fn core() -> Result<(), Error> {
                 jump(),
                 repeat(),
                 queue(),
+                shuffle(),
+                seek(),
             ],
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("-".into()),
