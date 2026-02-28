@@ -1,9 +1,29 @@
-use serenity::{all::GuildId, async_trait};
-use songbird::{Call, Event, EventContext, EventHandler, Songbird, TrackEvent};
+use serenity::{
+    all::{Cache, ChannelId, GuildId},
+    async_trait,
+};
+use songbird::{Call, CoreEvent, Event, EventContext, EventHandler, Songbird, TrackEvent};
 use std::{sync::Arc, time::Duration};
 use tokio::{sync::Mutex, task::JoinHandle, time::sleep};
 
 type TimeoutHandle = Arc<Mutex<Option<JoinHandle<()>>>>;
+
+struct PlayHandler {
+    pub timeout: TimeoutHandle,
+}
+
+struct EndHandler {
+    pub timeout: TimeoutHandle,
+    pub manager: Arc<Songbird>,
+    pub guild_id: GuildId,
+}
+
+pub struct AloneHandler {
+    pub timeout: TimeoutHandle,
+    pub manager: Arc<Songbird>,
+    pub guild_id: GuildId,
+    pub cache: Arc<Cache>,
+}
 
 async fn cancel_timer(timeout: &TimeoutHandle) {
     let mut lock = timeout.lock().await;
@@ -17,7 +37,7 @@ async fn reset_timer(timeout: &TimeoutHandle, manager: Arc<Songbird>, guild_id: 
     let handle_clone = timeout.clone();
 
     let task = tokio::spawn(async move {
-        sleep(Duration::from_secs(60)).await;
+        sleep(Duration::from_secs(5 * 60)).await;
 
         manager.remove(guild_id).await.ok();
 
@@ -30,25 +50,12 @@ async fn reset_timer(timeout: &TimeoutHandle, manager: Arc<Songbird>, guild_id: 
     *lock = Some(task);
 }
 
-struct PlayHandler {
-    pub timeout: TimeoutHandle,
-}
-
 #[async_trait]
 impl EventHandler for PlayHandler {
     async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
         cancel_timer(&self.timeout).await;
-
-        dbg!("play event fired");
-
         None
     }
-}
-
-struct EndHandler {
-    pub timeout: TimeoutHandle,
-    pub manager: Arc<Songbird>,
-    pub guild_id: GuildId,
 }
 
 #[async_trait]
@@ -61,8 +68,6 @@ impl EventHandler for EndHandler {
             false
         };
 
-        dbg!("endhander", is_empty);
-
         if is_empty {
             reset_timer(&self.timeout, self.manager.clone(), self.guild_id).await;
         }
@@ -71,7 +76,49 @@ impl EventHandler for EndHandler {
     }
 }
 
-pub async fn register_idle_timeout(call: &mut Call, guild_id: GuildId, manager: Arc<Songbird>) {
+
+#[async_trait]
+impl EventHandler for AloneHandler {
+    async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
+        let is_alone = if let Some(call_lock) = self.manager.get(self.guild_id) {
+            let call = call_lock.lock().await;
+            
+            if let Some(channel_id) = call.current_channel() {
+                let channel_id = ChannelId::new(channel_id.0.get());
+                
+                // Count human users in the bot's current channel
+                let count = self.cache.guild(self.guild_id).map(|g| {
+                    g.voice_states
+                        .values()
+                        .filter(|vs| {
+                            vs.channel_id == Some(channel_id) && 
+                            // Make sure we aren't counting bots
+                            !vs.member.as_ref().map(|m| m.user.bot).unwrap_or(false)
+                        })
+                        .count()
+                }).unwrap_or(0);
+
+                count == 0
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        if is_alone {
+            // No humans left! Start the 60s countdown.
+            reset_timer(&self.timeout, self.manager.clone(), self.guild_id).await;
+        } else {
+            // Someone is in the channel (or joined). Cancel the disconnect.
+            cancel_timer(&self.timeout).await;
+        }
+
+        None
+    }
+}
+
+pub async fn register_idle_timeout(call: &mut Call, guild_id: GuildId, manager: Arc<Songbird>, cache: Arc<Cache>) {
     let timeout: TimeoutHandle = Arc::new(Mutex::new(None));
 
     // Start a timer immediately in case the bot joins but nothing is ever queued
@@ -89,9 +136,19 @@ pub async fn register_idle_timeout(call: &mut Call, guild_id: GuildId, manager: 
     call.add_global_event(
         Event::Track(TrackEvent::End),
         EndHandler {
+            timeout: timeout.clone(),
+            manager:manager.clone(),
+            guild_id,
+        },
+    );
+ 
+    call.add_global_event(
+        Event::Core(CoreEvent::SpeakingStateUpdate),
+        AloneHandler {
             timeout,
             manager,
             guild_id,
+            cache
         },
     );
 }
