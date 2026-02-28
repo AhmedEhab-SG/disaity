@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
-use crate::uitls::get_or_join_voice;
-
 use poise::command;
 use songbird::{input::YoutubeDl, tracks::Track};
 
 use crate::{
+    commands::get_or_join_voice,
     core::{Context, Error},
     handlers::SongMetadata,
 };

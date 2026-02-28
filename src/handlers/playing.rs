@@ -3,10 +3,10 @@ use serenity::{
     all::{ChannelId, CreateEmbed, CreateEmbedFooter, CreateMessage, Http},
     async_trait,
 };
-use songbird::{Event, EventContext, EventHandler};
+use songbird::{Call, Event, EventContext, EventHandler, TrackEvent};
 use std::sync::Arc;
 
-pub struct TrackStartNotifier {
+struct TrackStartNotifier {
     pub channel_id: ChannelId,
     pub http: Arc<Http>,
 }
@@ -50,4 +50,15 @@ impl EventHandler for TrackStartNotifier {
 
         None
     }
+}
+
+pub async fn register_playing_info(call: &mut Call, text_channel_id: ChannelId, http: Arc<Http>) {
+    // 1. "Now Playing" Notifier
+    call.add_global_event(
+        Event::Track(TrackEvent::Play),
+        TrackStartNotifier {
+            channel_id: text_channel_id,
+            http,
+        },
+    );
 }

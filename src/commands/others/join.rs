@@ -1,6 +1,9 @@
 use poise::command;
 
-use crate::core::{Context, Error};
+use crate::{
+    commands::get_or_join_voice,
+    core::{Context, Error},
+};
 
 #[command(slash_command, prefix_command, rename = "join", aliases("j"))]
 pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
@@ -37,9 +40,16 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
         }
     }
 
-    let call = manager.join(guild_id, voice_channel_id).await?;
+    get_or_join_voice(
+        &manager,
+        guild_id,
+        voice_channel_id,
+        ctx.channel_id(),
+        ctx.serenity_context().http.clone(),
+    )
+    .await?;
 
-    let mut handler = call.lock().await;
+    // let mut handler = call.lock().await;
 
     // handler.deafen(true).await?;
 
