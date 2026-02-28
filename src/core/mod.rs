@@ -7,12 +7,15 @@ use poise::{
 };
 use songbird::SerenityInit;
 
-use crate::commands::{
-    music::{
-        clear::clear, jump::jump, pause::pause, play::play, queue::queue, repeat::repeat,
-        resume::resume, seek::seek, shuffle::shuffle, skip::skip, stop::stop,
+use crate::{
+    commands::{
+        music::{
+            clear::clear, jump::jump, pause::pause, play::play, queue::queue, repeat::repeat,
+            resume::resume, seek::seek, shuffle::shuffle, skip::skip, stop::stop,
+        },
+        others::{help::help, join::join, leave::leave},
     },
-    others::{help::help, join::join, leave::leave},
+    handlers::ready::start_status_loop,
 };
 
 pub struct Data {}
@@ -59,6 +62,7 @@ pub async fn core() -> Result<(), Error> {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 builtins::register_globally(ctx, &framework.options().commands).await?;
+                start_status_loop(ctx.clone());
                 Ok(Data {})
             })
         })

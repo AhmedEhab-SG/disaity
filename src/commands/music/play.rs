@@ -43,6 +43,7 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
         channel_id,
         ctx.channel_id(),
         ctx.serenity_context().http.clone(),
+        ctx.serenity_context().cache.clone(),
     )
     .await?;
 

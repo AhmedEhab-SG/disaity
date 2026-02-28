@@ -1,7 +1,8 @@
 pub mod idle;
 pub mod playing;
+pub mod ready;
 
-use serenity::all::{ChannelId, GuildId, Http};
+use serenity::all::{Cache, ChannelId, GuildId, Http};
 use songbird::{Call, Songbird};
 use std::sync::Arc;
 
@@ -22,11 +23,12 @@ pub async fn register_all(
     text_channel_id: ChannelId,
     http: Arc<Http>,
     manager: Arc<Songbird>,
+    cache: Arc<Cache>,
 ) {
     // Clear default or old handlers to prevent duplicates
     call.remove_all_global_events();
 
     register_playing_info(call, text_channel_id, http).await;
 
-    register_idle_timeout(call, guild_id, manager).await;
+    register_idle_timeout(call, guild_id, manager, cache).await;
 }

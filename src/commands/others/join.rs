@@ -46,6 +46,7 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
         voice_channel_id,
         ctx.channel_id(),
         ctx.serenity_context().http.clone(),
+        ctx.serenity_context().cache.clone(),
     )
     .await?;
 
