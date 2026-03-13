@@ -47,8 +47,6 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
     )
     .await?;
 
-    let mut handler = call.lock().await;
-
     // handler.deafen(true).await?;
 
     let defer_msg = ctx.say("🔎 Searching...").await?;
@@ -79,7 +77,9 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
 
     let track = Track::new_with_data(src.into(), Arc::new(song_info.clone()));
 
+    let mut handler = call.lock().await;
     handler.enqueue(track).await;
+    drop(handler);
 
     defer_msg
         .edit(
