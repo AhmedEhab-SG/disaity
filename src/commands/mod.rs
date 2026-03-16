@@ -1,3 +1,4 @@
+pub mod chat;
 pub mod music;
 pub mod others;
 
