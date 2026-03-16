@@ -1,7 +1,11 @@
 use std::sync::Arc;
 
-use poise::command;
-use songbird::{input::YoutubeDl, tracks::Track};
+use poise::{CreateReply, command};
+use songbird::{
+    get,
+    input::{Input, YoutubeDl},
+    tracks::Track,
+};
 
 use crate::{
     commands::get_or_join_voice,
@@ -32,7 +36,7 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
         return Ok(());
     };
 
-    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
+    let Some(manager) = get(ctx.serenity_context()).await else {
         ctx.say("failed to mount songbird").await?;
         return Ok(());
     };
@@ -51,12 +55,12 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
 
     let defer_msg = ctx.say("🔎 Searching...").await?;
 
-    let client = reqwest::Client::new();
+    let ctx_data = ctx.data();
 
-    let mut src: songbird::input::Input = if do_search {
-        YoutubeDl::new_search(client, query).into()
+    let mut src: Input = if do_search {
+        YoutubeDl::new_search(ctx_data.client.clone(), query).into()
     } else {
-        YoutubeDl::new(client, query).into()
+        YoutubeDl::new(ctx_data.client.clone(), query).into()
     };
 
     let Ok(metadata) = src.aux_metadata().await else {
@@ -84,7 +88,7 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
     defer_msg
         .edit(
             ctx,
-            poise::CreateReply::default().content(format!("Added to queue: {}", song_info.title)),
+            CreateReply::default().content(format!("Added to queue: {}", song_info.title)),
         )
         .await?;
 

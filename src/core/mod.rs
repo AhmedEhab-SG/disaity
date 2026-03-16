@@ -5,6 +5,7 @@ use poise::{
     Context as BaseContext, Framework, FrameworkOptions, PrefixFrameworkOptions, builtins,
     serenity_prelude as serenity,
 };
+use reqwest::Client;
 use songbird::SerenityInit;
 
 use crate::{
@@ -18,7 +19,10 @@ use crate::{
     handlers::ready::start_status_loop,
 };
 
-pub struct Data {}
+#[derive(Clone, Debug)]
+pub struct Data {
+    pub client: Client,
+}
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = BaseContext<'a, Data, Error>;
@@ -63,7 +67,9 @@ pub async fn core() -> Result<(), Error> {
             Box::pin(async move {
                 builtins::register_globally(ctx, &framework.options().commands).await?;
                 start_status_loop(ctx.clone());
-                Ok(Data {})
+                Ok(Data {
+                    client: Client::new(),
+                })
             })
         })
         .build();
