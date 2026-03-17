@@ -17,12 +17,9 @@ use crate::{
 pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> {
     let do_search = !query.starts_with("http");
 
-    let guild_id = match ctx.guild_id() {
-        Some(id) => id,
-        None => {
-            ctx.say("This command only works in servers.").await?;
-            return Ok(());
-        }
+    let Some(guild_id) = ctx.guild_id() else {
+        ctx.say("This command only works in servers.").await?;
+        return Ok(());
     };
 
     let voice_channel = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
@@ -58,15 +55,12 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
     let ctx_data = ctx.data();
 
     let mut src: Input = if do_search {
-        YoutubeDl::new_search(ctx_data.client.clone(), query).into()
+        YoutubeDl::new_search(ctx_data.http.clone(), query).into()
     } else {
-        YoutubeDl::new(ctx_data.client.clone(), query).into()
+        YoutubeDl::new(ctx_data.http.clone(), query).into()
     };
 
-    let Ok(metadata) = src.aux_metadata().await else {
-        ctx.say("Could not fetch song metadata.").await?;
-        return Ok(());
-    };
+    let metadata = src.aux_metadata().await?;
 
     let song_info = SongMetadata {
         title: metadata.title.clone().unwrap_or("Unknown".to_string()),

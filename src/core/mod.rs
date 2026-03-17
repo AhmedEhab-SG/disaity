@@ -5,11 +5,16 @@ use poise::{
     Context as BaseContext, Framework, FrameworkOptions, PrefixFrameworkOptions, builtins,
     serenity_prelude as serenity,
 };
-use reqwest::Client;
+use rig::{
+    agent::Agent,
+    client::CompletionClient,
+    providers::gemini::{self, CompletionModel, completion::GEMINI_2_0_FLASH_LITE},
+};
 use songbird::SerenityInit;
 
 use crate::{
     commands::{
+        chat::ask::ask,
         music::{
             clear::clear, jump::jump, pause::pause, play::play, queue::queue, repeat::repeat,
             resume::resume, seek::seek, shuffle::shuffle, skip::skip, stop::stop,
@@ -19,9 +24,9 @@ use crate::{
     handlers::ready::start_status_loop,
 };
 
-#[derive(Clone, Debug)]
 pub struct Data {
-    pub client: Client,
+    pub http: reqwest::Client,
+    pub agent: Agent<CompletionModel>,
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -29,6 +34,7 @@ pub type Context<'a> = BaseContext<'a, Data, Error>;
 
 pub async fn core() -> Result<(), Error> {
     let token = dotenv::var("CLIENT_TOKEN")?;
+    let ai_token = dotenv::var("GEMINI_API_KEY")?;
 
     let intents = GatewayIntents::non_privileged()
         | GatewayIntents::GUILDS
@@ -38,6 +44,11 @@ pub async fn core() -> Result<(), Error> {
         | GatewayIntents::GUILD_INTEGRATIONS
         | GatewayIntents::MESSAGE_CONTENT
         | GatewayIntents::DIRECT_MESSAGES;
+
+    let agent = gemini::Client::new(ai_token)?
+        .agent(GEMINI_2_0_FLASH_LITE)
+        .build();
+    let http = reqwest::Client::new();
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
@@ -56,6 +67,7 @@ pub async fn core() -> Result<(), Error> {
                 queue(),
                 shuffle(),
                 seek(),
+                ask(),
             ],
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("-".into()),
@@ -67,9 +79,7 @@ pub async fn core() -> Result<(), Error> {
             Box::pin(async move {
                 builtins::register_globally(ctx, &framework.options().commands).await?;
                 start_status_loop(ctx.clone());
-                Ok(Data {
-                    client: Client::new(),
-                })
+                Ok(Data { http, agent })
             })
         })
         .build();
