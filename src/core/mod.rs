@@ -1,15 +1,12 @@
 pub mod utils;
 
 use ::serenity::all::GatewayIntents;
+use gemini_rust::Gemini;
 use poise::{
     Context as BaseContext, Framework, FrameworkOptions, PrefixFrameworkOptions, builtins,
     serenity_prelude as serenity,
 };
-use rig::{
-    agent::Agent,
-    client::CompletionClient,
-    providers::gemini::{self, CompletionModel, completion::GEMINI_2_0_FLASH_LITE},
-};
+
 use songbird::SerenityInit;
 
 use crate::{
@@ -26,7 +23,7 @@ use crate::{
 
 pub struct Data {
     pub http: reqwest::Client,
-    pub agent: Agent<CompletionModel>,
+    pub agent: Gemini,
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -34,7 +31,7 @@ pub type Context<'a> = BaseContext<'a, Data, Error>;
 
 pub async fn core() -> Result<(), Error> {
     let token = dotenv::var("CLIENT_TOKEN")?;
-    let ai_token = dotenv::var("GEMINI_API_KEY")?;
+    let ai_key = dotenv::var("GEMINI_API_KEY")?;
 
     let intents = GatewayIntents::non_privileged()
         | GatewayIntents::GUILDS
@@ -45,9 +42,7 @@ pub async fn core() -> Result<(), Error> {
         | GatewayIntents::MESSAGE_CONTENT
         | GatewayIntents::DIRECT_MESSAGES;
 
-    let agent = gemini::Client::new(ai_token)?
-        .agent(GEMINI_2_0_FLASH_LITE)
-        .build();
+    let agent = Gemini::new(ai_key)?;
     let http = reqwest::Client::new();
 
     let framework = Framework::builder()
