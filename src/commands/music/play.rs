@@ -15,6 +15,11 @@ use crate::{
 
 #[command(slash_command, prefix_command, rename = "play", aliases("p"))]
 pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> {
+    ctx.channel_id()
+        .broadcast_typing(&ctx.serenity_context().http)
+        .await
+        .ok();
+
     let do_search = !query.starts_with("http");
 
     let Some(guild_id) = ctx.guild_id() else {
@@ -50,8 +55,6 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
 
     // handler.deafen(true).await?;
 
-    let defer_msg = ctx.say("🔎 Searching...").await?;
-
     let ctx_data = ctx.data();
 
     let mut src: Input = if do_search {
@@ -79,11 +82,7 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
     handler.enqueue(track).await;
     drop(handler);
 
-    defer_msg
-        .edit(
-            ctx,
-            CreateReply::default().content(format!("Added to queue: {}", song_info.title)),
-        )
+    ctx.send(CreateReply::default().content(format!("Added to queue: {}", song_info.title)))
         .await?;
 
     Ok(())
