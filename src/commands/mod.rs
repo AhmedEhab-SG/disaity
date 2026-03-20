@@ -3,17 +3,17 @@ pub mod music;
 pub mod others;
 
 use crate::{core::Error, handlers::register_all};
-use serenity::all::{Cache, ChannelId};
-use songbird::Call;
+use serenity::all::{Cache, ChannelId, GuildId, Http};
+use songbird::{Call, Songbird};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub async fn get_or_join_voice(
-    manager: &Arc<songbird::Songbird>,
-    guild_id: serenity::all::GuildId,
+    manager: &Arc<Songbird>,
+    guild_id: GuildId,
     voice_channel_id: ChannelId,
     text_channel_id: ChannelId,
-    http: Arc<serenity::all::Http>,
+    http: Arc<Http>,
     cache: Arc<Cache>,
 ) -> Result<Arc<Mutex<Call>>, Error> {
     let (call, is_new_call) = if let Some(exisiting_call) = manager.get(guild_id) {
