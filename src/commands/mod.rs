@@ -9,12 +9,12 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub async fn get_or_join_voice(
-    manager: &Arc<Songbird>,
+    manager: Arc<Songbird>,
     guild_id: GuildId,
     voice_channel_id: ChannelId,
     text_channel_id: ChannelId,
-    http: Arc<Http>,
-    cache: Arc<Cache>,
+    http: &Arc<Http>,
+    cache: &Arc<Cache>,
 ) -> Result<Arc<Mutex<Call>>, Error> {
     let (call, is_new_call) = if let Some(exisiting_call) = manager.get(guild_id) {
         let mut handler = exisiting_call.lock().await;
@@ -23,7 +23,7 @@ pub async fn get_or_join_voice(
 
         drop(handler);
 
-        (exisiting_call.clone(), false)
+        (exisiting_call, false)
     } else {
         let new_call = manager.join(guild_id, voice_channel_id).await?;
         (new_call, true)
@@ -36,9 +36,9 @@ pub async fn get_or_join_voice(
             &mut call_lock,
             guild_id,
             text_channel_id,
-            http,
+            http.clone(),
             manager.clone(),
-            cache,
+            cache.clone(),
         )
         .await;
     }

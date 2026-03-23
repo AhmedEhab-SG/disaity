@@ -7,16 +7,20 @@ use crate::{
 
 #[command(slash_command, prefix_command, rename = "join", aliases("j"))]
 pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
+    let serenity_context = ctx.serenity_context();
+    let author_id = ctx.author().id;
+    let http = &serenity_context.http;
+    let cache = &serenity_context.cache;
+
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("This command only works in servers.").await?;
         return Ok(());
     };
 
-    let Some(voice_channel_id) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&ctx.author().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
+    let Some(voice_channel_id) = cache
+        .guild(guild_id)
+        .and_then(|g| g.voice_states.get(&author_id).and_then(|vs| vs.channel_id))
+    else {
         ctx.say("You are already not in any chennel").await?;
         return Ok(());
     };
@@ -41,12 +45,12 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     get_or_join_voice(
-        &manager,
+        manager,
         guild_id,
         voice_channel_id,
         ctx.channel_id(),
-        ctx.serenity_context().http.clone(),
-        ctx.serenity_context().cache.clone(),
+        http,
+        cache,
     )
     .await?;
 
