@@ -1,0 +1,22 @@
+{
+  "prefix": "-",
+
+  "client_id": "1346580316726231136",
+
+  "owner": {
+    "username": "Goblo",
+    "id": "291260815716253696",
+    "url": "https://ahmedehab-sg.com/",
+    "icon_url": "https://i.ibb.co/hFNhYk2/AES-solid-colors-512.png"
+  },
+
+  "permissions": {
+    "send_message": "SendMessages",
+    "admin": "Administrator",
+    "voice_join": "Connect"
+  },
+
+  "invite_ul": "https://discord.com/api/oauth2/authorize?client_id=1346580316726231136&permissions=8&scope=bot",
+
+  "author_icon": "https://i.ibb.co/hFNhYk2/AES-solid-colors-512.png"
+}

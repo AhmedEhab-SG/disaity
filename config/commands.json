@@ -1,0 +1,150 @@
+{
+  "play": {
+    "name": "play",
+    "key": "p",
+    "category": "music",
+    "description": "Play's an audio.",
+    "options": [
+      {
+        "name": "song",
+        "description": "Enter song name"
+      }
+    ]
+  },
+
+  "seek": {
+    "name": "seek",
+    "key": "sk",
+    "category": "music",
+    "description": "Seek's the current song.",
+    "options": [
+      {
+        "name": "time",
+        "description": "Enter time in seconds."
+      }
+    ]
+  },
+
+  "stop": {
+    "name": "stop",
+    "key": "st",
+    "category": "music",
+    "description": "Stop's playing."
+  },
+
+  "skip": {
+    "name": "skip",
+    "key": "s",
+    "category": "music",
+    "description": "Skip's the current song."
+  },
+
+  "clear": {
+    "name": "clear",
+    "key": "c",
+    "category": "music",
+    "description": "Clears the queue."
+  },
+
+  "join": {
+    "name": "join",
+    "key": "j",
+    "category": "music",
+    "description": "I will join your channel."
+  },
+
+  "leave": {
+    "name": "leave",
+    "key": "l",
+    "category": "music",
+    "description": "I will leave your channel."
+  },
+
+  "pause": {
+    "name": "pause",
+    "key": "ps",
+    "category": "music",
+    "description": "Pause's the current song."
+  },
+
+  "resume": {
+    "name": "resume",
+    "key": "r",
+    "category": "music",
+    "description": "Resume's the current song."
+  },
+
+  "repeat": {
+    "name": "repeat",
+    "key": "rp",
+    "category": "music",
+    "description": "Repeat queue or song you are playing.",
+    "options": [
+      {
+        "name": "repeat",
+        "choices": [
+          {
+            "name": "song",
+            "value": "1"
+          },
+          {
+            "name": "queue",
+            "value": "2"
+          },
+          {
+            "name": "disable",
+            "value": "0"
+          }
+        ],
+        "description": "Repeat's a song or a queue."
+      }
+    ]
+  },
+
+  "queue": {
+    "name": "queue",
+    "key": "q",
+    "category": "music",
+    "description": "Displays the current queue."
+  },
+
+  "shuffle": {
+    "name": "shuffle",
+    "key": "sh",
+    "category": "music",
+    "description": "Shuffle's the queue."
+  },
+
+  "jump": {
+    "name": "jump",
+    "key": "jp",
+    "category": "music",
+    "description": "Jump's to the song.",
+    "options": [
+      {
+        "name": "jump",
+        "description": "Enter song number."
+      }
+    ]
+  },
+
+  "ask": {
+    "name": "ask",
+    "key": "a",
+    "category": "chat",
+    "description": "I will answer you.",
+    "options": [
+      {
+        "name": "chat",
+        "description": "Take to me."
+      }
+    ]
+  },
+
+  "help": {
+    "name": "help",
+    "key": "h",
+    "category": "others",
+    "description": "Displays all the commands. ⌘"
+  }
+}

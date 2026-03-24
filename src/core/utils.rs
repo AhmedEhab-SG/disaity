@@ -1,42 +1,70 @@
-pub fn load_bin() {
-    #[cfg(any(target_os = "windows", target_family = "unix"))]
+use std::{env, path::PathBuf, process::Command};
+
+fn find_binary(sub_dir: &str, bin_name: &str) -> Option<PathBuf> {
+    let exe_name = format!("{}{}", bin_name, env::consts::EXE_SUFFIX);
+
+    let relative_path = PathBuf::from("bin").join(sub_dir).join(&exe_name);
+
+    if let Ok(cwd) = env::current_dir() {
+        let path = cwd.join(&relative_path);
+        if path.exists() {
+            return Some(path);
+        }
+    }
+
+    if let Ok(mut exe_dir) = env::current_exe() {
+        exe_dir.pop(); // Remove the executable name to get its directory
+        let path = exe_dir.join(&relative_path);
+        if path.exists() {
+            return Some(path);
+        }
+    }
+
+    None
+}
+
+fn verify_execution(cmd: &str, arg: Option<&str>) {
+    if Command::new(cmd)
+        .arg(arg.unwrap_or("-version"))
+        .output()
+        .is_ok()
     {
-        use std::env;
+        println!("✅ {cmd} are globally accessible to the app!");
+    } else {
+        println!("⚠️ Binay {cmd} found, but still not accessible via PATH.");
+    }
+}
 
-        let project_bin = env::current_dir().unwrap().join("bin");
+pub fn load_bin() {
+    const BINARIES: [(&str, &str); 2] = [("ffmpeg", "ffmpeg"), ("yt-dlp", "yt-dlp")];
 
-        let mut exe_bin = env::current_exe().unwrap();
-        exe_bin.pop();
-        let exe_bin = exe_bin.join("bin");
+    let mut extra_paths: Vec<(&str, PathBuf)> = Vec::new();
 
-        if let Some(path) = env::var_os("PATH") {
-            let mut paths = env::split_paths(&path).collect::<Vec<_>>();
-
-            paths.insert(0, exe_bin);
-            paths.insert(0, project_bin);
-
-            let new_path = env::join_paths(paths).unwrap();
-            unsafe {
-                env::set_var("PATH", &new_path);
+    for (dir, bin) in BINARIES {
+        if let Some(p) = find_binary(dir, bin) {
+            if let Some(parent) = p.parent() {
+                extra_paths.push((bin, parent.to_path_buf()));
             }
         }
     }
 
-    {
-        let check = std::process::Command::new("ffmpeg")
-            .arg("-version")
-            .output();
-        match check {
-            Ok(_) => println!("✅ FFmpeg is ready to go!"),
-            Err(_) => println!("❌ FFmpeg NOT FOUND. Install it or check /bin folder."),
+    if let Some(old_path) = env::var_os("PATH") {
+        let mut paths = env::split_paths(&old_path).collect::<Vec<_>>();
+
+        for (_, path) in extra_paths.clone() {
+            if !paths.contains(&path) {
+                paths.insert(0, path);
+            }
         }
 
-        let check_yt = std::process::Command::new("yt-dlp")
-            .arg("-version")
-            .output();
-        match check_yt {
-            Ok(_) => println!("✅ yt-dlp is ready to go!"),
-            Err(_) => println!("❌ yt-dlp NOT FOUND. Install it or check /bin folder."),
+        let new_path = env::join_paths(paths).expect("Failed to join paths");
+
+        unsafe {
+            env::set_var("PATH", &new_path);
         }
+    }
+
+    for (name, _) in extra_paths {
+        verify_execution(name, None);
     }
 }
