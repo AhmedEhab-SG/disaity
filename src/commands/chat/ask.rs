@@ -1,3 +1,4 @@
+use gemini_rust::Tool;
 use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
@@ -101,7 +102,10 @@ pub async fn ask(ctx: Context<'_>, #[rest] msg: String) -> Result<(), Error> {
 
     let history = get_history(messages, current_msg_id, user_id);
 
-    let mut req = agent.generate_content();
+    let mut req = agent
+        .generate_content()
+        // .with_system_instruction(system_prompt)
+        .with_tool(Tool::google_search());
 
     for (is_bot, content) in history {
         if is_bot {

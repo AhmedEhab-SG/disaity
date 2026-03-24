@@ -1,0 +1,71 @@
+{
+  "ready": "I'm Awake!",
+
+  "status": [
+    {
+      "text": "hide & seek with Puck",
+      "type": 0
+    },
+    {
+      "text": "stories with Rem & Ram",
+      "type": 2
+    },
+    {
+      "text": "a Man becomes a Hero",
+      "type": 3
+    }
+  ],
+
+  "join": [
+    "What's up? Did you need me for something?",
+    "Yes, can I help you?",
+    "Hello? Is there something you wanted to talk about?",
+    "Yes? Did you need something?"
+  ],
+
+  "leave": [
+    "I'll be going now. Goodbye!",
+    "I'm heading out. Take care.",
+    "I have to go. See you later.",
+    "I'll catch you later. Bye."
+  ],
+
+  "built_message": [
+    "Built with love by Goblo.",
+    "Lovely built by Goblo.",
+    "Handcrafted by Goblo."
+  ],
+
+  "errors": {
+    "general": [
+      "Feeling a bit under the weather right now, please get in touch with me later T_T",
+      "I'm not feeling good atm, please reach me later T_T",
+      "Currently not in the best mood, could you reach out to me later? T_T",
+      "Currently not in the best mood, could you reach out to me later? T_T",
+      "Having a rough time at the moment, can we talk later? T_T",
+      "Not feeling my best right now, can we catch up later? T_T"
+    ],
+
+    "direct_message": [
+      "Apologies, it seems slash commands don't work in DMs T_T",
+      "Sorry, slash commands don't operate in DMs T_T",
+      "Unfortunately, slash commands don't functional in DMs T_T"
+    ]
+  },
+
+  "colors": {
+    "help": "0x703be7",
+    "error": "0xff0000",
+    "main": "Blurple",
+    "Blurple": "0x0099ff",
+    "action": "15110828"
+  },
+
+  "providers_logos": {
+    "youtube": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1465px-YouTube_full-color_icon_%282017%29.svg.png",
+
+    "soundcloud": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Antu_soundcloud.svg/1024px-Antu_soundcloud.svg.png?20220611134026",
+
+    "spotify": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/1024px-Spotify_logo_without_text.svg.png"
+  }
+}
