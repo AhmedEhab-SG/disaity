@@ -1,9 +1,14 @@
+use serde::Deserialize;
 use std::collections::HashMap;
 
-use serde::Deserialize;
+#[derive(Deserialize, Debug, Clone, Eq, Hash, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum Character {
+    Emilia,
+}
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Character {
+pub struct CharacterConfig {
     pub name: String,
     pub personality: String,
 }
@@ -11,13 +16,13 @@ pub struct Character {
 #[derive(Deserialize, Debug)]
 pub struct CharacterRegistry {
     #[serde(flatten)]
-    pub characters: HashMap<String, Character>,
+    pub characters: HashMap<Character, CharacterConfig>,
 }
 
 impl Default for CharacterRegistry {
     fn default() -> Self {
-        let ymal_data = include_str!("../../config/characters.yaml");
-        serde_yaml::from_str(ymal_data).expect("Critical Error: character.yaml is malformed!")
+        let yaml_data = include_str!("../../config/characters.yaml");
+        serde_yaml::from_str(yaml_data).expect("Critical Error: character.yaml is malformed!")
     }
 }
 
@@ -26,7 +31,7 @@ impl CharacterRegistry {
         Self::default()
     }
 
-    pub fn get_character(&self, key: &str) -> Option<&Character> {
+    pub fn get_character(&self, key: &Character) -> Option<&CharacterConfig> {
         self.characters.get(key)
     }
 }
