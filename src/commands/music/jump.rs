@@ -2,8 +2,11 @@ use poise::command;
 
 use crate::core::{Context, Error};
 
-#[command(slash_command, prefix_command, rename = "jump", aliases("jp"))]
-pub async fn jump(ctx: Context<'_>, #[rest] number: usize) -> Result<(), Error> {
+#[command(slash_command, prefix_command)]
+pub async fn jump(
+    ctx: Context<'_>,
+    #[description = "Enter song number."] number: usize,
+) -> Result<(), Error> {
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("this commad ont works in servers.").await?;
         return Ok(());

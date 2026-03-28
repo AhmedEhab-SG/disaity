@@ -6,7 +6,7 @@ use serenity::all::{
     CreateInteractionResponse, CreateInteractionResponseMessage,
 };
 
-#[command(slash_command, prefix_command, rename = "queue", aliases("q"))]
+#[command(slash_command, prefix_command)]
 pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     // 1) guild check
     let Some(guild_id) = ctx.guild_id() else {

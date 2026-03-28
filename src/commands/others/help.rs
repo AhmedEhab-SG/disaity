@@ -6,7 +6,7 @@ use serenity::all::CreateEmbedAuthor;
 
 use crate::core::{Context, Error};
 
-#[command(slash_command, prefix_command, rename = "help", aliases("h"))]
+#[command(slash_command, prefix_command)]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let (avatar_url, author_name) = {
         let user = ctx.serenity_context().cache.current_user();

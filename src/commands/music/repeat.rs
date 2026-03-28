@@ -3,8 +3,21 @@ use songbird::tracks::LoopState;
 
 use crate::core::{Context, Error};
 
-#[command(slash_command, prefix_command, rename = "repeat", aliases("rp"))]
-pub async fn repeat(ctx: Context<'_>, #[rest] state: Option<String>) -> Result<(), Error> {
+#[derive(Debug, poise::ChoiceParameter)]
+enum RepeatMode {
+    #[name = "song"]
+    Song,
+    #[name = "toggle"]
+    Toggle,
+    #[name = "disable"]
+    Disable,
+}
+
+#[command(slash_command, prefix_command)]
+pub async fn repeat(
+    ctx: Context<'_>,
+    #[description = "Repeat's a song"] mode: Option<RepeatMode>,
+) -> Result<(), Error> {
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("this commad ont works in servers.").await?;
         return Ok(());
@@ -52,22 +65,19 @@ pub async fn repeat(ctx: Context<'_>, #[rest] state: Option<String>) -> Result<(
         return Ok(());
     };
 
-    // 2. Determine what action to take (On, Off, or Toggle)
-    let action = state.unwrap_or_else(|| "toggle".to_string());
-
-    match action.to_lowercase().as_str() {
-        "on" | "enable" | "true" | "song" | "track" => {
+    match mode {
+        Some(RepeatMode::Song) => {
             // Force loop ON
             let _ = current_track.enable_loop();
             ctx.say("🔁 **Loop enabled** for the current track.")
                 .await?;
         }
-        "off" | "disable" | "false" | "stop" => {
+        Some(RepeatMode::Disable) => {
             // Force loop OFF
             let _ = current_track.disable_loop();
             ctx.say("➡️ **Loop disabled**.").await?;
         }
-        "toggle" => {
+        Some(RepeatMode::Toggle) => {
             // Get current state to decide whether to turn it on or off
             let track_info = current_track.get_info().await?;
 
@@ -82,8 +92,8 @@ pub async fn repeat(ctx: Context<'_>, #[rest] state: Option<String>) -> Result<(
                 }
             }
         }
-        _ => {
-            ctx.say("Invalid option! Use `on`, `off`, or leave empty to toggle.")
+        None => {
+            ctx.say("Invalid option! Use `song`, `disable`, `toggle`, or leave empty to toggle.")
                 .await?;
         }
     }

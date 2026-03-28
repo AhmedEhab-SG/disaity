@@ -13,8 +13,11 @@ use crate::{
     handlers::SongMetadata,
 };
 
-#[command(slash_command, prefix_command, rename = "play", aliases("p"))]
-pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> {
+#[command(slash_command, prefix_command)]
+pub async fn play(
+    ctx: Context<'_>,
+    #[description = "Enter song name"] song: String,
+) -> Result<(), Error> {
     let serenity_context = ctx.serenity_context();
     let text_channel_id = ctx.channel_id();
     let author = ctx.author();
@@ -23,7 +26,7 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
 
     let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let do_search = !query.starts_with("http");
+    let do_search = !song.starts_with("http");
 
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("This command only works in servers.").await?;
@@ -56,9 +59,9 @@ pub async fn play(ctx: Context<'_>, #[rest] query: String) -> Result<(), Error> 
     // handler.deafen(true).await?;
 
     let mut src: Input = if do_search {
-        YoutubeDl::new_search(ctx.data().http.clone(), query).into()
+        YoutubeDl::new_search(ctx.data().http.clone(), song).into()
     } else {
-        YoutubeDl::new(ctx.data().http.clone(), query).into()
+        YoutubeDl::new(ctx.data().http.clone(), song).into()
     };
 
     let metadata = src.aux_metadata().await?;

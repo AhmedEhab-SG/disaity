@@ -18,6 +18,7 @@ use crate::{
         },
         others::{help::help, join::join, leave::leave},
     },
+    config::commands::CommandRegistry,
     handlers::ready::start_status_loop,
 };
 
@@ -44,26 +45,60 @@ pub async fn core() -> Result<(), Error> {
 
     let agent = Gemini::new(ai_key)?;
     let http = reqwest::Client::new();
+    let cmds_registery = CommandRegistry::new();
+
+    let mut commands = vec![
+        play(),
+        pause(),
+        stop(),
+        skip(),
+        clear(),
+        resume(),
+        help(),
+        join(),
+        leave(),
+        jump(),
+        repeat(),
+        queue(),
+        shuffle(),
+        seek(),
+        ask(),
+    ];
+
+    for cmd in &mut commands {
+        if let Some(config) = cmds_registery.commands.get(&cmd.name) {
+            cmd.name = config.name.clone();
+            cmd.description = Some(config.description.clone());
+            cmd.aliases = config.keys.clone();
+            cmd.category = Some(config.category.clone());
+
+            // if let Some(json_options) = &config.options {
+            //     for (param, json_opt) in cmd.parameters.iter_mut().zip(json_options.iter()) {
+            //         param.name = json_opt.name.clone();
+            //         param.description = Some(json_opt.description.clone());
+            //         param.required = json_opt.required;
+            //
+            //         if let Some(json_choices) = &json_opt.choices {
+            //             let mut poise_choices = Vec::new();
+            //
+            //             for choice in json_choices {
+            //                 poise_choices.push(poise::CommandParameterChoice {
+            //                     name: choice.name.clone(),
+            //                     localizations: Default::default(),
+            //                     __non_exhaustive: (),
+            //                 });
+            //             }
+            //             param.choices = poise_choices;
+            //             param.required = json_opt.required;
+            //         }
+            //     }
+            // }
+        }
+    }
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![
-                play(),
-                pause(),
-                stop(),
-                skip(),
-                clear(),
-                resume(),
-                help(),
-                join(),
-                leave(),
-                jump(),
-                repeat(),
-                queue(),
-                shuffle(),
-                seek(),
-                ask(),
-            ],
+            commands,
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some("-".into()),
                 ..Default::default()

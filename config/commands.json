@@ -1,82 +1,71 @@
 {
   "play": {
     "name": "play",
-    "key": "p",
+    "keys": ["play", "p"],
     "category": "music",
     "description": "Play's an audio.",
     "options": [
       {
         "name": "song",
-        "description": "Enter song name"
-      }
-    ]
-  },
-
-  "seek": {
-    "name": "seek",
-    "key": "sk",
-    "category": "music",
-    "description": "Seek's the current song.",
-    "options": [
-      {
-        "name": "time",
-        "description": "Enter time in seconds."
+        "description": "Enter song name",
+        "type": 3,
+        "required": true
       }
     ]
   },
 
   "stop": {
     "name": "stop",
-    "key": "st",
+    "keys": ["stop", "st"],
     "category": "music",
     "description": "Stop's playing."
   },
 
   "skip": {
     "name": "skip",
-    "key": "s",
+    "keys": ["skip", "s"],
     "category": "music",
     "description": "Skip's the current song."
   },
 
   "clear": {
     "name": "clear",
-    "key": "c",
+    "keys": ["clear", "c"],
     "category": "music",
     "description": "Clears the queue."
   },
 
   "join": {
     "name": "join",
-    "key": "j",
+    "keys": ["join", "j"],
     "category": "music",
     "description": "I will join your channel."
   },
 
   "leave": {
     "name": "leave",
-    "key": "l",
+    "keys": ["leave", "l"],
     "category": "music",
     "description": "I will leave your channel."
   },
 
   "pause": {
     "name": "pause",
-    "key": "ps",
+    "keys": ["pause", "ps"],
     "category": "music",
     "description": "Pause's the current song."
   },
 
   "resume": {
     "name": "resume",
-    "key": "r",
+    "keys": ["resume", "r"],
     "category": "music",
     "description": "Resume's the current song."
   },
 
   "repeat": {
     "name": "repeat",
-    "key": "rp",
+    "keys": ["repeat", "rp"],
     "category": "music",
     "description": "Repeat queue or song you are playing.",
     "options": [
@@ -85,65 +74,88 @@
         "choices": [
           {
             "name": "song",
-            "value": "1"
+            "value": "song"
           },
           {
-            "name": "queue",
-            "value": "2"
+            "name": "toggle",
+            "value": "toggle"
           },
           {
             "name": "disable",
-            "value": "0"
+            "value": "disable"
           }
         ],
-        "description": "Repeat's a song or a queue."
+        "description": "Repeat's a song",
+        "type": 3,
+        "required": true
       }
     ]
   },
 
   "queue": {
     "name": "queue",
-    "key": "q",
+    "keys": ["queue", "q"],
     "category": "music",
     "description": "Displays the current queue."
   },
 
   "shuffle": {
     "name": "shuffle",
-    "key": "sh",
+    "keys": ["shuffle", "sh"],
     "category": "music",
     "description": "Shuffle's the queue."
   },
 
+  "volume": {
+    "name": "volume",
+    "keys": ["volume", "v"],
+    "category": "music",
+    "description": "Change's the volume.",
+    "options": [
+      {
+        "name": "volume",
+        "description": "Enter value from 0 to 100",
+        "type": 4,
+        "min_value": 0,
+        "max_value": 100,
+        "required": true
+      }
+    ]
+  },
+
   "jump": {
     "name": "jump",
-    "key": "jp",
+    "keys": ["jump", "jp"],
     "category": "music",
     "description": "Jump's to the song.",
     "options": [
       {
         "name": "jump",
-        "description": "Enter song number."
+        "description": "Enter song number.",
+        "type": 4,
+        "required": true
       }
     ]
   },
 
   "ask": {
     "name": "ask",
-    "key": "a",
+    "keys": ["ask", "a"],
     "category": "chat",
-    "description": "I will answer you.",
+    "description": "Emilia will answer you.",
     "options": [
       {
         "name": "chat",
-        "description": "Take to me."
+        "description": "Take to me.",
+        "type": 3,
+        "required": true
       }
     ]
   },
 
   "help": {
     "name": "help",
-    "key": "h",
+    "keys": ["help", "h"],
     "category": "others",
     "description": "Displays all the commands. ⌘"
   }

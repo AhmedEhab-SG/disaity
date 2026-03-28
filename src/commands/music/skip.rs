@@ -2,7 +2,7 @@ use poise::command;
 
 use crate::core::{Context, Error};
 
-#[command(slash_command, prefix_command, rename = "skip", aliases("s"))]
+#[command(slash_command, prefix_command)]
 pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = match ctx.guild_id() {
         Some(id) => id,

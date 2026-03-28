@@ -2,7 +2,7 @@ use poise::command;
 
 use crate::core::{Context, Error};
 
-#[command(slash_command, prefix_command, rename = "pause", aliases("ps"))]
+#[command(slash_command, prefix_command)]
 pub async fn pause(ctx: Context<'_>) -> Result<(), Error> {
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("This command only works in servers.").await?;

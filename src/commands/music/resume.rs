@@ -2,7 +2,7 @@ use poise::command;
 
 use crate::core::{Context, Error};
 
-#[command(slash_command, prefix_command, rename = "resume", aliases("r"))]
+#[command(slash_command, prefix_command)]
 pub async fn resume(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = match ctx.guild_id() {
         Some(id) => id,
