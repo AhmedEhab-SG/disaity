@@ -11,7 +11,7 @@ pub struct CommandChoice {
 pub struct CommandOption {
     pub name: String,
     pub description: String,
-    pub r#type: u8, // Using r# because 'type' is a reserved keyword in Rust
+    pub r#type: u8, // r# reserved name
     pub required: bool,
     pub min_value: Option<i64>,
     pub max_value: Option<i64>,
