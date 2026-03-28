@@ -1,9 +1,9 @@
 use std::{env, path::PathBuf, process::Command};
 
-fn find_binary(sub_dir: &str, bin_name: &str) -> Option<PathBuf> {
+fn find_binary(dir: &str, sub_dir: &str, bin_name: &str) -> Option<PathBuf> {
     let exe_name = format!("{}{}", bin_name, env::consts::EXE_SUFFIX);
 
-    let relative_path = PathBuf::from("bin").join(sub_dir).join(&exe_name);
+    let relative_path = PathBuf::from("bin").join(dir).join(sub_dir).join(&exe_name);
 
     if let Ok(cwd) = env::current_dir() {
         let path = cwd.join(&relative_path);
@@ -36,12 +36,15 @@ fn verify_execution(cmd: &str, arg: Option<&str>) {
 }
 
 pub fn load_bin() {
-    const BINARIES: [(&str, &str); 2] = [("ffmpeg", "ffmpeg"), ("yt-dlp", "yt-dlp")];
+    const BINARIES: [(&str, &str, &str); 2] = [
+        ("engines", "media", "ffmpeg"),
+        ("providers", "youtube", "yt-dlp"),
+    ];
 
     let mut extra_paths: Vec<(&str, PathBuf)> = Vec::new();
 
-    for (dir, bin) in BINARIES {
-        if let Some(p) = find_binary(dir, bin) {
+    for (dir, sub_dir, bin) in BINARIES {
+        if let Some(p) = find_binary(dir, sub_dir, bin) {
             if let Some(parent) = p.parent() {
                 extra_paths.push((bin, parent.to_path_buf()));
             }

@@ -5,8 +5,11 @@ use crate::{
     uitls::{format_duration_human, parse_timestamp},
 };
 
-#[command(slash_command, prefix_command, rename = "seek", aliases("sk"))]
-pub async fn seek(ctx: Context<'_>, #[rest] time: String) -> Result<(), Error> {
+#[command(slash_command, prefix_command)]
+pub async fn seek(
+    ctx: Context<'_>,
+    #[description = "Enter time number or format you want to play in current song."] time: String,
+) -> Result<(), Error> {
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("this commad ont works in servers.").await?;
         return Ok(());

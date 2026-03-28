@@ -5,7 +5,7 @@ use crate::{
     core::{Context, Error},
 };
 
-#[command(slash_command, prefix_command, rename = "join", aliases("j"))]
+#[command(slash_command, prefix_command)]
 pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
     let serenity_context = ctx.serenity_context();
     let author_id = ctx.author().id;

@@ -4,7 +4,7 @@ use rand::{rng, seq::SliceRandom};
 
 use crate::core::{Context, Error};
 
-#[command(slash_command, prefix_command, rename = "shuffle", aliases("sh"))]
+#[command(slash_command, prefix_command)]
 pub async fn shuffle(ctx: Context<'_>) -> Result<(), Error> {
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("this commad ont works in servers.").await?;

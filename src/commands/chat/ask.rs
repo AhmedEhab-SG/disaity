@@ -81,8 +81,11 @@ fn get_history(
     history
 }
 
-#[command(slash_command, prefix_command, rename = "ask", aliases("a"))]
-pub async fn ask(ctx: Context<'_>, #[rest] msg: String) -> Result<(), Error> {
+#[command(slash_command, prefix_command)]
+pub async fn ask(
+    ctx: Context<'_>,
+    #[description = "Take to me."] chat: String,
+) -> Result<(), Error> {
     let serenity_context = ctx.serenity_context();
     let channel_id = ctx.channel_id();
     let agent = &ctx.data().agent;
@@ -115,7 +118,7 @@ pub async fn ask(ctx: Context<'_>, #[rest] msg: String) -> Result<(), Error> {
         }
     }
 
-    req = req.with_user_message(msg.trim());
+    req = req.with_user_message(chat.trim());
 
     let res_text = req.execute().await?.text();
 
@@ -127,7 +130,7 @@ pub async fn ask(ctx: Context<'_>, #[rest] msg: String) -> Result<(), Error> {
 
         if i == 0 {
             if let MessageContext::Application(_) = ctx {
-                content = format!("> {}\n\n{}", msg.trim(), content);
+                content = format!("> {}\n\n{}", chat.trim(), content);
             }
             ctx.reply(content).await?;
         } else {
