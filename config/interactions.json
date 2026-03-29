@@ -56,11 +56,11 @@
   },
 
   "colors": {
-    "help": "0x703be7",
-    "error": "0xff0000",
-    "default": "0x0099ff",
-    "blurple": "0x5865F2",
-    "action": "15110828"
+    "help": 7355367,
+    "error": 16711680,
+    "default": 39423,
+    "blurple": 5793266,
+    "action": 15110828
   },
 
   "provider_logo_urls": {

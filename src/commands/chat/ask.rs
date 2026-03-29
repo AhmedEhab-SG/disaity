@@ -2,7 +2,10 @@ use gemini_rust::Tool;
 use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
-use crate::core::{Context, Error};
+use crate::{
+    config::characters::Character,
+    core::{Context, Error},
+};
 
 fn get_history(
     messages: Vec<Message>,
@@ -84,7 +87,9 @@ fn get_history(
 #[command(slash_command, prefix_command)]
 pub async fn ask(
     ctx: Context<'_>,
-    #[description = "Take to me."] chat: String,
+    #[description = "Take to me."]
+    #[rest]
+    chat: String,
 ) -> Result<(), Error> {
     let serenity_context = ctx.serenity_context();
     let channel_id = ctx.channel_id();
@@ -104,10 +109,19 @@ pub async fn ask(
     };
 
     let history = get_history(messages, current_msg_id, user_id);
+    let Some(character) = ctx
+        .data()
+        .config
+        .characters_registry
+        .get_character(&Character::Emilia)
+    else {
+        ctx.say("failed to get target character").await?;
+        return Ok(());
+    };
 
     let mut req = agent
         .generate_content()
-        // .with_system_instruction(system_prompt)
+        .with_system_instruction(character.personality.clone())
         .with_tool(Tool::google_search());
 
     for (is_bot, content) in history {

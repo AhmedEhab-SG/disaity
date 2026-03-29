@@ -18,22 +18,20 @@ use crate::{
         },
         others::{help::help, join::join, leave::leave},
     },
-    config::commands::CommandRegistry,
+    config::Config,
     handlers::ready::start_status_loop,
 };
 
 pub struct Data {
     pub http: reqwest::Client,
     pub agent: Gemini,
+    pub config: Config,
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = BaseContext<'a, Data, Error>;
 
 pub async fn core() -> Result<(), Error> {
-    let token = dotenv::var("CLIENT_TOKEN")?;
-    let ai_key = dotenv::var("GEMINI_API_KEY")?;
-
     let intents = GatewayIntents::non_privileged()
         | GatewayIntents::GUILDS
         | GatewayIntents::GUILD_MEMBERS
@@ -43,9 +41,11 @@ pub async fn core() -> Result<(), Error> {
         | GatewayIntents::MESSAGE_CONTENT
         | GatewayIntents::DIRECT_MESSAGES;
 
-    let agent = Gemini::new(ai_key)?;
+    let config = Config::new();
+    let agent = Gemini::new(&config.env.gemini_api_key)?;
     let http = reqwest::Client::new();
-    let cmds_registery = CommandRegistry::new();
+    let cmds_registery = &config.commands_registry;
+    let token = config.env.client_token.clone();
 
     let mut commands = vec![
         play(),
@@ -109,7 +109,11 @@ pub async fn core() -> Result<(), Error> {
             Box::pin(async move {
                 builtins::register_globally(ctx, &framework.options().commands).await?;
                 start_status_loop(ctx.clone());
-                Ok(Data { http, agent })
+                Ok(Data {
+                    http,
+                    agent,
+                    config,
+                })
             })
         })
         .build();

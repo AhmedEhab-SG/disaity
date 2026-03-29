@@ -48,7 +48,7 @@ pub struct InteractionsRegistry {
 impl Default for InteractionsRegistry {
     fn default() -> Self {
         let json_data = include_str!("../../config/interactions.json");
-        serde_json::from_str(json_data).expect("Critical Error: info.json is malformed!")
+        serde_json::from_str(json_data).expect("Critical Error: interactions.json is malformed!")
     }
 }
 
