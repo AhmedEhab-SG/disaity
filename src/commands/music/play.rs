@@ -16,7 +16,9 @@ use crate::{
 #[command(slash_command, prefix_command)]
 pub async fn play(
     ctx: Context<'_>,
-    #[description = "Enter song name"] song: String,
+    #[description = "Enter song name"]
+    #[rest]
+    song: String,
 ) -> Result<(), Error> {
     let serenity_context = ctx.serenity_context();
     let text_channel_id = ctx.channel_id();

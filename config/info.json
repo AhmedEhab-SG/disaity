@@ -10,7 +10,7 @@
     "icon_url": "https://i.ibb.co/hFNhYk2/AES-solid-colors-512.png"
   },
 
-  "permissions": {
+  "permission": {
     "send_message": "SendMessages",
     "admin": "Administrator",
     "voice_join": "Connect"
