@@ -1,7 +1,8 @@
 use serde::Deserialize;
 use std::collections::HashMap;
+use strum::Display;
 
-#[derive(Deserialize, Debug, Clone, Eq, Hash, PartialEq)]
+#[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Character {
     Emilia,
@@ -31,7 +32,9 @@ impl CharacterRegistry {
         Self::default()
     }
 
-    pub fn get_character(&self, key: &Character) -> Option<&CharacterConfig> {
-        self.characters.get(key)
+    pub fn get_character(&self, key: &Character) -> &CharacterConfig {
+        self.characters
+            .get(key)
+            .unwrap_or_else(|| panic!("Expect character '{key}', but it wasn't found in registry"))
     }
 }
