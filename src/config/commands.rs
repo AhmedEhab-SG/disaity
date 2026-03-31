@@ -1,5 +1,37 @@
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug, str::FromStr};
+use strum::{Display, EnumString};
+
+#[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum Command {
+    Ask,
+    Help,
+    Join,
+    Leave,
+    Clear,
+    Jump,
+    Pause,
+    Play,
+    Queue,
+    Repeat,
+    Resume,
+    Seek,
+    Shuffle,
+    Skip,
+    Stop,
+    Volume,
+}
+
+#[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum Category {
+    Chat,
+    Music,
+    Others,
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct CommandChoice {
@@ -30,13 +62,38 @@ pub struct CommandConfig {
 #[derive(Deserialize, Debug)]
 pub struct CommandRegistry {
     #[serde(flatten)]
-    pub commands: HashMap<String, CommandConfig>,
+    pub categories: HashMap<Category, Vec<CommandConfig>>,
+
+    #[serde(flatten)]
+    pub commands: HashMap<Command, CommandConfig>,
 }
 
 impl Default for CommandRegistry {
     fn default() -> Self {
         let json_data = include_str!("../../config/commands.json");
-        serde_json::from_str(json_data).expect("Critical Error: commands.json is malformed!")
+        let commands: HashMap<Command, CommandConfig> =
+            serde_json::from_str(json_data).expect("Critical Error: commands.json is malformed!");
+
+        let mut categories: HashMap<Category, Vec<CommandConfig>> = HashMap::new();
+
+        for config in commands.values() {
+            if let Ok(category_enum) = Category::from_str(&config.category) {
+                categories
+                    .entry(category_enum)
+                    .or_insert_with(Vec::new)
+                    .push(config.clone());
+            } else {
+                eprintln!(
+                    "Warning: Unknown category '{}' in command '{}'",
+                    config.category, config.name
+                );
+            }
+        }
+
+        Self {
+            categories,
+            commands,
+        }
     }
 }
 
@@ -45,7 +102,15 @@ impl CommandRegistry {
         Self::default()
     }
 
-    pub fn get(&self, name: &str) -> Option<&CommandConfig> {
-        self.commands.get(name)
+    pub fn get_command(&self, cmd: &Command) -> &CommandConfig {
+        self.commands.get(cmd).unwrap_or_else(|| {
+            panic!("Expected command '{cmd}', but it was not found in registry",);
+        })
+    }
+
+    pub fn get_category(&self, cat: &Category) -> &Vec<CommandConfig> {
+        self.categories
+            .get(cat)
+            .unwrap_or_else(|| panic!("Expect category '{cat}', but it wasnt found in registry"))
     }
 }

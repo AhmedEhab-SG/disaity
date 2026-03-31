@@ -1,5 +1,7 @@
 pub mod utils;
 
+use std::str::FromStr;
+
 use ::serenity::all::GatewayIntents;
 use gemini_rust::Gemini;
 use poise::{
@@ -18,7 +20,7 @@ use crate::{
         },
         others::{help::help, join::join, leave::leave},
     },
-    config::Config,
+    config::{Config, commands::Command},
     handlers::ready::start_status_loop,
 };
 
@@ -66,34 +68,36 @@ pub async fn core() -> Result<(), Error> {
     ];
 
     for cmd in &mut commands {
-        if let Some(config) = cmds_registery.commands.get(&cmd.name) {
-            cmd.name = config.name.clone();
-            cmd.description = Some(config.description.clone());
-            cmd.aliases = config.keys.clone();
-            cmd.category = Some(config.category.clone());
+        let cmd_enum = Command::from_str(cmd.name.as_str())?;
 
-            // if let Some(json_options) = &config.options {
-            //     for (param, json_opt) in cmd.parameters.iter_mut().zip(json_options.iter()) {
-            //         param.name = json_opt.name.clone();
-            //         param.description = Some(json_opt.description.clone());
-            //         param.required = json_opt.required;
-            //
-            //         if let Some(json_choices) = &json_opt.choices {
-            //             let mut poise_choices = Vec::new();
-            //
-            //             for choice in json_choices {
-            //                 poise_choices.push(poise::CommandParameterChoice {
-            //                     name: choice.name.clone(),
-            //                     localizations: Default::default(),
-            //                     __non_exhaustive: (),
-            //                 });
-            //             }
-            //             param.choices = poise_choices;
-            //             param.required = json_opt.required;
-            //         }
-            //     }
-            // }
-        }
+        let config = cmds_registery.get_command(&cmd_enum);
+
+        cmd.name = config.name.clone();
+        cmd.description = Some(config.description.clone());
+        cmd.aliases = config.keys.clone();
+        cmd.category = Some(config.category.clone());
+
+        // if let Some(json_options) = &config.options {
+        //     for (param, json_opt) in cmd.parameters.iter_mut().zip(json_options.iter()) {
+        //         param.name = json_opt.name.clone();
+        //         param.description = Some(json_opt.description.clone());
+        //         param.required = json_opt.required;
+        //
+        //         if let Some(json_choices) = &json_opt.choices {
+        //             let mut poise_choices = Vec::new();
+        //
+        //             for choice in json_choices {
+        //                 poise_choices.push(poise::CommandParameterChoice {
+        //                     name: choice.name.clone(),
+        //                     localizations: Default::default(),
+        //                     __non_exhaustive: (),
+        //                 });
+        //             }
+        //             param.choices = poise_choices;
+        //             param.required = json_opt.required;
+        //         }
+        //     }
+        // }
     }
 
     let framework = Framework::builder()

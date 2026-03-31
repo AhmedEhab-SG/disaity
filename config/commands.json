@@ -28,6 +28,21 @@
     "description": "Skip's the current song."
   },
 
+  "seek": {
+    "name": "seek",
+    "keys": ["seek", "sk"],
+    "category": "music",
+    "description": "Seek's the current song.",
+    "options": [
+      {
+        "name": "time",
+        "description": "Enter time in seconds.",
+        "type": 4,
+        "required": true
+      }
+    ]
+  },
+
   "clear": {
     "name": "clear",
     "keys": ["clear", "c"],

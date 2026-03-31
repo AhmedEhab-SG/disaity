@@ -18,3 +18,4 @@ symphonia = { version = "0.5.5", features = ["all"] }
 tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread"] }
 tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.3" }
+strum = { version = "0.28", features = ["derive"] }

@@ -3,7 +3,7 @@ use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
 use crate::{
-    config::characters::Character,
+    config::{Config, characters::Character, commands::Command},
     core::{Context, Error},
 };
 
@@ -11,7 +11,11 @@ fn get_history(
     messages: Vec<Message>,
     current_msg_id: Option<u64>,
     user_id: UserId,
+    config: &Config,
 ) -> Vec<(bool, String)> {
+    let prefix = &config.info_registry.prefix;
+    let keys = &config.commands_registry.get_command(&Command::Ask).keys;
+
     let mut history: Vec<(bool, String)> = messages
         .into_iter()
         .filter_map(|m| {
@@ -29,13 +33,16 @@ fn get_history(
                     return None;
                 }
 
-                if !(content.starts_with("-ask ") || content.starts_with("-a ")) {
+                if !&keys
+                    .iter()
+                    .any(|k| content.starts_with(&format!("{} ", format!("{prefix}{k}"))))
+                {
                     return None;
                 }
 
-                let clean = content
-                    .strip_prefix("-ask ")
-                    .or_else(|| content.strip_prefix("-a "))
+                let clean = keys
+                    .iter()
+                    .find_map(|k| content.strip_prefix(&format!("{prefix}{k} ")))
                     .unwrap_or(&content);
 
                 return Some(vec![(is_bot, clean.trim().to_string())]);
@@ -93,7 +100,9 @@ pub async fn ask(
 ) -> Result<(), Error> {
     let serenity_context = ctx.serenity_context();
     let channel_id = ctx.channel_id();
-    let agent = &ctx.data().agent;
+    let data = &ctx.data();
+    let agent = &data.agent;
+    let config = &data.config;
     let user_id = ctx.author().id;
     let http = &serenity_context.http;
 
@@ -108,16 +117,8 @@ pub async fn ask(
         MessageContext::Application(p) => Some(p.interaction.id.into()),
     };
 
-    let history = get_history(messages, current_msg_id, user_id);
-    let Some(character) = ctx
-        .data()
-        .config
-        .characters_registry
-        .get_character(&Character::Emilia)
-    else {
-        ctx.say("failed to get target character").await?;
-        return Ok(());
-    };
+    let history = get_history(messages, current_msg_id, user_id, config);
+    let character = config.characters_registry.get_character(&Character::Emilia);
 
     let mut req = agent
         .generate_content()
