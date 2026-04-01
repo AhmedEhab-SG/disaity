@@ -16,7 +16,7 @@ use crate::{
         chat::ask::ask,
         music::{
             clear::clear, jump::jump, pause::pause, play::play, queue::queue, repeat::repeat,
-            resume::resume, seek::seek, shuffle::shuffle, skip::skip, stop::stop,
+            resume::resume, seek::seek, shuffle::shuffle, skip::skip, stop::stop, volume::volume,
         },
         others::{help::help, join::join, leave::leave},
     },
@@ -65,6 +65,7 @@ pub async fn core() -> Result<(), Error> {
         shuffle(),
         seek(),
         ask(),
+        volume(),
     ];
 
     for cmd in &mut commands {

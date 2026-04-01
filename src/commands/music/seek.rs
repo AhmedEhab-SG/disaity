@@ -1,4 +1,5 @@
 use poise::command;
+use songbird::tracks::PlayMode;
 
 use crate::{
     core::{Context, Error},
@@ -10,12 +11,15 @@ pub async fn seek(
     ctx: Context<'_>,
     #[description = "Enter time number or format you want to play in current song."] time: String,
 ) -> Result<(), Error> {
+    let serenity_context = ctx.serenity_context();
+    let cache = &serenity_context.cache;
+
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("this commad ont works in servers.").await?;
         return Ok(());
     };
 
-    let Some(user_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let Some(user_ch) = cache.guild(guild_id).and_then(|g| {
         g.voice_states
             .get(&ctx.author().id)
             .and_then(|vs| vs.channel_id)
@@ -24,9 +28,9 @@ pub async fn seek(
         return Ok(());
     };
 
-    let Some(client_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let Some(client_ch) = cache.guild(guild_id).and_then(|g| {
         g.voice_states
-            .get(&ctx.serenity_context().cache.current_user().id)
+            .get(&cache.current_user().id)
             .and_then(|vs| vs.channel_id)
     }) else {
         ctx.say("I'm not in any channel").await?;
@@ -38,7 +42,7 @@ pub async fn seek(
         return Ok(());
     }
 
-    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
+    let Some(manager) = songbird::get(serenity_context).await else {
         ctx.say("failed to mount songbird").await?;
         return Ok(());
     };
@@ -57,7 +61,7 @@ pub async fn seek(
 
     let info = track.get_info().await?;
 
-    if info.playing != songbird::tracks::PlayMode::Play {
+    if info.playing != PlayMode::Play {
         ctx.say("The music is must be already playing to seek a time frame in it")
             .await?;
         return Ok(());

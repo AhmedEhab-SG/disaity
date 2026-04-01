@@ -4,12 +4,15 @@ use crate::core::{Context, Error};
 
 #[command(slash_command, prefix_command)]
 pub async fn pause(ctx: Context<'_>) -> Result<(), Error> {
+    let serenity_context = ctx.serenity_context();
+    let cache = &serenity_context.cache;
+
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("This command only works in servers.").await?;
         return Ok(());
     };
 
-    let Some(user_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let Some(user_ch) = cache.guild(guild_id).and_then(|g| {
         g.voice_states
             .get(&ctx.author().id)
             .and_then(|vs| vs.channel_id)
@@ -18,7 +21,7 @@ pub async fn pause(ctx: Context<'_>) -> Result<(), Error> {
         return Ok(());
     };
 
-    let Some(client_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let Some(client_ch) = cache.guild(guild_id).and_then(|g| {
         g.voice_states
             .get(&ctx.serenity_context().cache.current_user().id)
             .and_then(|vs| vs.channel_id)
@@ -32,7 +35,7 @@ pub async fn pause(ctx: Context<'_>) -> Result<(), Error> {
         return Ok(());
     }
 
-    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
+    let Some(manager) = songbird::get(serenity_context).await else {
         ctx.say("failed to mount songbird").await?;
         return Ok(());
     };

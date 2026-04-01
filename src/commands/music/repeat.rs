@@ -1,9 +1,9 @@
-use poise::command;
+use poise::{ChoiceParameter, command};
 use songbird::tracks::LoopState;
 
 use crate::core::{Context, Error};
 
-#[derive(Debug, poise::ChoiceParameter)]
+#[derive(Debug, ChoiceParameter)]
 enum RepeatMode {
     #[name = "song"]
     Song,
@@ -18,12 +18,15 @@ pub async fn repeat(
     ctx: Context<'_>,
     #[description = "Repeat's a song"] mode: Option<RepeatMode>,
 ) -> Result<(), Error> {
+    let serenity_context = ctx.serenity_context();
+    let cache = &serenity_context.cache;
+
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("this commad ont works in servers.").await?;
         return Ok(());
     };
 
-    let Some(user_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let Some(user_ch) = cache.guild(guild_id).and_then(|g| {
         g.voice_states
             .get(&ctx.author().id)
             .and_then(|vs| vs.channel_id)
@@ -32,9 +35,9 @@ pub async fn repeat(
         return Ok(());
     };
 
-    let Some(client_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
+    let Some(client_ch) = cache.guild(guild_id).and_then(|g| {
         g.voice_states
-            .get(&ctx.serenity_context().cache.current_user().id)
+            .get(&cache.current_user().id)
             .and_then(|vs| vs.channel_id)
     }) else {
         ctx.say("I'm not in any channel").await?;
@@ -46,7 +49,7 @@ pub async fn repeat(
         return Ok(());
     }
 
-    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
+    let Some(manager) = songbird::get(serenity_context).await else {
         ctx.say("failed to mount songbird").await?;
         return Ok(());
     };
