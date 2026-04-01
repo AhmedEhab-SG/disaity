@@ -128,7 +128,7 @@
     "description": "Change's the volume.",
     "options": [
       {
-        "name": "volume",
+        "name": "percentage ",
         "description": "Enter value from 0 to 100",
         "type": 4,
         "min_value": 0,
