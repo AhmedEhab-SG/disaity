@@ -46,13 +46,16 @@ pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     let mut handler = handler_lock.lock().await;
-
     let queue = handler.queue();
 
-    if queue.len() <= 1 {
+    if queue.is_empty() {
         ctx.say("Nothing is currently in queue to stop.").await?;
         return Ok(());
     };
+
+    queue.modify_queue(|q| {
+        q.clear();
+    });
 
     handler.stop();
 
