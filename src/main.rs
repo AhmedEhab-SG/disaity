@@ -1,10 +1,10 @@
-use disaity::core::{core, utils::load_bin};
+use disaity::core::{bin, core};
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    load_bin();
+    bin::load();
 
     core().await.unwrap();
 }

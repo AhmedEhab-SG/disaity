@@ -1,7 +1,7 @@
 use poise::{ChoiceParameter, command};
 use songbird::tracks::LoopState;
 
-use crate::core::{Context, Error};
+use crate::core::{context::Context, error::Error};
 
 #[derive(Debug, ChoiceParameter)]
 enum RepeatMode {

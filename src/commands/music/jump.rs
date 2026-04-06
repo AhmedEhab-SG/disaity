@@ -1,44 +1,30 @@
 use poise::command;
 
-use crate::core::{Context, Error};
+use crate::{
+    commands::checks::{not_deafen, not_empty_queue, same_vc},
+    core::{context::Context, error::Error},
+};
 
-#[command(slash_command, prefix_command)]
+#[command(
+    slash_command,
+    prefix_command,
+    broadcast_typing,
+    guild_only,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | MANAGE_MESSAGES",
+    check = "same_vc",
+    check = "not_empty_queue",
+    check = "not_deafen"
+)]
 pub async fn jump(
     ctx: Context<'_>,
     #[description = "Enter song number."] order: usize,
 ) -> Result<(), Error> {
-    let serenity_context = ctx.serenity_context();
-    let cache = &serenity_context.cache;
-
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("this commad ont works in servers.").await?;
         return Ok(());
     };
 
-    let Some(user_ch) = cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&ctx.author().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("you must be in a voice channel").await?;
-        return Ok(());
-    };
-
-    let Some(client_ch) = cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&cache.current_user().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("I'm not in any channel").await?;
-        return Ok(());
-    };
-
-    if client_ch != user_ch {
-        ctx.say("You must be in the same voice channel").await?;
-        return Ok(());
-    }
-
-    let Some(manager) = songbird::get(serenity_context).await else {
+    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
         ctx.say("failed to mount songbird").await?;
         return Ok(());
     };
@@ -48,9 +34,13 @@ pub async fn jump(
         return Ok(());
     };
 
-    let handler = call.lock().await;
+    if let Context::Prefix(p_ctx) = ctx {
+        p_ctx.msg.react(ctx, '🔄').await?;
+    }
 
-    let queue = handler.queue();
+    let call_lock = call.lock().await;
+
+    let queue = call_lock.queue();
 
     if order == 0 {
         ctx.say("Track numbers start from 1.").await?;
@@ -65,24 +55,22 @@ pub async fn jump(
         return Ok(());
     }
 
-    if index == 0 {
-        if let Err(_) = queue.skip() {
-            ctx.say("Failed to skip the current track.").await?;
-        } else {
-            ctx.say(format!("▶️ Jumped to track {}!", order)).await?;
-        }
-        return Ok(());
+    if index != 0 {
+        queue.modify_queue(|vq| {
+            (0..index).for_each(|_| {
+                if let Some(queued) = vq.pop_front() {
+                    queued.stop().ok();
+                }
+            });
+        });
+    } else {
+        queue.skip()?;
     }
 
-    queue.modify_queue(|vq| {
-        (0..index).for_each(|_| {
-            if let Some(queued) = vq.pop_front() {
-                queued.stop().ok();
-            }
-        });
-    });
-
-    queue.skip().ok();
+    if let Context::Prefix(p_ctx) = ctx {
+        p_ctx.msg.delete_reactions(ctx).await?;
+        p_ctx.msg.react(ctx, '✅').await?;
+    }
 
     ctx.say(format!("▶️ Jumped to track {}!", order)).await?;
 

@@ -1,73 +1,72 @@
-use std::{env, path::PathBuf, process::Command};
+use serenity::async_trait;
 
-fn find_binary(dir: &str, sub_dir: &str, bin_name: &str) -> Option<PathBuf> {
-    let exe_name = format!("{}{}", bin_name, env::consts::EXE_SUFFIX);
+use crate::{
+    core::{context::Context, error::Error},
+    handlers::register_all,
+};
 
-    let relative_path = PathBuf::from("bin").join(dir).join(sub_dir).join(&exe_name);
-
-    if let Ok(cwd) = env::current_dir() {
-        let path = cwd.join(&relative_path);
-        if path.exists() {
-            return Some(path);
-        }
-    }
-
-    if let Ok(mut exe_dir) = env::current_exe() {
-        exe_dir.pop(); // Remove the executable name to get its directory
-        let path = exe_dir.join(&relative_path);
-        if path.exists() {
-            return Some(path);
-        }
-    }
-
-    None
+pub struct Utils<'a> {
+    pub ctx: Context<'a>,
 }
 
-fn verify_execution(cmd: &str, arg: Option<&str>) {
-    if Command::new(cmd)
-        .arg(arg.unwrap_or("-version"))
-        .output()
-        .is_ok()
-    {
-        println!("✅ {cmd} are globally accessible to the app!");
-    } else {
-        println!("⚠️ Binay {cmd} found, but still not accessible via PATH.");
-    }
+use songbird::{Call, Songbird};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+#[async_trait]
+pub trait UtilsExt {
+    async fn add_reactions(&self, emojis: &[char]) -> Result<(), Error>;
+
+    async fn get_or_join_voice(&self, manager: Arc<Songbird>) -> Result<Arc<Mutex<Call>>, Error>;
 }
 
-pub fn load_bin() {
-    const BINARIES: [(&str, &str, &str); 2] = [
-        ("engines", "media", "ffmpeg"),
-        ("providers", "youtube", "yt-dlp"),
-    ];
-
-    let mut extra_paths: Vec<(&str, PathBuf)> = Vec::new();
-
-    for (dir, sub_dir, bin) in BINARIES {
-        if let Some(p) = find_binary(dir, sub_dir, bin) {
-            if let Some(parent) = p.parent() {
-                extra_paths.push((bin, parent.to_path_buf()));
-            }
-        }
+#[async_trait]
+impl UtilsExt for Utils<'_> {
+    async fn add_reactions(&self, _emojis: &[char]) -> Result<(), Error> {
+        Ok(())
     }
 
-    if let Some(old_path) = env::var_os("PATH") {
-        let mut paths = env::split_paths(&old_path).collect::<Vec<_>>();
+    async fn get_or_join_voice(&self, manager: Arc<Songbird>) -> Result<Arc<Mutex<Call>>, Error> {
+        let guild_id = self
+            .ctx
+            .guild_id()
+            .ok_or("This command only works in servers.")?;
+        let voice_channel_id = self
+            .ctx
+            .guild()
+            .and_then(|g| {
+                g.voice_states
+                    .get(&self.ctx.author().id)
+                    .and_then(|vs| vs.channel_id)
+            })
+            .ok_or("You must be in a voice channel!")?;
+        let serenity_context = self.ctx.serenity_context();
 
-        for (_, path) in extra_paths.clone() {
-            if !paths.contains(&path) {
-                paths.insert(0, path);
-            }
+        let (call, is_new_call) = if let Some(exisiting_call) = manager.get(guild_id) {
+            let mut call_lock = exisiting_call.lock().await;
+            call_lock.join(voice_channel_id).await.ok();
+            drop(call_lock);
+
+            (exisiting_call, false)
+        } else {
+            let new_call = manager.join(guild_id, voice_channel_id).await?;
+            (new_call, true)
+        };
+
+        if is_new_call {
+            let mut call_lock = call.lock().await;
+
+            register_all(
+                &mut call_lock,
+                guild_id,
+                self.ctx.channel_id(),
+                serenity_context.http.clone(),
+                manager,
+                serenity_context.cache.clone(),
+            )
+            .await;
         }
 
-        let new_path = env::join_paths(paths).expect("Failed to join paths");
-
-        unsafe {
-            env::set_var("PATH", &new_path);
-        }
-    }
-
-    for (name, _) in extra_paths {
-        verify_execution(name, None);
+        Ok(call)
     }
 }

@@ -2,7 +2,7 @@ use poise::command;
 
 use rand::{rng, seq::SliceRandom};
 
-use crate::core::{Context, Error};
+use crate::core::{context::Context, error::Error};
 
 #[command(slash_command, prefix_command)]
 pub async fn shuffle(ctx: Context<'_>) -> Result<(), Error> {
