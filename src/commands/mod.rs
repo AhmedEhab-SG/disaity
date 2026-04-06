@@ -1,47 +1,78 @@
 pub mod chat;
+pub mod checks;
 pub mod music;
 pub mod others;
 
-use crate::{core::Error, handlers::register_all};
-use serenity::all::{Cache, ChannelId, GuildId, Http};
-use songbird::{Call, Songbird};
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use poise::Command;
+use std::str::FromStr;
 
-pub async fn get_or_join_voice(
-    manager: Arc<Songbird>,
-    guild_id: GuildId,
-    voice_channel_id: ChannelId,
-    text_channel_id: ChannelId,
-    http: &Arc<Http>,
-    cache: &Arc<Cache>,
-) -> Result<Arc<Mutex<Call>>, Error> {
-    let (call, is_new_call) = if let Some(exisiting_call) = manager.get(guild_id) {
-        let mut handler = exisiting_call.lock().await;
+use crate::{
+    config::commands::{Command as CommandEnum, CommandRegistry},
+    core::{context::Data, error::Error},
+};
 
-        handler.join(voice_channel_id).await.ok();
+#[derive(Debug)]
+pub struct CommandsRegistry {
+    pub commands: Vec<Command<Data, Error>>,
+}
 
-        drop(handler);
+impl CommandsRegistry {
+    pub fn new(cmds_registery: &CommandRegistry) -> Self {
+        let commands = vec![
+            music::play::play(),
+            music::pause::pause(),
+            music::stop::stop(),
+            music::skip::skip(),
+            music::clear::clear(),
+            music::resume::resume(),
+            music::jump::jump(),
+            music::repeat::repeat(),
+            music::queue::queue(),
+            music::shuffle::shuffle(),
+            music::seek::seek(),
+            music::volume::volume(),
+            chat::ask::ask(),
+            others::help::help(),
+            others::join::join(),
+            others::leave::leave(),
+        ]
+        .into_iter()
+        .map(|mut cmd| {
+            let cmd_enum =
+                CommandEnum::from_str(cmd.name.as_str()).expect("Failed to get command name");
 
-        (exisiting_call, false)
-    } else {
-        let new_call = manager.join(guild_id, voice_channel_id).await?;
-        (new_call, true)
-    };
+            let config = cmds_registery.get_command(&cmd_enum);
 
-    if is_new_call {
-        let mut call_lock = call.lock().await;
+            cmd.name = config.name.clone();
+            cmd.description = Some(config.description.clone());
+            cmd.aliases = config.keys.clone();
+            cmd.category = Some(config.category.clone());
 
-        register_all(
-            &mut call_lock,
-            guild_id,
-            text_channel_id,
-            http.clone(),
-            manager.clone(),
-            cache.clone(),
-        )
-        .await;
+            // if let Some(json_options) = &config.options {
+            //     for (param, json_opt) in cmd.parameters.iter_mut().zip(json_options.iter()) {
+            //         param.name = json_opt.name.clone();
+            //         param.description = Some(json_opt.description.clone());
+            //         param.required = json_opt.required;
+            //
+            //         if let Some(json_choices) = &json_opt.choices {
+            //             let mut poise_choices = Vec::new();
+            //
+            //             for choice in json_choices {
+            //                 poise_choices.push(poise::CommandParameterChoice {
+            //                     name: choice.name.clone(),
+            //                     localizations: Default::default(),
+            //                     __non_exhaustive: (),
+            //                 });
+            //             }
+            //             param.choices = poise_choices;
+            //             param.required = json_opt.required;
+            //         }
+            //     }
+            // }
+            cmd
+        })
+        .collect();
+
+        Self { commands }
     }
-
-    Ok(call)
 }

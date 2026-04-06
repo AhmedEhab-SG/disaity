@@ -4,7 +4,7 @@ use poise::{
 };
 use serenity::all::CreateEmbedAuthor;
 
-use crate::core::{Context, Error};
+use crate::core::{context::Context, error::Error};
 
 #[command(slash_command, prefix_command)]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {

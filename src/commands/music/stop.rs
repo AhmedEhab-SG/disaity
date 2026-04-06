@@ -1,6 +1,6 @@
 use poise::command;
 
-use crate::core::{Context, Error};
+use crate::core::{context::Context, error::Error};
 
 #[command(slash_command, prefix_command)]
 pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {

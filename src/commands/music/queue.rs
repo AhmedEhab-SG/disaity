@@ -1,4 +1,4 @@
-use crate::core::{Context, Error};
+use crate::core::{context::Context, error::Error};
 use crate::handlers::SongMetadata;
 use poise::{command, futures_util::StreamExt};
 use serenity::all::{

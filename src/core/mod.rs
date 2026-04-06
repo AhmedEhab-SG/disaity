@@ -1,37 +1,20 @@
+pub mod bin;
+pub mod context;
+pub mod error;
 pub mod utils;
 
-use std::str::FromStr;
-
-use ::serenity::all::GatewayIntents;
+use ::serenity::all::{ClientBuilder, GatewayIntents};
 use gemini_rust::Gemini;
-use poise::{
-    Context as BaseContext, Framework, FrameworkOptions, PrefixFrameworkOptions, builtins,
-    serenity_prelude as serenity,
-};
+use poise::{Framework, FrameworkOptions, PrefixFrameworkOptions, builtins};
 
 use songbird::SerenityInit;
 
 use crate::{
-    commands::{
-        chat::ask::ask,
-        music::{
-            clear::clear, jump::jump, pause::pause, play::play, queue::queue, repeat::repeat,
-            resume::resume, seek::seek, shuffle::shuffle, skip::skip, stop::stop, volume::volume,
-        },
-        others::{help::help, join::join, leave::leave},
-    },
-    config::{Config, commands::Command},
+    commands::CommandsRegistry,
+    config::Config,
+    core::{context::Data, error::Error},
     handlers::ready::start_status_loop,
 };
-
-pub struct Data {
-    pub http: reqwest::Client,
-    pub agent: Gemini,
-    pub config: Config,
-}
-
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Context<'a> = BaseContext<'a, Data, Error>;
 
 pub async fn core() -> Result<(), Error> {
     let intents = GatewayIntents::non_privileged()
@@ -46,66 +29,14 @@ pub async fn core() -> Result<(), Error> {
     let config = Config::new();
     let agent = Gemini::new(&config.env.gemini_api_key)?;
     let http = reqwest::Client::new();
-    let cmds_registery = &config.commands_registry;
+    let commands = CommandsRegistry::new(&config.commands_registry).commands;
     let token = config.env.client_token.clone();
-
-    let mut commands = vec![
-        play(),
-        pause(),
-        stop(),
-        skip(),
-        clear(),
-        resume(),
-        help(),
-        join(),
-        leave(),
-        jump(),
-        repeat(),
-        queue(),
-        shuffle(),
-        seek(),
-        ask(),
-        volume(),
-    ];
-
-    for cmd in &mut commands {
-        let cmd_enum = Command::from_str(cmd.name.as_str())?;
-
-        let config = cmds_registery.get_command(&cmd_enum);
-
-        cmd.name = config.name.clone();
-        cmd.description = Some(config.description.clone());
-        cmd.aliases = config.keys.clone();
-        cmd.category = Some(config.category.clone());
-
-        // if let Some(json_options) = &config.options {
-        //     for (param, json_opt) in cmd.parameters.iter_mut().zip(json_options.iter()) {
-        //         param.name = json_opt.name.clone();
-        //         param.description = Some(json_opt.description.clone());
-        //         param.required = json_opt.required;
-        //
-        //         if let Some(json_choices) = &json_opt.choices {
-        //             let mut poise_choices = Vec::new();
-        //
-        //             for choice in json_choices {
-        //                 poise_choices.push(poise::CommandParameterChoice {
-        //                     name: choice.name.clone(),
-        //                     localizations: Default::default(),
-        //                     __non_exhaustive: (),
-        //                 });
-        //             }
-        //             param.choices = poise_choices;
-        //             param.required = json_opt.required;
-        //         }
-        //     }
-        // }
-    }
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
             commands,
             prefix_options: PrefixFrameworkOptions {
-                prefix: Some("-".into()),
+                prefix: Some(config.info_registry.prefix.clone()),
                 ..Default::default()
             },
             ..Default::default()
@@ -123,12 +54,12 @@ pub async fn core() -> Result<(), Error> {
         })
         .build();
 
-    let client = serenity::ClientBuilder::new(token, intents)
+    ClientBuilder::new(token, intents)
         .framework(framework)
         .register_songbird()
-        .await;
-
-    client?.start().await?;
+        .await?
+        .start()
+        .await?;
 
     Ok(())
 }

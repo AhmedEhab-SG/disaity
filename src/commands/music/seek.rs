@@ -2,7 +2,7 @@ use poise::command;
 use songbird::tracks::PlayMode;
 
 use crate::{
-    core::{Context, Error},
+    core::{context::Context, error::Error},
     uitls::{format_duration_human, parse_timestamp},
 };
 

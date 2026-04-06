@@ -4,7 +4,7 @@ pub mod ready;
 
 use serenity::all::{Cache, ChannelId, GuildId, Http};
 use songbird::{Call, Songbird};
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use crate::handlers::{idle::register_idle_timeout, playing::register_playing_info};
 
@@ -13,7 +13,7 @@ pub struct SongMetadata {
     pub title: String,
     pub url: String,
     pub thumbnail: String,
-    pub duration: Option<std::time::Duration>,
+    pub duration: Option<Duration>,
     pub request_by: String,
 }
 

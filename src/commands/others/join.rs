@@ -1,27 +1,15 @@
 use poise::command;
 
-use crate::{
-    commands::get_or_join_voice,
-    core::{Context, Error},
+use crate::core::{
+    context::{Context, ContextExt},
+    error::Error,
+    utils::UtilsExt,
 };
 
 #[command(slash_command, prefix_command)]
 pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
-    let serenity_context = ctx.serenity_context();
-    let author_id = ctx.author().id;
-    let http = &serenity_context.http;
-    let cache = &serenity_context.cache;
-
     let Some(guild_id) = ctx.guild_id() else {
         ctx.say("This command only works in servers.").await?;
-        return Ok(());
-    };
-
-    let Some(voice_channel_id) = cache
-        .guild(guild_id)
-        .and_then(|g| g.voice_states.get(&author_id).and_then(|vs| vs.channel_id))
-    else {
-        ctx.say("You are already not in any chennel").await?;
         return Ok(());
     };
 
@@ -44,15 +32,7 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
         }
     }
 
-    get_or_join_voice(
-        manager,
-        guild_id,
-        voice_channel_id,
-        ctx.channel_id(),
-        http,
-        cache,
-    )
-    .await?;
+    ctx.utils().get_or_join_voice(manager).await?;
 
     // let mut handler = call.lock().await;
 

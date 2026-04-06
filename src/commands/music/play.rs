@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use poise::{Context as MessageContext, command};
+use poise::command;
 use songbird::{
     get,
     input::{Input, YoutubeDl},
@@ -8,57 +8,44 @@ use songbird::{
 };
 
 use crate::{
-    commands::get_or_join_voice,
-    core::{Context, Error},
+    commands::checks::not_deafen,
+    core::{
+        context::{Context, ContextExt},
+        error::Error,
+        utils::UtilsExt,
+    },
     handlers::SongMetadata,
 };
 
-#[command(slash_command, prefix_command)]
+#[command(
+    slash_command,
+    prefix_command,
+    guild_only,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT | SPEAK | EMBED_LINKS | ADD_REACTIONS",
+    check = "not_deafen"
+)]
 pub async fn play(
     ctx: Context<'_>,
+
     #[description = "Enter song name"]
     #[rest]
     song: String,
 ) -> Result<(), Error> {
-    let serenity_context = ctx.serenity_context();
-    let text_channel_id = ctx.channel_id();
     let author = ctx.author();
-    let http = &serenity_context.http;
-    let cache = &serenity_context.cache;
+    let do_search = !song.starts_with("http");
 
     let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let do_search = !song.starts_with("http");
-
-    let Some(guild_id) = ctx.guild_id() else {
-        ctx.say("This command only works in servers.").await?;
-        return Ok(());
-    };
-
-    let Some(voice_channel_id) = cache
-        .guild(guild_id)
-        .and_then(|g| g.voice_states.get(&author.id).and_then(|vs| vs.channel_id))
-    else {
-        ctx.say("You must be in a voice channel!").await?;
-        return Ok(());
-    };
-
-    let Some(manager) = get(serenity_context).await else {
+    let Some(manager) = get(ctx.serenity_context()).await else {
         ctx.say("failed to mount songbird").await?;
         return Ok(());
     };
 
-    let call = get_or_join_voice(
-        manager,
-        guild_id,
-        voice_channel_id,
-        text_channel_id,
-        http,
-        cache,
-    )
-    .await?;
+    let call = ctx.utils().get_or_join_voice(manager).await?;
 
-    // handler.deafen(true).await?;
+    if let Context::Prefix(p_ctx) = ctx {
+        p_ctx.msg.react(ctx, '🔍').await?;
+    }
 
     let mut src: Input = if do_search {
         YoutubeDl::new_search(ctx.data().http.clone(), song).into()
@@ -80,15 +67,27 @@ pub async fn play(
 
     let track = Track::new_with_data(src.into(), Arc::new(song_info.clone()));
 
-    let mut handler = call.lock().await;
+    let mut call_lock = call.lock().await;
 
-    handler.enqueue(track).await;
+    if author.id != ctx.data().config.info_registry.owner.id {
+        if call_lock.queue().len() <= 0 {
+            call_lock.deafen(true).await?;
+        }
+    }
+
+    call_lock.enqueue(track).await;
 
     match ctx {
-        MessageContext::Application(_) => {
-            ctx.say(format!("Fetched {}", song_info.title)).await.ok()
+        Context::Application(_) => {
+            let reply_handle = ctx.say(format!("Fetched {}", song_info.title)).await?;
+            let msg = reply_handle.message().await?;
+            msg.react(ctx, '✅').await?;
         }
-        MessageContext::Prefix(_) => None,
+
+        Context::Prefix(p_ctx) => {
+            p_ctx.msg.delete_reactions(ctx).await?;
+            p_ctx.msg.react(ctx, '✅').await?;
+        }
     };
 
     Ok(())
