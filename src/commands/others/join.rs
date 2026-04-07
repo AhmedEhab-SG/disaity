@@ -1,42 +1,40 @@
 use poise::command;
 
-use crate::core::{
-    context::{Context, ContextExt},
-    error::Error,
-    utils::UtilsExt,
+use crate::{
+    commands::checks::{diff_vc, not_mute, user_not_deafen},
+    core::{
+        context::{Context, ContextExt},
+        error::Error,
+        utils::VoiceUtils,
+    },
 };
 
-#[command(slash_command, prefix_command)]
+#[command(
+    slash_command,
+    prefix_command,
+    guild_only,
+    broadcast_typing,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
+    check = "diff_vc",
+    check = "not_mute",
+    check = "user_not_deafen"
+)]
 pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
-    let Some(guild_id) = ctx.guild_id() else {
-        ctx.say("This command only works in servers.").await?;
-        return Ok(());
-    };
+    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
-        ctx.say("failed to mount songbird").await?;
-        return Ok(());
-    };
+    let call = ctx.utils().get_or_join_voice().await?;
 
-    if let Some(handler_lock) = manager.get(guild_id) {
-        let mut handler = handler_lock.lock().await;
+    let mut call_lock = call.lock().await;
 
-        handler.stop();
+    let queue = call_lock.queue();
 
-        let queue = handler.queue();
-
-        if !queue.is_empty() {
-            queue.modify_queue(|q| {
-                q.clear();
-            });
-        }
+    if !queue.is_empty() {
+        queue.stop();
     }
 
-    ctx.utils().get_or_join_voice(manager).await?;
-
-    // let mut handler = call.lock().await;
-
-    // handler.deafen(true).await?;
+    if ctx.author().id != ctx.data().config.info_registry.owner.id {
+        call_lock.deafen(true).await?;
+    }
 
     ctx.say("Yes?").await?;
 

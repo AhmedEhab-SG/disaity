@@ -1,69 +1,56 @@
-use crate::core::{context::Context, error::Error};
-use crate::handlers::SongMetadata;
 use poise::{command, futures_util::StreamExt};
+
 use serenity::all::{
     ComponentInteractionCollector, CreateActionRow, CreateButton, CreateEmbed, CreateEmbedFooter,
     CreateInteractionResponse, CreateInteractionResponseMessage,
 };
 
-#[command(slash_command, prefix_command)]
+use crate::{
+    commands::checks::{not_empty_queue, same_vc},
+    core::{
+        context::{Context, ContextExt},
+        error::Error,
+        utils::ReactionUtils,
+    },
+    handlers::SongMetadata,
+};
+
+#[command(
+    slash_command,
+    prefix_command,
+    guild_only,
+    broadcast_typing,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | ADD_REACTIONS",
+    check = "same_vc",
+    check = "not_empty_queue"
+)]
 pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     let serenity_context = ctx.serenity_context();
-    let cache = &serenity_context.cache;
+    let ctx_utils = ctx.utils();
+    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let Some(guild_id) = ctx.guild_id() else {
-        ctx.say("This command only works in servers.").await?;
-        return Ok(());
-    };
+    let guild_id = ctx.guild_id().ok_or("this commad only works in servers.")?;
 
-    let Some(user_ch) = cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&ctx.author().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("you must be in a voice channel").await?;
-        return Ok(());
-    };
+    let manager = songbird::get(serenity_context)
+        .await
+        .ok_or("failed to mount songbird")?;
 
-    let Some(client_ch) = cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&cache.current_user().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("I'm not in any channel").await?;
-        return Ok(());
-    };
+    let call = manager
+        .get(guild_id)
+        .ok_or("Not in a voice channel / no handler found")?;
 
-    if client_ch != user_ch {
-        ctx.say("You must be in the same voice channel").await?;
-        return Ok(());
-    }
-
-    let Some(manager) = songbird::get(serenity_context).await else {
-        ctx.say("This command only works in servers.").await?;
-        return Ok(());
-    };
-
-    let Some(handler_lock) = manager.get(guild_id) else {
-        ctx.say("Not in a voice channel / no handler found").await?;
-        return Ok(());
-    };
+    ctx_utils.start_loading_react().await?;
 
     let queue_snapshot = {
-        let handler = handler_lock.lock().await;
-        handler.queue().current_queue()
+        let call_lock = call.lock().await;
+        call_lock.queue().current_queue()
     };
-
-    if queue_snapshot.is_empty() {
-        ctx.say("The queue is currently empty!").await?;
-        return Ok(());
-    }
 
     let mut tracks = Vec::new();
 
-    for (i, handle) in queue_snapshot.iter().enumerate() {
+    for (i, track_handle) in queue_snapshot.iter().enumerate() {
         // Downcast to your stored metadata type (Arc<SongMetadata>)
-        let track_info = handle.data::<SongMetadata>();
+        let track_info = track_handle.data::<SongMetadata>();
 
         let duration = track_info
             .duration
@@ -133,6 +120,8 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     let builder = poise::CreateReply::default()
         .embed(create_queue_embed(0, &tracks))
         .components(components);
+
+    ctx_utils.end_loading_react().await?;
 
     ctx.send(builder).await?;
 

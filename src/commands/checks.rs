@@ -8,6 +8,13 @@ use crate::core::{context::Context, error::Error};
 //     Ok(true)
 // }
 
+pub async fn dm_with_auth(ctx: Context<'_>) -> Result<bool, Error> {
+    if ctx.guild_id().is_some() && ctx.author().id != ctx.data().config.info_registry.owner.id {
+        return Err("You are not authorized to use this command in DMs.".into());
+    }
+    Ok(true)
+}
+
 pub async fn same_vc(ctx: Context<'_>) -> Result<bool, Error> {
     let (user_vc, client_vc) = {
         let guild = ctx.guild().ok_or("This command only works in servers.")?;
@@ -27,18 +34,9 @@ pub async fn same_vc(ctx: Context<'_>) -> Result<bool, Error> {
 
     match (user_vc, client_vc) {
         (Some(c), Some(u)) if c == u => Ok(true),
-        (None, _) => {
-            ctx.say("You must be in a voice channel").await?;
-            Ok(false)
-        }
-        (_, None) => {
-            ctx.say("I'm not in any channel").await?;
-            Ok(false)
-        }
-        _ => {
-            ctx.say("We must be in the same voice channel").await?;
-            Ok(false)
-        }
+        (None, _) => return Err("You must be in a voice channel".into()),
+        (_, None) => return Err("I'm not in any channel".into()),
+        _ => return Err("We must be in the same voice channel".into()),
     }
 }
 
@@ -60,49 +58,33 @@ pub async fn diff_vc(ctx: Context<'_>) -> Result<bool, Error> {
     };
 
     match (user_vc, client_vc) {
-        (None, _) => {
-            ctx.say("You need to be in a voice channel for me to join you!")
-                .await?;
-            Ok(false)
-        }
-        (Some(b), Some(u)) if b == u => {
-            ctx.say("I'm already in your voice channel!").await?;
-            Ok(false)
-        }
-
+        (None, _) => return Err("You need to be in a voice channel for me to join you!".into()),
+        (Some(b), Some(u)) if b == u => return Err("I'm already in your voice channel!".into()),
         _ => Ok(true),
     }
 }
 
 pub async fn not_empty_queue(ctx: Context<'_>) -> Result<bool, Error> {
-    let Some(guild_id) = ctx.guild_id() else {
-        ctx.say("This command only works in servers.").await?;
-        return Ok(false);
-    };
+    let guild_id = ctx.guild_id().ok_or("this commad only works in servers.")?;
 
-    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
-        ctx.say("failed to mount songbird").await?;
-        return Ok(false);
-    };
+    let manager = songbird::get(ctx.serenity_context())
+        .await
+        .ok_or("failed to mount songbird")?;
 
-    let Some(handler_lock) = manager.get(guild_id) else {
-        ctx.say("Not in a voice channel!").await?;
-        return Ok(false);
-    };
+    let call = manager.get(guild_id).ok_or("Not in a voice channel!")?;
 
-    let handler = handler_lock.lock().await;
+    let call_lock = call.lock().await;
 
-    let queue = handler.queue();
+    let queue = call_lock.queue();
 
     if queue.is_empty() {
-        ctx.say("The queue is already empty!").await?;
-        return Ok(false);
+        return Err("The queue is already empty!".into());
     }
 
     Ok(true)
 }
 
-pub async fn not_deafen(ctx: Context<'_>) -> Result<bool, Error> {
+pub async fn user_not_deafen(ctx: Context<'_>) -> Result<bool, Error> {
     let is_deaf = ctx.guild().is_some_and(|g| {
         g.voice_states
             .get(&ctx.author().id)
@@ -111,9 +93,24 @@ pub async fn not_deafen(ctx: Context<'_>) -> Result<bool, Error> {
     });
 
     if is_deaf {
-        ctx.say("You must be not deaffen to use that command")
-            .await?;
-        return Ok(false);
+        return Err("You must be not deaffen to use that command".into());
     }
     return Ok(true);
+}
+
+pub async fn not_mute(ctx: Context<'_>) -> Result<bool, Error> {
+    let client_id = ctx.cache().current_user().id;
+
+    let is_muted = ctx.guild().is_some_and(|g| {
+        g.voice_states
+            .get(&client_id)
+            .map(|state| state.mute || state.self_mute)
+            .unwrap_or(false)
+    });
+
+    if is_muted {
+        return Err("🔇 **I'm currently muted.** Please unmute the me to use this command.".into());
+    }
+
+    Ok(true)
 }

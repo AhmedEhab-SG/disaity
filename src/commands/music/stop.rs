@@ -1,65 +1,49 @@
 use poise::command;
 
-use crate::core::{context::Context, error::Error};
+use crate::{
+    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+    core::{
+        context::{Context, ContextExt},
+        error::Error,
+        utils::ReactionUtils,
+    },
+};
 
-#[command(slash_command, prefix_command)]
+#[command(
+    slash_command,
+    prefix_command,
+    guild_only,
+    broadcast_typing,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | ADD_REACTIONS",
+    check = "same_vc",
+    check = "not_empty_queue",
+    check = "not_mute",
+    check = "user_not_deafen"
+)]
 pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
-    let serenity_context = ctx.serenity_context();
-    let cache = &serenity_context.cache;
+    let ctx_utils = ctx.utils();
 
-    let Some(guild_id) = ctx.guild_id() else {
-        ctx.say("this commad ont works in servers.").await?;
-        return Ok(());
-    };
+    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let Some(user_ch) = cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&ctx.author().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("you must be in a voice channel").await?;
-        return Ok(());
-    };
+    let guild_id = ctx.guild_id().ok_or("this commad only works in servers.")?;
 
-    let Some(client_ch) = cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&cache.current_user().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("I'm not in any channel").await?;
-        return Ok(());
-    };
+    let manager = songbird::get(ctx.serenity_context())
+        .await
+        .ok_or("failed to mount songbird")?;
 
-    if client_ch != user_ch {
-        ctx.say("You must be in the same voice channel").await?;
-        return Ok(());
-    }
+    let call = manager.get(guild_id).ok_or("Not in a voice channel!")?;
 
-    let Some(manager) = songbird::get(serenity_context).await else {
-        ctx.say("failed to mount songbird").await?;
-        return Ok(());
-    };
+    ctx_utils.start_loading_react().await?;
 
-    let Some(handler_lock) = manager.get(guild_id) else {
-        ctx.say("Not in a voice channel!").await?;
-        return Ok(());
-    };
+    let call_lock = call.lock().await;
 
-    let mut handler = handler_lock.lock().await;
-    let queue = handler.queue();
+    let queue = call_lock.queue();
 
-    if queue.is_empty() {
-        ctx.say("Nothing is currently in queue to stop.").await?;
-        return Ok(());
-    };
-
-    queue.modify_queue(|q| {
-        q.clear();
-    });
-
-    handler.stop();
+    queue.stop();
 
     ctx.say("⏹ Stopped playback!").await?;
+
+    ctx_utils.end_loading_react().await?;
 
     Ok(())
 }

@@ -34,6 +34,21 @@ pub async fn core() -> Result<(), Error> {
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
+            // handles only check errors for now
+            on_error: |error| {
+                Box::pin(async move {
+                    match error {
+                        // This catches errors returned specifically from 'check' functions
+                        poise::FrameworkError::CommandCheckFailed { ctx, error, .. } => {
+                            if let Some(err_msg) = error {
+                                ctx.say(format!("{}", err_msg)).await.ok();
+                            }
+                        }
+                        // Handle other errors...
+                        _ => poise::builtins::on_error(error).await.unwrap(),
+                    }
+                })
+            },
             commands,
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some(config.info_registry.prefix.clone()),

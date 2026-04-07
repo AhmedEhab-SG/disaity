@@ -6,8 +6,15 @@ use serenity::all::CreateEmbedAuthor;
 
 use crate::core::{context::Context, error::Error};
 
-#[command(slash_command, prefix_command)]
+#[command(
+    slash_command,
+    prefix_command,
+    broadcast_typing,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | EMBED_LINKS | ADD_REACTIONS"
+)]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
+    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+
     let (avatar_url, author_name) = {
         let user = ctx.serenity_context().cache.current_user();
 
