@@ -1,4 +1,4 @@
-use serenity::async_trait;
+use serenity::{all::ReactionType, async_trait};
 
 use crate::{
     core::{context::Context, error::Error},
@@ -9,24 +9,112 @@ pub struct Utils<'a> {
     pub ctx: Context<'a>,
 }
 
-use songbird::{Call, Songbird};
+use songbird::Call;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 #[async_trait]
-pub trait UtilsExt {
-    async fn add_reactions(&self, emojis: &[char]) -> Result<(), Error>;
+pub trait ReactionUtils {
+    async fn add_reactions(
+        &self,
+        emojis: &[impl Into<ReactionType> + Clone + Send + Sync],
+    ) -> Result<(), Error>;
 
-    async fn get_or_join_voice(&self, manager: Arc<Songbird>) -> Result<Arc<Mutex<Call>>, Error>;
+    async fn delete_self_reactions(
+        &self,
+        emojis: &[impl Into<ReactionType> + Clone + Send + Sync],
+    ) -> Result<(), Error>;
+
+    async fn delete_all_self_reactions(&self) -> Result<(), Error>;
+
+    async fn start_loading_react(&self) -> Result<(), Error>;
+    async fn end_loading_react(&self) -> Result<(), Error>;
 }
 
 #[async_trait]
-impl UtilsExt for Utils<'_> {
-    async fn add_reactions(&self, _emojis: &[char]) -> Result<(), Error> {
+pub trait VoiceUtils {
+    async fn get_or_join_voice(&self) -> Result<Arc<Mutex<Call>>, Error>;
+}
+
+#[async_trait]
+impl ReactionUtils for Utils<'_> {
+    async fn add_reactions(
+        &self,
+        emojis: &[impl Into<ReactionType> + Clone + Send + Sync],
+    ) -> Result<(), Error> {
+        if let Context::Prefix(p_ctx) = self.ctx {
+            for emoji in emojis {
+                p_ctx.msg.react(self.ctx, emoji.clone().into()).await?;
+            }
+        }
+        Ok(())
+    }
+    async fn delete_self_reactions(
+        &self,
+        emojis: &[impl Into<ReactionType> + Clone + Send + Sync],
+    ) -> Result<(), Error> {
+        if let Context::Prefix(p_ctx) = self.ctx {
+            let target_emojis: Vec<ReactionType> =
+                emojis.iter().map(|e| e.clone().into()).collect();
+
+            let updated_msg = self
+                .ctx
+                .channel_id()
+                .message(self.ctx, p_ctx.msg.id)
+                .await?;
+
+            for reaction in &updated_msg.reactions {
+                if !reaction.me {
+                    continue;
+                }
+
+                if target_emojis.contains(&reaction.reaction_type) {
+                    updated_msg
+                        .delete_reaction(self.ctx, None, reaction.reaction_type.clone())
+                        .await?;
+                }
+            }
+        }
         Ok(())
     }
 
-    async fn get_or_join_voice(&self, manager: Arc<Songbird>) -> Result<Arc<Mutex<Call>>, Error> {
+    async fn start_loading_react(&self) -> Result<(), Error> {
+        self.add_reactions(&['🔃']).await?;
+        Ok(())
+    }
+
+    async fn end_loading_react(&self) -> Result<(), Error> {
+        self.delete_self_reactions(&['🔃']).await?;
+        self.add_reactions(&['✅']).await?;
+        Ok(())
+    }
+
+    async fn delete_all_self_reactions(&self) -> Result<(), Error> {
+        if let Context::Prefix(p_ctx) = self.ctx {
+            let updated_msg = self
+                .ctx
+                .channel_id()
+                .message(self.ctx, p_ctx.msg.id)
+                .await?;
+
+            for reaction in &updated_msg.reactions {
+                if !reaction.me {
+                    continue;
+                }
+
+                updated_msg
+                    .delete_reaction(self.ctx, None, reaction.reaction_type.clone())
+                    .await?;
+            }
+        }
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl VoiceUtils for Utils<'_> {
+    async fn get_or_join_voice(&self) -> Result<Arc<Mutex<Call>>, Error> {
+        let serenity_context = self.ctx.serenity_context();
         let guild_id = self
             .ctx
             .guild_id()
@@ -40,7 +128,9 @@ impl UtilsExt for Utils<'_> {
                     .and_then(|vs| vs.channel_id)
             })
             .ok_or("You must be in a voice channel!")?;
-        let serenity_context = self.ctx.serenity_context();
+        let manager = songbird::get(serenity_context)
+            .await
+            .ok_or("Failed to mount songbird")?;
 
         let (call, is_new_call) = if let Some(exisiting_call) = manager.get(guild_id) {
             let mut call_lock = exisiting_call.lock().await;

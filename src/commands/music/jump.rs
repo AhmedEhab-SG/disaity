@@ -1,58 +1,53 @@
 use poise::command;
 
 use crate::{
-    commands::checks::{not_deafen, not_empty_queue, same_vc},
-    core::{context::Context, error::Error},
+    commands::checks::{not_empty_queue, same_vc, user_not_deafen},
+    core::{
+        context::{Context, ContextExt},
+        error::Error,
+        utils::ReactionUtils,
+    },
 };
 
 #[command(
     slash_command,
     prefix_command,
-    broadcast_typing,
     guild_only,
-    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | MANAGE_MESSAGES",
+    broadcast_typing,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | ADD_REACTIONS",
     check = "same_vc",
     check = "not_empty_queue",
-    check = "not_deafen"
+    check = "user_not_deafen"
 )]
 pub async fn jump(
     ctx: Context<'_>,
     #[description = "Enter song number."] order: usize,
 ) -> Result<(), Error> {
-    let Some(guild_id) = ctx.guild_id() else {
-        ctx.say("this commad ont works in servers.").await?;
-        return Ok(());
-    };
+    let ctx_utils = ctx.utils();
+    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let Some(manager) = songbird::get(ctx.serenity_context()).await else {
-        ctx.say("failed to mount songbird").await?;
-        return Ok(());
-    };
+    let guild_id = ctx.guild_id().ok_or("this commad only works in servers.")?;
 
-    let Some(call) = manager.get(guild_id) else {
-        ctx.say("Not in a voice channel!").await?;
-        return Ok(());
-    };
+    let manager = songbird::get(ctx.serenity_context())
+        .await
+        .ok_or("failed to mount songbird")?;
 
-    if let Context::Prefix(p_ctx) = ctx {
-        p_ctx.msg.react(ctx, '🔄').await?;
-    }
+    let call = manager.get(guild_id).ok_or("Not in a voice channel!")?;
+
+    ctx_utils.start_loading_react().await?;
 
     let call_lock = call.lock().await;
 
     let queue = call_lock.queue();
 
     if order == 0 {
-        ctx.say("Track numbers start from 1.").await?;
-        return Ok(());
+        return Err("Track numbers start from 1.".into());
     }
 
     let index = order - 1;
 
     if index >= queue.len() {
-        ctx.say("That track number does not exist in the queue.")
-            .await?;
-        return Ok(());
+        return Err("That track number does not exist in the queue.".into());
     }
 
     if index != 0 {
@@ -67,10 +62,7 @@ pub async fn jump(
         queue.skip()?;
     }
 
-    if let Context::Prefix(p_ctx) = ctx {
-        p_ctx.msg.delete_reactions(ctx).await?;
-        p_ctx.msg.react(ctx, '✅').await?;
-    }
+    ctx.utils().end_loading_react().await?;
 
     ctx.say(format!("▶️ Jumped to track {}!", order)).await?;
 

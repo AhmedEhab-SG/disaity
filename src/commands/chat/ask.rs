@@ -3,6 +3,7 @@ use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
 use crate::{
+    commands::checks::dm_with_auth,
     config::{Config, characters::Character, commands::Command},
     core::{context::Context, error::Error},
 };
@@ -91,9 +92,15 @@ fn get_history(
     history
 }
 
-#[command(slash_command, prefix_command)]
+#[command(
+    slash_command,
+    prefix_command,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | READ_MESSAGE_HISTORY",
+    check = "dm_with_auth"
+)]
 pub async fn ask(
     ctx: Context<'_>,
+
     #[description = "Take to me."]
     #[rest]
     chat: String,

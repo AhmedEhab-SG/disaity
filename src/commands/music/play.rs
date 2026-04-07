@@ -2,17 +2,16 @@ use std::sync::Arc;
 
 use poise::command;
 use songbird::{
-    get,
     input::{Input, YoutubeDl},
     tracks::Track,
 };
 
 use crate::{
-    commands::checks::not_deafen,
+    commands::checks::{not_mute, user_not_deafen},
     core::{
         context::{Context, ContextExt},
         error::Error,
-        utils::UtilsExt,
+        utils::{ReactionUtils, VoiceUtils},
     },
     handlers::SongMetadata,
 };
@@ -22,7 +21,8 @@ use crate::{
     prefix_command,
     guild_only,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT | SPEAK | EMBED_LINKS | ADD_REACTIONS",
-    check = "not_deafen"
+    check = "not_mute",
+    check = "user_not_deafen"
 )]
 pub async fn play(
     ctx: Context<'_>,
@@ -31,21 +31,16 @@ pub async fn play(
     #[rest]
     song: String,
 ) -> Result<(), Error> {
+    let ctx_utils = ctx.utils();
     let author = ctx.author();
     let do_search = !song.starts_with("http");
 
     let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let Some(manager) = get(ctx.serenity_context()).await else {
-        ctx.say("failed to mount songbird").await?;
-        return Ok(());
-    };
+    let call = ctx.utils().get_or_join_voice().await?;
 
-    let call = ctx.utils().get_or_join_voice(manager).await?;
-
-    if let Context::Prefix(p_ctx) = ctx {
-        p_ctx.msg.react(ctx, '🔍').await?;
-    }
+    ctx_utils.start_loading_react().await?;
+    ctx_utils.add_reactions(&['🔍']).await?;
 
     let mut src: Input = if do_search {
         YoutubeDl::new_search(ctx.data().http.clone(), song).into()
@@ -77,6 +72,8 @@ pub async fn play(
 
     call_lock.enqueue(track).await;
 
+    ctx_utils.delete_all_self_reactions().await?;
+
     match ctx {
         Context::Application(_) => {
             let reply_handle = ctx.say(format!("Fetched {}", song_info.title)).await?;
@@ -85,7 +82,6 @@ pub async fn play(
         }
 
         Context::Prefix(p_ctx) => {
-            p_ctx.msg.delete_reactions(ctx).await?;
             p_ctx.msg.react(ctx, '✅').await?;
         }
     };

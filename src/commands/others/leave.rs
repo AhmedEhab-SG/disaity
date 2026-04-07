@@ -1,44 +1,28 @@
 use poise::command;
 
-use crate::core::{context::Context, error::Error};
+use crate::{
+    commands::checks::same_vc,
+    core::{context::Context, error::Error},
+};
 
-#[command(slash_command, prefix_command)]
+#[command(
+    slash_command,
+    prefix_command,
+    guild_only,
+    broadcast_typing,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
+    check = "same_vc"
+)]
 pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
-    let Some(guild_id) = ctx.guild_id() else {
-        ctx.say("This command only works in servers.").await?;
-        return Ok(());
-    };
+    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let Some(user_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&ctx.author().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("you must be in a voice channel").await?;
-        return Ok(());
-    };
+    let guild_id = ctx
+        .guild_id()
+        .ok_or("This command only works in servers.")?;
 
-    let Some(client_ch) = ctx.serenity_context().cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&ctx.serenity_context().cache.current_user().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("I'm not in any channel").await?;
-        return Ok(());
-    };
-
-    if client_ch != user_ch {
-        ctx.say("You must be in the same voice channel").await?;
-        return Ok(());
-    }
-
-    let manager = match songbird::get(ctx.serenity_context()).await {
-        Some(m) => m,
-        None => {
-            ctx.say("failed to mount songbird").await?;
-            return Ok(());
-        }
-    };
+    let manager = songbird::get(ctx.serenity_context())
+        .await
+        .ok_or("failed to mount songbird")?;
 
     manager.leave(guild_id).await?;
 

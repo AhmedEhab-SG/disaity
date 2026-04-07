@@ -1,66 +1,58 @@
 use poise::command;
+use songbird::tracks::PlayMode;
 
-use crate::core::{context::Context, error::Error};
+use crate::{
+    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+    core::{
+        context::{Context, ContextExt},
+        error::Error,
+        utils::ReactionUtils,
+    },
+};
 
-#[command(slash_command, prefix_command)]
+#[command(
+    slash_command,
+    prefix_command,
+    guild_only,
+    broadcast_typing,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | SPEAK | ADD_REACTIONS",
+    check = "same_vc",
+    check = "not_empty_queue",
+    check = "not_mute",
+    check = "user_not_deafen"
+)]
 pub async fn resume(ctx: Context<'_>) -> Result<(), Error> {
-    let serenity_context = ctx.serenity_context();
-    let cache = &serenity_context.cache;
+    let ctx_utils = ctx.utils();
+    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let Some(guild_id) = ctx.guild_id() else {
-        ctx.say("This command only works in servers.").await?;
-        return Ok(());
-    };
+    let guild_id = ctx.guild_id().ok_or("this commad only works in servers.")?;
 
-    let Some(user_ch) = cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&ctx.author().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("you must be in a voice channel").await?;
-        return Ok(());
-    };
+    let manager = songbird::get(ctx.serenity_context())
+        .await
+        .ok_or("failed to mount songbird")?;
 
-    let Some(client_ch) = cache.guild(guild_id).and_then(|g| {
-        g.voice_states
-            .get(&cache.current_user().id)
-            .and_then(|vs| vs.channel_id)
-    }) else {
-        ctx.say("I'm not in any channel").await?;
-        return Ok(());
-    };
+    let call = manager.get(guild_id).ok_or("Not in a voice channel!")?;
 
-    if client_ch != user_ch {
-        ctx.say("You must be in the same voice channel").await?;
-        return Ok(());
-    }
+    ctx_utils.start_loading_react().await?;
 
-    let Some(manager) = songbird::get(serenity_context).await else {
-        ctx.say("failed to mount songbird").await?;
-        return Ok(());
-    };
+    let call_lock = call.lock().await;
 
-    let Some(handler_lock) = manager.get(guild_id) else {
-        ctx.say("Not in a voice channel!").await?;
-        return Ok(());
-    };
-
-    let handler = handler_lock.lock().await;
-
-    let Some(track_handler) = handler.queue().current() else {
-        ctx.say("Nothing is in the queue to resume.").await?;
-        return Ok(());
-    };
+    let track_handler = call_lock
+        .queue()
+        .current()
+        .ok_or("Nothing is in the queue to resume.")?;
 
     let info = track_handler.get_info().await?;
 
-    if info.playing == songbird::tracks::PlayMode::Play {
-        ctx.say("The music is already playing!").await?;
-        return Ok(());
+    if info.playing == PlayMode::Play {
+        return Err("The music is already playing!".into());
     }
 
     track_handler.play()?;
 
+    ctx_utils.end_loading_react().await?;
+
     ctx.say("▶️ Resumed!").await?;
+
     Ok(())
 }
