@@ -1,4 +1,7 @@
 use serenity::{all::ReactionType, async_trait};
+use songbird::Call;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use crate::{
     core::{context::Context, error::Error},
@@ -8,10 +11,6 @@ use crate::{
 pub struct Utils<'a> {
     pub ctx: Context<'a>,
 }
-
-use songbird::Call;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 #[async_trait]
 pub trait ReactionUtils {

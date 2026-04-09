@@ -2,7 +2,10 @@ use poise::command;
 use songbird::tracks::PlayMode;
 
 use crate::{
-    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+    commands::{
+        checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -61,10 +64,12 @@ pub async fn seek(
 
     let result_time = track_handler.seek(target).result_async().await?;
 
-    ctx.say(format!("Seeked to {}", format_duration_human(result_time)))
-        .await?;
-
     ctx_utils.end_loading_react().await?;
+
+    say!(
+        ctx,
+        format!("Seeked to {}", format_duration_human(result_time))
+    );
 
     Ok(())
 }

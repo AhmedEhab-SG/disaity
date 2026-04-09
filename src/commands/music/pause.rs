@@ -2,7 +2,10 @@ use poise::command;
 use songbird::tracks::PlayMode;
 
 use crate::{
-    commands::checks::{not_empty_queue, same_vc},
+    commands::{
+        checks::{not_empty_queue, same_vc},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -50,7 +53,7 @@ pub async fn pause(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx_utils.end_loading_react().await?;
 
-    ctx.say("⏸️ Paused").await?;
+    say!(ctx, "⏸️ paused");
 
     Ok(())
 }

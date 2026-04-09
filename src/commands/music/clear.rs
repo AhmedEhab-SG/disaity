@@ -1,7 +1,10 @@
 use poise::command;
 
 use crate::{
-    commands::checks::{not_empty_queue, same_vc},
+    commands::{
+        checks::{not_empty_queue, same_vc},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -42,7 +45,7 @@ pub async fn clear(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx_utils.end_loading_react().await?;
 
-    ctx.say("🗑️ Queue cleared!").await?;
+    say!(ctx, "🗑️ Queue cleared!");
 
     Ok(())
 }

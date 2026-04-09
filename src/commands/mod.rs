@@ -1,5 +1,6 @@
 pub mod chat;
 pub mod checks;
+pub mod macros;
 pub mod music;
 pub mod others;
 

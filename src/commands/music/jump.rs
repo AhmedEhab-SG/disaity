@@ -1,7 +1,10 @@
 use poise::command;
 
 use crate::{
-    commands::checks::{not_empty_queue, same_vc, user_not_deafen},
+    commands::{
+        checks::{not_empty_queue, same_vc, user_not_deafen},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -64,7 +67,7 @@ pub async fn jump(
 
     ctx.utils().end_loading_react().await?;
 
-    ctx.say(format!("▶️ Jumped to track {}!", order)).await?;
+    say!(ctx, format!("▶️ Jumped to track {}!", order));
 
     Ok(())
 }

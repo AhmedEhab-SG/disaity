@@ -29,7 +29,6 @@ impl EventHandler for TrackStartNotifier {
         if let EventContext::Track(track_listen) = ctx {
             for (_, handle) in track_listen.iter() {
                 let data = handle.data::<SongMetadata>();
-
                 let embed = CreateEmbed::new()
                     .title(data.title.clone())
                     .url(data.url.clone())
