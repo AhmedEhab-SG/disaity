@@ -2,7 +2,10 @@ use poise::{ChoiceParameter, command};
 use songbird::tracks::LoopState;
 
 use crate::{
-    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+    commands::{
+        checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -59,13 +62,12 @@ pub async fn repeat(
         Some(RepeatMode::Song) => {
             // Force loop ON
             current_track.enable_loop().ok();
-            ctx.say("🔁 **Loop enabled** for the current track.")
-                .await?;
+            say!(ctx, "🔁 **Loop enabled** for the current track.");
         }
         Some(RepeatMode::Disable) => {
             // Force loop OFF
             current_track.disable_loop().ok();
-            ctx.say("➡️ **Loop disabled**.").await?;
+            say!(ctx, "➡️ **Loop disabled**");
         }
         Some(RepeatMode::Toggle) => {
             // Get current state to decide whether to turn it on or off
@@ -74,17 +76,19 @@ pub async fn repeat(
             match track_info.loops {
                 LoopState::Infinite => {
                     current_track.disable_loop().ok();
-                    ctx.say("➡️ **Loop disabled**.").await?;
+                    say!(ctx, "➡️ **Loop disabled*.");
                 }
                 _ => {
                     current_track.enable_loop().ok();
-                    ctx.say("🔁 **Loop enabled**.").await?;
+                    say!(ctx, "🔁 **Loop enabled**.");
                 }
             }
         }
         None => {
-            ctx.say("Invalid option! Use `song`, `disable`, `toggle`, or leave empty to toggle.")
-                .await?;
+            say!(
+                ctx,
+                "Invalid option! Use `song`, `disable`, `toggle`, or leave empty to toggle."
+            );
         }
     }
     ctx_utils.end_loading_react().await?;

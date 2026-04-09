@@ -1,7 +1,10 @@
 use poise::command;
 
 use crate::{
-    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+    commands::{
+        checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -42,6 +45,8 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
     queue.skip().ok();
 
     ctx_utils.end_loading_react().await?;
+
+    say!(ctx, "Skipped");
 
     Ok(())
 }

@@ -7,7 +7,10 @@ use songbird::{
 };
 
 use crate::{
-    commands::checks::{not_mute, user_not_deafen},
+    commands::{
+        checks::{not_mute, user_not_deafen},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -39,7 +42,6 @@ pub async fn play(
 
     let call = ctx.utils().get_or_join_voice().await?;
 
-    ctx_utils.start_loading_react().await?;
     ctx_utils.add_reactions(&['🔍']).await?;
 
     let mut src: Input = if do_search {
@@ -72,19 +74,14 @@ pub async fn play(
 
     call_lock.enqueue(track).await;
 
-    ctx_utils.delete_all_self_reactions().await?;
+    ctx_utils.delete_self_reactions(&['🔍']).await?;
+    ctx_utils.add_reactions(&['✅']).await?;
 
-    match ctx {
-        Context::Application(_) => {
-            let reply_handle = ctx.say(format!("Fetched {}", song_info.title)).await?;
-            let msg = reply_handle.message().await?;
-            msg.react(ctx, '✅').await?;
-        }
-
-        Context::Prefix(p_ctx) => {
-            p_ctx.msg.react(ctx, '✅').await?;
-        }
-    };
+    say!(
+        ctx,
+        format!("**Fetched** {}", song_info.title),
+        application_only
+    );
 
     Ok(())
 }

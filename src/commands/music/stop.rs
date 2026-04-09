@@ -1,7 +1,10 @@
 use poise::command;
 
 use crate::{
-    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+    commands::{
+        checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -41,9 +44,9 @@ pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
 
     queue.stop();
 
-    ctx.say("⏹ Stopped playback!").await?;
-
     ctx_utils.end_loading_react().await?;
+
+    say!(ctx, "⏹ Stopped playback!");
 
     Ok(())
 }

@@ -3,7 +3,10 @@ use poise::command;
 use rand::{rng, seq::SliceRandom};
 
 use crate::{
-    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+    commands::{
+        checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -52,9 +55,9 @@ pub async fn shuffle(ctx: Context<'_>) -> Result<(), Error> {
         q.extend(rest.into_iter());
     });
 
-    ctx.say("Shuffled the queue.").await?;
-
     ctx_utils.end_loading_react().await?;
+
+    say!(ctx, "Shuffled the queue.");
 
     Ok(())
 }

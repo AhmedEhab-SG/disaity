@@ -2,7 +2,10 @@ use poise::command;
 use songbird::tracks::PlayMode;
 
 use crate::{
-    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+    commands::{
+        checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -52,7 +55,7 @@ pub async fn resume(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx_utils.end_loading_react().await?;
 
-    ctx.say("▶️ Resumed!").await?;
+    say!(ctx, "▶️ Resumed!");
 
     Ok(())
 }

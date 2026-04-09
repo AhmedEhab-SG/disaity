@@ -26,3 +26,23 @@ impl<'a> ContextExt<'a> for Context<'a> {
         Utils { ctx: self }
     }
 }
+
+impl Default for Data {
+    fn default() -> Self {
+        let config = Config::new();
+        let agent = Gemini::new(&config.env.gemini_api_key).expect("failed to connect to gemini");
+        let http = reqwest::Client::new();
+
+        Self {
+            http,
+            agent,
+            config,
+        }
+    }
+}
+
+impl Data {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}

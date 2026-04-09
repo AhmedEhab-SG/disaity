@@ -2,7 +2,10 @@ use poise::command;
 use songbird::tracks::PlayMode;
 
 use crate::{
-    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+    commands::{
+        checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
+        macros::say,
+    },
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -61,10 +64,9 @@ pub async fn volume(
 
     track_handle.set_volume(percentage / 100.0).ok();
 
-    ctx.say(format!("changed the volume to {percentage}%"))
-        .await?;
-
     ctx_utils.end_loading_react().await?;
+
+    say!(ctx, format!("changed the volume to {percentage}%"));
 
     Ok(())
 }
