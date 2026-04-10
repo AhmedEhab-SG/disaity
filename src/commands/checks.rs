@@ -1,13 +1,5 @@
 use crate::core::{context::Context, error::Error};
 
-// pub async fn guild_cmd(ctx: Context<'_>) -> Result<bool, Error> {
-//     if ctx.guild_id().is_none() {
-//         ctx.say("This command only works in servers.").await?;
-//         return Ok(false);
-//     }
-//     Ok(true)
-// }
-
 pub async fn dm_with_auth(ctx: Context<'_>) -> Result<bool, Error> {
     if ctx.guild_id().is_some() && ctx.author().id != ctx.data().config.info_registry.owner.id {
         return Err("You are not authorized to use this command in DMs.".into());

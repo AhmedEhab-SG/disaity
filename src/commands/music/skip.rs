@@ -16,7 +16,7 @@ use crate::{
     slash_command,
     prefix_command,
     guild_only,
-    broadcast_typing,
+    // broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | SPEAK | EMBED_LINKS | ADD_REACTIONS",
     check = "same_vc",
     check = "not_empty_queue",
@@ -46,7 +46,7 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx_utils.end_loading_react().await?;
 
-    say!(ctx, "Skipped");
+    say!(ctx, "Skipped", application_only);
 
     Ok(())
 }

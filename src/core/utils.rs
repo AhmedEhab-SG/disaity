@@ -147,6 +147,7 @@ impl VoiceUtils for Utils<'_> {
 
             register_all(
                 &mut call_lock,
+                call.clone(),
                 guild_id,
                 self.ctx.channel_id(),
                 serenity_context.http.clone(),
