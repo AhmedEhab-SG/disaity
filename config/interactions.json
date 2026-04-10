@@ -66,6 +66,7 @@
   "provider_logo_urls": {
     "youtube": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1465px-YouTube_full-color_icon_%282017%29.svg.png",
     "soundcloud": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Antu_soundcloud.svg/1024px-Antu_soundcloud.svg.png?20220611134026",
-    "spotify": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/1024px-Spotify_logo_without_text.svg.png"
+    "spotify": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/1024px-Spotify_logo_without_text.svg.png",
+    "unknown": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Treble_a.svg/1920px-Treble_a.svg.png"
   }
 }

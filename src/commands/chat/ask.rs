@@ -105,18 +105,13 @@ pub async fn ask(
     #[rest]
     chat: String,
 ) -> Result<(), Error> {
-    let serenity_context = ctx.serenity_context();
-    let channel_id = ctx.channel_id();
     let data = &ctx.data();
-    let agent = &data.agent;
-    let config = &data.config;
-    let user_id = ctx.author().id;
-    let http = &serenity_context.http;
 
     let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let messages = channel_id
-        .messages(http, GetMessages::new().limit(50))
+    let messages = ctx
+        .channel_id()
+        .messages(ctx.http(), GetMessages::new().limit(50))
         .await?;
 
     let current_msg_id: Option<u64> = match ctx {
@@ -124,10 +119,14 @@ pub async fn ask(
         MessageContext::Application(p) => Some(p.interaction.id.into()),
     };
 
-    let history = get_history(messages, current_msg_id, user_id, config);
-    let character = config.characters_registry.get_character(&Character::Emilia);
+    let history = get_history(messages, current_msg_id, ctx.author().id, &data.config);
+    let character = data
+        .config
+        .characters_registry
+        .get_character(&Character::Emilia);
 
-    let mut req = agent
+    let mut req = data
+        .agent
         .generate_content()
         .with_system_instruction(character.personality.clone())
         .with_tool(Tool::google_search());

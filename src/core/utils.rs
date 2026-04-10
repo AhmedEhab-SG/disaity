@@ -1,11 +1,16 @@
 use serenity::{all::ReactionType, async_trait};
-use songbird::Call;
+use songbird::{
+    Call,
+    input::{Input, YoutubeDl},
+    tracks::Track,
+};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::{
+    config::interactions::Provider,
     core::{context::Context, error::Error},
-    handlers::register_all,
+    handlers::{SongMetadata, register_all},
 };
 
 pub struct Utils<'a> {
@@ -33,6 +38,12 @@ pub trait ReactionUtils {
 #[async_trait]
 pub trait VoiceUtils {
     async fn get_or_join_voice(&self) -> Result<Arc<Mutex<Call>>, Error>;
+}
+
+#[async_trait]
+pub trait ProviderUtils {
+    async fn spotify_extractor(&self, url: &str) -> Result<String, Error>;
+    async fn play(&self, song: String) -> Result<(Track, SongMetadata), Error>;
 }
 
 #[async_trait]
@@ -158,5 +169,102 @@ impl VoiceUtils for Utils<'_> {
         }
 
         Ok(call)
+    }
+}
+
+#[async_trait]
+impl ProviderUtils for Utils<'_> {
+    async fn spotify_extractor(&self, url: &str) -> Result<String, Error> {
+        let res = self.ctx.data().http.get(url).send().await?.text().await?;
+
+        let title = res
+            .find("<title>")
+            .map(|start| start + 7)
+            .and_then(|start_idx| {
+                res[start_idx..]
+                    .find("</title>")
+                    .map(|end_idx| &res[start_idx..start_idx + end_idx])
+            })
+            .ok_or("failed to get extract the song title")?
+            .replace(" - song and lyrics by", "")
+            .replace(" | Spotify", "");
+
+        Ok(title)
+    }
+
+    async fn play(&self, song: String) -> Result<(Track, SongMetadata), Error> {
+        let original_url = song.clone();
+
+        let (query, do_search, provider) = if song.contains("spotify.com") {
+            (
+                self.spotify_extractor(&song).await?,
+                true,
+                Provider::Spotify,
+            )
+        } else {
+            let needs_search = !song.starts_with("http");
+            let prov = if needs_search {
+                Provider::Unknown
+            } else {
+                Provider::from_url(&song)
+            };
+
+            (song, needs_search, prov)
+        };
+
+        let mut src: Input = if do_search {
+            YoutubeDl::new_search(self.ctx.data().http.clone(), query).into()
+        } else {
+            YoutubeDl::new(self.ctx.data().http.clone(), query).into()
+        };
+
+        let mut metadata = src.aux_metadata().await?;
+        let author = self.ctx.author();
+
+        let url = if provider == Provider::Spotify {
+            original_url
+        } else {
+            metadata
+                .source_url
+                .take()
+                .unwrap_or_else(|| "https://youtube.com".to_string())
+        };
+
+        let provider_logo = if provider == Provider::Unknown {
+            Provider::from_url(&url)
+        } else {
+            provider
+        };
+
+        let info = SongMetadata {
+            title: metadata
+                .title
+                .take()
+                .unwrap_or_else(|| "Unknown".to_string()),
+            url,
+            thumbnail: metadata.thumbnail.take().unwrap_or_default(),
+            duration: metadata.duration,
+
+            request_by: author.name.clone(),
+            request_by_avatar: author
+                .avatar_url()
+                .unwrap_or_else(|| author.default_avatar_url()),
+
+            author: metadata
+                .channel
+                .take()
+                .unwrap_or_else(|| "Unknown Author".to_string()),
+
+            provider_logo_url: self
+                .ctx
+                .data()
+                .config
+                .interactions_registry
+                .get_logo(provider_logo),
+        };
+
+        let track = Track::new_with_data(src.into(), Arc::new(info.clone()));
+
+        Ok((track, info))
     }
 }
