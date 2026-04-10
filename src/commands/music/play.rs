@@ -38,7 +38,7 @@ pub async fn play(
     let author = ctx.author();
     let do_search = !song.starts_with("http");
 
-    let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+    ctx.defer().await?;
 
     let call = ctx.utils().get_or_join_voice().await?;
 
@@ -53,13 +53,31 @@ pub async fn play(
     let metadata = src.aux_metadata().await?;
 
     let song_info = SongMetadata {
-        title: metadata.title.unwrap_or("Unknown".to_string()),
+        title: metadata
+            .title
+            .clone()
+            .unwrap_or_else(|| "Unknown".to_string()),
         url: metadata
             .source_url
-            .unwrap_or("https://youtube.com".to_string()),
-        thumbnail: metadata.thumbnail.unwrap_or_default(),
+            .clone()
+            .unwrap_or_else(|| "https://youtube.com".to_string()),
+        thumbnail: metadata.thumbnail.clone().unwrap_or_default(),
         duration: metadata.duration,
         request_by: author.name.clone(),
+        request_by_avatar: author
+            .avatar_url()
+            .unwrap_or_else(|| author.default_avatar_url()),
+        author: metadata
+            .channel
+            .clone()
+            .unwrap_or_else(|| "Unknown Author".to_string()),
+        provider_logo_url: ctx
+            .data()
+            .config
+            .interactions_registry
+            .provider_logo_urls
+            .youtube
+            .clone(),
     };
 
     let track = Track::new_with_data(src.into(), Arc::new(song_info.clone()));

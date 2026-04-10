@@ -9,20 +9,20 @@ use tokio::{sync::Mutex, task::JoinHandle, time::sleep};
 type TimeoutHandle = Arc<Mutex<Option<JoinHandle<()>>>>;
 
 struct PlayHandler {
-    pub timeout: TimeoutHandle,
+     timeout: TimeoutHandle,
 }
 
 struct EndHandler {
-    pub timeout: TimeoutHandle,
-    pub manager: Arc<Songbird>,
-    pub guild_id: GuildId,
+     timeout: TimeoutHandle,
+     manager: Arc<Songbird>,
+     guild_id: GuildId,
 }
 
-pub struct AloneHandler {
-    pub timeout: TimeoutHandle,
-    pub manager: Arc<Songbird>,
-    pub guild_id: GuildId,
-    pub cache: Arc<Cache>,
+ struct AloneHandler {
+     timeout: TimeoutHandle,
+     manager: Arc<Songbird>,
+     guild_id: GuildId,
+     cache: Arc<Cache>,
 }
 
 async fn cancel_timer(timeout: &TimeoutHandle) {
@@ -118,14 +118,14 @@ impl EventHandler for AloneHandler {
     }
 }
 
-pub async fn register_idle_timeout(call: &mut Call, guild_id: GuildId, manager: Arc<Songbird>, cache: Arc<Cache>) {
+pub async fn register_idle_timeout(call_lock: &mut Call, guild_id: GuildId, manager: Arc<Songbird>, cache: Arc<Cache>) {
     let timeout: TimeoutHandle = Arc::new(Mutex::new(None));
 
     // Start a timer immediately in case the bot joins but nothing is ever queued
     reset_timer(&timeout, manager.clone(), guild_id).await;
 
     // Hook up the cancellation on play
-    call.add_global_event(
+    call_lock.add_global_event(
         Event::Track(TrackEvent::Play),
         PlayHandler {
             timeout: timeout.clone(),
@@ -133,7 +133,7 @@ pub async fn register_idle_timeout(call: &mut Call, guild_id: GuildId, manager: 
     );
 
     // Hook up the restart on end
-    call.add_global_event(
+    call_lock.add_global_event(
         Event::Track(TrackEvent::End),
         EndHandler {
             timeout: timeout.clone(),
@@ -142,7 +142,7 @@ pub async fn register_idle_timeout(call: &mut Call, guild_id: GuildId, manager: 
         },
     );
  
-    call.add_global_event(
+    call_lock.add_global_event(
         Event::Core(CoreEvent::SpeakingStateUpdate),
         AloneHandler {
             timeout,

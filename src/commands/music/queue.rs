@@ -19,7 +19,7 @@ use crate::{
     slash_command,
     prefix_command,
     guild_only,
-    broadcast_typing,
+    // broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | ADD_REACTIONS",
     check = "same_vc",
     check = "not_empty_queue"
@@ -27,7 +27,6 @@ use crate::{
 pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     let serenity_context = ctx.serenity_context();
     let ctx_utils = ctx.utils();
-    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let guild_id = ctx.guild_id().ok_or("this commad only works in servers.")?;
 
@@ -42,6 +41,7 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     ctx_utils.start_loading_react().await?;
 
     let queue_snapshot = {
+        let _typing = ctx.defer_or_broadcast().await.ok().flatten();
         let call_lock = call.lock().await;
         call_lock.queue().current_queue()
     };
