@@ -1,10 +1,28 @@
-use serde::Deserialize;
+use std::collections::HashMap;
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct ProviderLogUrls {
-    pub youtube: String,
-    pub soundcloud: String,
-    pub spotify: String,
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Provider {
+    YouTube,
+    SoundCloud,
+    Spotify,
+    Unknown,
+}
+
+impl Provider {
+    pub fn from_url(url: &str) -> Self {
+        if url.contains("youtube.com") || url.contains("youtu.be") {
+            Self::YouTube
+        } else if url.contains("soundcloud.com") {
+            Self::SoundCloud
+        } else if url.contains("spotify.com") {
+            Self::Spotify
+        } else {
+            Self::Unknown
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -42,7 +60,7 @@ pub struct InteractionsRegistry {
     pub messages: Messages,
     pub errors: Errors,
     pub colors: Colors,
-    pub provider_logo_urls: ProviderLogUrls,
+    pub provider_logo_urls: HashMap<Provider, String>,
 }
 
 impl Default for InteractionsRegistry {
@@ -55,5 +73,12 @@ impl Default for InteractionsRegistry {
 impl InteractionsRegistry {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn get_logo(&self, provider: Provider) -> String {
+        self.provider_logo_urls
+            .get(&provider)
+            .cloned()
+            .unwrap_or_else(|| "".to_string())
     }
 }
