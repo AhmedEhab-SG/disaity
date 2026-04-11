@@ -37,7 +37,7 @@ pub async fn play(
 
     let mut call_lock = call.lock().await;
 
-    let (track, info) = ctx_utils.play(song).await?;
+    let tracks_data = ctx_utils.play(song).await?;
 
     if ctx.author().id != ctx.data().config.info_registry.owner.id {
         if call_lock.queue().len() <= 0 {
@@ -45,12 +45,27 @@ pub async fn play(
         }
     }
 
-    call_lock.enqueue(track).await;
+    let is_playlist = tracks_data.len() > 1;
+
+    let first_title = tracks_data
+        .first()
+        .map(|(_, info)| info.title.clone())
+        .unwrap_or_else(|| "Unknown".to_string());
+
+    for (track, _) in tracks_data {
+        call_lock.enqueue(track).await;
+    }
 
     ctx_utils.delete_self_reactions(&['🔍']).await?;
     ctx_utils.add_reactions(&['✅']).await?;
 
-    say!(ctx, format!("**Fetched** {}", info.title), application_only);
+    let response = if is_playlist {
+        format!("**Fetched** {} and its playlist", first_title)
+    } else {
+        format!("**Fetched** {}", first_title)
+    };
+
+    say!(ctx, response, application_only);
 
     Ok(())
 }
