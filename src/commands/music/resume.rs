@@ -9,7 +9,6 @@ use crate::{
     core::{
         context::{Context, ContextExt},
         error::Error,
-        utils::ReactionUtils,
     },
 };
 

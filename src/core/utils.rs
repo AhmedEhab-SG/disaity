@@ -31,9 +31,6 @@ pub trait ReactionUtils {
     ) -> Result<(), Error>;
 
     async fn delete_all_self_reactions(&self) -> Result<(), Error>;
-
-    async fn start_loading_react(&self) -> Result<(), Error>;
-    async fn end_loading_react(&self) -> Result<(), Error>;
 }
 
 #[async_trait]
@@ -42,12 +39,15 @@ pub trait VoiceUtils {
 }
 
 #[async_trait]
-pub trait ProviderUtils {
+pub trait ExtractorUtils {
     async fn spotify_extractor(&self, url: &str) -> Result<String, Error>;
     async fn playlist_extractor(&self, url: &str) -> Result<Vec<String>, Error>;
     async fn spotify_playlist_extractor(&self, url: &str) -> Result<Vec<String>, Error>;
-    async fn youtube_track(&self, song: String) -> Result<(Track, SongMetadata), Error>;
-    async fn play(&self, song: String) -> Result<Vec<(Track, SongMetadata)>, Error>;
+}
+
+#[async_trait]
+pub trait ProviderUtils {
+    async fn youtube_provider(&self, song: String) -> Result<(Track, SongMetadata), Error>;
 }
 
 #[async_trait]
@@ -89,17 +89,6 @@ impl ReactionUtils for Utils<'_> {
                 }
             }
         }
-        Ok(())
-    }
-
-    async fn start_loading_react(&self) -> Result<(), Error> {
-        self.add_reactions(&['🔃']).await?;
-        Ok(())
-    }
-
-    async fn end_loading_react(&self) -> Result<(), Error> {
-        self.delete_self_reactions(&['🔃']).await?;
-        self.add_reactions(&['✅']).await?;
         Ok(())
     }
 
@@ -177,7 +166,7 @@ impl VoiceUtils for Utils<'_> {
 }
 
 #[async_trait]
-impl ProviderUtils for Utils<'_> {
+impl ExtractorUtils for Utils<'_> {
     async fn spotify_extractor(&self, url: &str) -> Result<String, Error> {
         let res = self.ctx.data().http.get(url).send().await?.text().await?;
 
@@ -450,6 +439,7 @@ impl ProviderUtils for Utils<'_> {
         println!("✅ Successfully scraped {} tracks", queries.len());
         Ok(queries)
     }
+
     async fn playlist_extractor(&self, url: &str) -> Result<Vec<String>, Error> {
         if url.contains("open.spotify.com/playlist/") || url.contains("open.spotify.com/album/") {
             return self.spotify_playlist_extractor(url).await;
@@ -478,8 +468,11 @@ impl ProviderUtils for Utils<'_> {
 
         Ok(urls)
     }
+}
 
-    async fn youtube_track(&self, song: String) -> Result<(Track, SongMetadata), Error> {
+#[async_trait]
+impl ProviderUtils for Utils<'_> {
+    async fn youtube_provider(&self, song: String) -> Result<(Track, SongMetadata), Error> {
         let original_url = song.clone();
 
         // We determine the search query and the branding (Provider) upfront.
@@ -565,8 +558,10 @@ impl ProviderUtils for Utils<'_> {
 
         Ok((track, info))
     }
+}
 
-    async fn play(&self, song: String) -> Result<Vec<(Track, SongMetadata)>, Error> {
+impl Utils<'_> {
+    pub async fn play(&self, song: String) -> Result<Vec<(Track, SongMetadata)>, Error> {
         let is_playlist =
             song.contains("list=") || song.contains("/sets/") || song.contains("/playlist/");
 
@@ -580,21 +575,32 @@ impl ProviderUtils for Utils<'_> {
                     continue;
                 }
 
-                if let Ok(track_data) = self.youtube_track(url).await {
+                if let Ok(track_data) = self.youtube_provider(url).await {
                     tracks_data.push(track_data);
                 }
             }
 
             // fallback to single if there is nothing
             if tracks_data.is_empty() {
-                vec![self.youtube_track(song).await?]
+                vec![self.youtube_provider(song).await?]
             } else {
                 tracks_data
             }
         } else {
-            vec![self.youtube_track(song).await?]
+            vec![self.youtube_provider(song).await?]
         };
 
         Ok(tracks_data)
+    }
+
+    pub async fn start_loading_react(&self) -> Result<(), Error> {
+        self.add_reactions(&['🔃']).await?;
+        Ok(())
+    }
+
+    pub async fn end_loading_react(&self) -> Result<(), Error> {
+        self.delete_self_reactions(&['🔃']).await?;
+        self.add_reactions(&['✅']).await?;
+        Ok(())
     }
 }
