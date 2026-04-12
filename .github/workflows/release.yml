@@ -145,6 +145,16 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
+      - name: Prune wrong OS binaries
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            # On Windows, delete the extension-less Linux binaries
+            find bin/ -type f ! -name "*.exe" -delete
+          else
+            # On Linux/macOS, delete the .exe binaries
+            find bin/ -type f -name "*.exe" -delete
+          fi
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
