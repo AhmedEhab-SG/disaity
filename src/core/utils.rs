@@ -1,3 +1,4 @@
+use scraper::{Html, Selector};
 use serde_json::{Map, Value};
 use serenity::{all::ReactionType, async_trait};
 use songbird::{
@@ -197,8 +198,9 @@ impl ExtractorUtils for Utils<'_> {
         let client = &self.ctx.data().http;
         let ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-        let mut html = None;
+        let mut html_text = None;
 
+        // 1. Fetch the HTML
         for candidate in [embed_url.as_str(), clean_url] {
             if let Ok(resp) = client
                 .get(candidate)
@@ -209,33 +211,33 @@ impl ExtractorUtils for Utils<'_> {
             {
                 if let Ok(text) = resp.text().await {
                     if !text.is_empty() {
-                        html = Some(text);
+                        html_text = Some(text);
                         break;
                     }
                 }
             }
         }
 
-        let html = html.ok_or("Failed to fetch Spotify page")?;
+        let html_text = html_text.ok_or("Failed to fetch Spotify page")?;
 
-        let script_tag = r#"<script id="__NEXT_DATA__" type="application/json">"#;
-        let start_idx = html
-            .find(script_tag)
-            .map(|i| i + script_tag.len())
+        // 2. Parse HTML and extract JSON using `scraper`
+        let document = Html::parse_document(&html_text);
+        let selector =
+            Selector::parse("script#__NEXT_DATA__").map_err(|_| "Invalid CSS selector")?;
+
+        let json_str = document
+            .select(&selector)
+            .next()
+            .map(|element| element.inner_html())
             .ok_or_else(|| {
                 println!(
                     "--- RAW HTML START ---\n{}\n--- RAW HTML END ---",
-                    &html[..html.len().min(1000)]
+                    &html_text[..html_text.len().min(1000)]
                 );
-                "Could not find __NEXT_DATA__ in Spotify HTML"
+                "Could not find script#__NEXT_DATA__ in Spotify HTML"
             })?;
 
-        let end_idx = html[start_idx..]
-            .find("</script>")
-            .ok_or("Malformed Spotify HTML: missing closing __NEXT_DATA__ script tag")?;
-
-        let json_str = &html[start_idx..start_idx + end_idx];
-        let root: Value = serde_json::from_str(json_str)?;
+        let root: Value = serde_json::from_str(&json_str)?;
 
         let state_data = root
             .get("props")
@@ -244,6 +246,7 @@ impl ExtractorUtils for Utils<'_> {
             .and_then(|s| s.get("data"))
             .ok_or("Spotify state.data missing")?;
 
+        // 3. Helper Functions
         fn push_query(
             title: &str,
             artist: &str,
@@ -403,6 +406,7 @@ impl ExtractorUtils for Utils<'_> {
             }
         }
 
+        // 4. Execution
         let mut queries = Vec::new();
         let mut seen = HashSet::new();
 
@@ -439,7 +443,6 @@ impl ExtractorUtils for Utils<'_> {
         println!("✅ Successfully scraped {} tracks", queries.len());
         Ok(queries)
     }
-
     async fn playlist_extractor(&self, url: &str) -> Result<Vec<String>, Error> {
         if url.contains("open.spotify.com/playlist/") || url.contains("open.spotify.com/album/") {
             return self.spotify_playlist_extractor(url).await;
