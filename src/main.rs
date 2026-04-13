@@ -1,10 +1,10 @@
-use disaity::core::{bin, core};
+use disaity::core::{bin::BinariesExt, core};
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    bin::load();
+    BinariesExt::load();
 
     core().await.unwrap();
 }

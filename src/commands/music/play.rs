@@ -1,10 +1,12 @@
 use poise::command;
+use tokio::time::{Duration, timeout};
 
 use crate::{
     commands::{
         checks::{not_mute, user_not_deafen},
         macros::say,
     },
+    config::commands::Command,
     core::{
         context::{Context, ContextExt},
         error::Error,
@@ -37,7 +39,16 @@ pub async fn play(
 
     let mut call_lock = call.lock().await;
 
-    let tracks_data = ctx_utils.play(song).await?;
+    let timeout_duration = ctx
+        .data()
+        .config
+        .commands_registry
+        .get_command(&Command::Play)
+        .timeout
+        .unwrap_or(30);
+    let tracks_data = timeout(Duration::from_secs(timeout_duration), ctx_utils.play(song))
+        .await
+        .map_err(|_|format!( "The playlist or song took too long to load ({timeout_duration}s limit). Try a shorter query!"))??;
 
     if ctx.author().id != ctx.data().config.info_registry.owner.id {
         if call_lock.queue().len() <= 0 {

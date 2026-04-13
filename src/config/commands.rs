@@ -56,6 +56,7 @@ pub struct CommandConfig {
     pub keys: Vec<String>,
     pub category: String,
     pub description: String,
+    pub timeout: Option<u64>,
     pub options: Option<Vec<CommandOption>>,
 }
 
