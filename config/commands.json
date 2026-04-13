@@ -4,6 +4,7 @@
     "keys": ["play", "p"],
     "category": "music",
     "description": "Play's an audio.",
+    "timeout": 40,
     "options": [
       {
         "name": "song",

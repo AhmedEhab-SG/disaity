@@ -64,6 +64,7 @@ impl ReactionUtils for Utils<'_> {
         }
         Ok(())
     }
+
     async fn delete_self_reactions(
         &self,
         emojis: &[impl Into<ReactionType> + Clone + Send + Sync],
@@ -443,6 +444,7 @@ impl ExtractorUtils for Utils<'_> {
         println!("✅ Successfully scraped {} tracks", queries.len());
         Ok(queries)
     }
+
     async fn playlist_extractor(&self, url: &str) -> Result<Vec<String>, Error> {
         if url.contains("open.spotify.com/playlist/") || url.contains("open.spotify.com/album/") {
             return self.spotify_playlist_extractor(url).await;
