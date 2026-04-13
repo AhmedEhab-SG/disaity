@@ -40,6 +40,24 @@ impl BinariesExt<'_> {
         }
     }
 
+    fn ensure_executable(path: &PathBuf) -> std::io::Result<()> {
+        #[cfg(unix)]
+        {
+            use std::{fs, os::unix::fs::PermissionsExt};
+
+            let mut perms = fs::metadata(path)?.permissions();
+            let mode = perms.mode();
+
+            // 0o111 represents execute permissions for owner, group, and others
+            if mode & 0o111 != 0o111 {
+                perms.set_mode(mode | 0o111);
+                fs::set_permissions(path, perms)?;
+                println!("🔒 Set execution permissions for {}", path.display());
+            }
+        }
+        Ok(())
+    }
+
     pub fn load() -> Self {
         const BINARIES: [(&str, &str, &str); 2] = [
             ("engines", "media", "ffmpeg"),
@@ -50,6 +68,14 @@ impl BinariesExt<'_> {
 
         for (dir, sub_dir, bin) in BINARIES {
             if let Some(p) = Self::find_binary(dir, sub_dir, bin) {
+                if let Err(e) = Self::ensure_executable(&p) {
+                    println!(
+                        "⚠️ Failed to set execution permissions for {}: {}",
+                        p.display(),
+                        e
+                    );
+                }
+
                 if let Some(parent) = p.parent() {
                     extra_paths.push((bin, parent.to_path_buf()));
                 }
