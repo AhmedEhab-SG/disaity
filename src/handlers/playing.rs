@@ -2,16 +2,23 @@ use crate::handlers::SongMetadata;
 use serenity::{
     all::{
         ChannelId, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage, Http,
-        Timestamp,
+        MessageId, Timestamp,
     },
     async_trait,
 };
 use songbird::{Call, Event, EventContext, EventHandler, TrackEvent};
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
 struct TrackStartNotifier {
     call: Arc<Mutex<Call>>,
+    channel_id: ChannelId,
+    http: Arc<Http>,
+    message_id: Arc<Mutex<Option<MessageId>>>,
+}
+
+struct TrackEndNotifier {
+    message_id: Arc<Mutex<Option<MessageId>>>,
     channel_id: ChannelId,
     http: Arc<Http>,
 }
@@ -29,6 +36,26 @@ fn format_duration(d: Option<std::time::Duration>) -> String {
 }
 
 #[async_trait]
+impl EventHandler for TrackEndNotifier {
+    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
+        if let EventContext::Track(_) = ctx {
+            let message_id = self.message_id.clone();
+            let http = self.http.clone();
+            let channel_id = self.channel_id;
+
+            tokio::spawn(async move {
+                let mut message_id_lock = message_id.lock().await;
+
+                if let Some(old_id) = message_id_lock.take() {
+                    channel_id.delete_message(&http, old_id).await.ok();
+                }
+            });
+        }
+        None
+    }
+}
+
+#[async_trait]
 impl EventHandler for TrackStartNotifier {
     async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
         if let EventContext::Track(track_listen) = ctx {
@@ -39,6 +66,7 @@ impl EventHandler for TrackStartNotifier {
                 let call = self.call.clone();
                 let http = self.http.clone();
                 let channel_id = self.channel_id;
+                let message_id = self.message_id.clone();
 
                 // Spawning a task prevents the deadlock!
                 tokio::spawn(async move {
@@ -49,7 +77,7 @@ impl EventHandler for TrackStartNotifier {
                         let current_queue = queue.current_queue();
 
                         let len = current_queue.len();
-                        let total: std::time::Duration = current_queue
+                        let total: Duration = current_queue
                             .iter()
                             .filter_map(|h| Some(h.data::<SongMetadata>()))
                             .filter_map(|d| d.duration)
@@ -87,9 +115,16 @@ impl EventHandler for TrackStartNotifier {
                         )
                         .timestamp(Timestamp::now());
 
+                    let mut message_id_lock = message_id.lock().await;
+
                     channel_id
                         .send_message(&http, CreateMessage::new().embed(embed))
                         .await
+                        .map(|msg| *message_id_lock = Some(msg.id))
+                        .map_err(|e| {
+                            *message_id_lock = None;
+                            e
+                        })
                         .ok();
                 });
             }
@@ -98,19 +133,31 @@ impl EventHandler for TrackStartNotifier {
         None
     }
 }
+
 pub async fn register_playing_info(
     call_lock: &mut Call,
     call: Arc<Mutex<Call>>,
     text_channel_id: ChannelId,
     http: Arc<Http>,
 ) {
-    // 1. "Now Playing" Notifier
+    let message_id = Arc::new(Mutex::new(None));
+
     call_lock.add_global_event(
         Event::Track(TrackEvent::Play),
         TrackStartNotifier {
-            channel_id: text_channel_id,
-            http,
             call,
+            http: http.clone(),
+            channel_id: text_channel_id,
+            message_id: message_id.clone(),
+        },
+    );
+
+    call_lock.add_global_event(
+        Event::Track(TrackEvent::End),
+        TrackEndNotifier {
+            http,
+            message_id,
+            channel_id: text_channel_id,
         },
     );
 }
