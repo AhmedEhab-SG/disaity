@@ -62,6 +62,15 @@ git lfs pull
 > You will need to manually download [FFmpeg](https://ffmpeg.org/download.html)
 > and [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation) for your system and replace the empty pointers with your downloaded binaires.
 
+#### 🦀 Prerequisites
+
+The project is built with purely Rust, you must have the Rust toolchain installed. The recommended way is via `rustup`:
+
+```bash
+# Install Rust (curl)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
 #### ⚙️ Setup Environment Variables
 
 ```bash
