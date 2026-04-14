@@ -13,6 +13,7 @@
 <div align="center">
 
 [![Build status](https://github.com/AhmedEhab-SG/disaity/actions/workflows/release.yml/badge.svg)](https://github.com/AhmedEhab-SG/disaity/actions/workflows/release.yml)
+[![Latest Release](https://img.shields.io/github/v/release/AhmedEhab-SG/disaity?style=flat-square&color=D4AF37&logo=github&logoColor=white)](https://github.com/AhmedEhab-SG/disaity/releases/latest)
 [![Rust Version](https://img.shields.io/badge/rust-latest-orange?logo=rust&logoColor=orange)](https://www.rust-lang.org)
 
 </div
@@ -89,8 +90,6 @@ cargo run --release
 ```
 
 ## 🏷️ Releases & User Setup
-
-[![Latest Release](https://img.shields.io/github/v/release/AhmedEhab-SG/disaity?style=flat-square&color=D4AF37&logo=github&logoColor=white)](https://github.com/AhmedEhab-SG/disaity/releases/latest)
 
 If you don't want to build the bot from source, you can use the pre-compiled binaries from the Releases page.
 
