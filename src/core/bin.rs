@@ -40,7 +40,7 @@ impl BinariesExt<'_> {
         }
     }
 
-    fn ensure_executable(path: &PathBuf) -> std::io::Result<()> {
+    fn ensure_executable(path: &PathBuf) -> std::io::Result<&PathBuf> {
         #[cfg(unix)]
         {
             use std::{fs, os::unix::fs::PermissionsExt};
@@ -55,7 +55,7 @@ impl BinariesExt<'_> {
                 println!("🔒 Set execution permissions for {}", path.display());
             }
         }
-        Ok(())
+        Ok(path)
     }
 
     pub fn load() -> Self {
