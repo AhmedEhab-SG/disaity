@@ -173,6 +173,7 @@
     "name": "help",
     "keys": ["help", "h"],
     "category": "others",
-    "description": "Displays all the commands. ⌘"
+    "description": "Displays all the commands. ⌘",
+    "action": "help_menu"
   }
 }

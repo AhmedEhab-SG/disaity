@@ -2,9 +2,16 @@ use poise::{
     CreateReply, command,
     serenity_prelude::{CreateEmbed, CreateEmbedFooter},
 };
-use serenity::all::CreateEmbedAuthor;
+use rand::seq::IndexedRandom;
+use serenity::all::{
+    CreateActionRow, CreateEmbedAuthor, CreateSelectMenu, CreateSelectMenuKind,
+    CreateSelectMenuOption,
+};
 
-use crate::core::{context::Context, error::Error};
+use crate::{
+    config::{characters::Character, commands::Command},
+    core::{context::Context, error::Error},
+};
 
 #[command(
     slash_command,
@@ -14,6 +21,19 @@ use crate::core::{context::Context, error::Error};
 )]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+
+    let ctx_data = ctx.data();
+
+    let character = ctx_data
+        .config
+        .characters_registry
+        .get_character(&Character::Emilia);
+
+    let interactions_registry = &ctx_data.config.interactions_registry;
+    let built_quotes = &interactions_registry.messages.built;
+
+    let commands_registry = &ctx_data.config.commands_registry;
+    let help_command = commands_registry.get_command(&Command::Help);
 
     let (avatar_url, author_name) = {
         let user = ctx.serenity_context().cache.current_user();
@@ -25,21 +45,52 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
         )
     };
 
+    let select_menu = CreateSelectMenu::new(
+        help_command
+            .action
+            .clone()
+            .unwrap_or("help_menu".to_string()),
+        CreateSelectMenuKind::String {
+            options: commands_registry
+                .categories
+                .keys()
+                .map(|cat| {
+                    let cat_name = format!(
+                        "{}{}",
+                        &cat.to_string()[..1].to_string(),
+                        &cat.to_string()[1..]
+                    );
+                    CreateSelectMenuOption::new(
+                        format!("{} {}", commands_registry.get_cat_emoji(cat), cat_name),
+                        cat_name.to_lowercase(),
+                    )
+                })
+                .collect(),
+        },
+    )
+    .placeholder(&help_command.description);
+
     let embed = CreateEmbed::new()
         .title("Hello,")
-        .description("\n I'm Emilia, you'll often find me indulging in my love for nature walks, admiring the beauty of flowers 🌸 I have a soft spot for sweet treats, especially anything with strawberries - they're just so delightful! 🍓✨.\nIf you're up for a chat feel free to ask me anything. 🗨\n\nAlso I could play and manage your favorite music. 🎵")
+        .description(&character.summary)
         .thumbnail(&avatar_url)
-        .color(0x703be7)
-        .author(
-            CreateEmbedAuthor::new(author_name)
-                .icon_url(avatar_url)
-        )
+        .color(interactions_registry.colors.help)
+        .author(CreateEmbedAuthor::new(author_name).icon_url(avatar_url))
         .footer(
-            CreateEmbedFooter::new("build with love")
-                .icon_url("https://i.ibb.co/hFNhYk2/AES-solid-colors-512.png")
+            CreateEmbedFooter::new(
+                built_quotes
+                    .choose(&mut rand::rng())
+                    .unwrap_or(&"".to_string()),
+            )
+            .icon_url(&ctx_data.config.info_registry.owner.icon_url),
         );
 
-    ctx.send(CreateReply::default().embed(embed)).await?;
+    ctx.send(
+        CreateReply::default()
+            .embed(embed)
+            .components(vec![CreateActionRow::SelectMenu(select_menu)]),
+    )
+    .await?;
 
     Ok(())
 }

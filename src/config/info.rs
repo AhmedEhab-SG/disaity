@@ -22,7 +22,6 @@ pub struct InfoRegistry {
     pub owner: Owner,
     pub permission: Permission,
     pub invite_ul: String,
-    pub author_icon: String,
 }
 
 impl Default for InfoRegistry {
