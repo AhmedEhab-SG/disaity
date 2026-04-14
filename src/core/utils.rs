@@ -40,14 +40,14 @@ pub trait VoiceUtils {
 }
 
 #[async_trait]
-pub trait ExtractorUtils {
+trait ExtractorUtils {
     async fn spotify_extractor(&self, url: &str) -> Result<String, Error>;
     async fn playlist_extractor(&self, url: &str) -> Result<Vec<String>, Error>;
     async fn spotify_playlist_extractor(&self, url: &str) -> Result<Vec<String>, Error>;
 }
 
 #[async_trait]
-pub trait ProviderUtils {
+trait ProviderUtils {
     async fn youtube_provider(&self, song: String) -> Result<(Track, SongMetadata), Error>;
 }
 

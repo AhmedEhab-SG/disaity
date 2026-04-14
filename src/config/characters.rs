@@ -11,6 +11,7 @@ pub enum Character {
 #[derive(Deserialize, Debug, Clone)]
 pub struct CharacterConfig {
     pub name: String,
+    pub summary: String,
     pub personality: String,
 }
 

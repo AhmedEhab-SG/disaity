@@ -57,6 +57,7 @@ pub struct CommandConfig {
     pub category: String,
     pub description: String,
     pub timeout: Option<u64>,
+    pub action: Option<String>,
     pub options: Option<Vec<CommandOption>>,
 }
 
@@ -113,5 +114,13 @@ impl CommandRegistry {
         self.categories
             .get(cat)
             .unwrap_or_else(|| panic!("Expect category '{cat}', but it wasnt found in registry"))
+    }
+
+    pub fn get_cat_emoji(&self, cat: &Category) -> &str {
+        match cat {
+            Category::Music => "🎶",
+            Category::Chat => "🗨️",
+            Category::Others => "⚙️",
+        }
     }
 }
