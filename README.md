@@ -1,5 +1,5 @@
 <div align=center>
-    <img src="https://rustacean.net/assets/cuddlyferris.svg" width="160" alt="ferris-logo" />
+    <img src="./logo.png" width="200" alt="ferris-logo" />
  
 <h3>Disaity</h3>
 
