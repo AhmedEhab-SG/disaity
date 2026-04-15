@@ -22,7 +22,7 @@
 
 ## 📝 Description
 
-> Disaity is a Discord bot built in Rust with zero external dependencies. It combines a low-latency music streaming experience with a AI chat interface.
+> Disaity is a Discord bot built in Rust with zero-cost abstractions. It combines a low-latency music streaming experience with a AI chat interface.
 
 ## 🛠️ Core Technologies
 
