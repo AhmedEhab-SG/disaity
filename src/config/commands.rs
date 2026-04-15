@@ -110,7 +110,7 @@ impl CommandRegistry {
         })
     }
 
-    pub fn get_category(&self, cat: &Category) -> &Vec<CommandConfig> {
+    pub fn get_cmds_from_cat(&self, cat: &Category) -> &Vec<CommandConfig> {
         self.categories
             .get(cat)
             .unwrap_or_else(|| panic!("Expect category '{cat}', but it wasnt found in registry"))

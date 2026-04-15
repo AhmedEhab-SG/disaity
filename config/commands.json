@@ -54,14 +54,14 @@
   "join": {
     "name": "join",
     "keys": ["join", "j"],
-    "category": "music",
+    "category": "others",
     "description": "I will join your channel."
   },
 
   "leave": {
     "name": "leave",
     "keys": ["leave", "l"],
-    "category": "music",
+    "category": "others",
     "description": "I will leave your channel."
   },
 

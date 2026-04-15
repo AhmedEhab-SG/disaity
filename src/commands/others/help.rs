@@ -1,27 +1,37 @@
+use std::{str::FromStr, time::Duration};
+
 use poise::{
     CreateReply, command,
     serenity_prelude::{CreateEmbed, CreateEmbedFooter},
 };
 use rand::seq::IndexedRandom;
-use serenity::all::{
-    CreateActionRow, CreateEmbedAuthor, CreateSelectMenu, CreateSelectMenuKind,
-    CreateSelectMenuOption,
+use serenity::{
+    all::{
+        ComponentInteractionCollector, ComponentInteractionDataKind, CreateActionRow,
+        CreateEmbedAuthor, CreateInteractionResponse, CreateInteractionResponseMessage,
+        CreateSelectMenu, CreateSelectMenuKind, CreateSelectMenuOption,
+    },
+    futures::StreamExt,
 };
 
 use crate::{
-    config::{characters::Character, commands::Command},
+    config::{
+        characters::Character,
+        commands::{Category, Command},
+    },
     core::{context::Context, error::Error},
 };
 
 #[command(
     slash_command,
     prefix_command,
-    broadcast_typing,
+    // broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | EMBED_LINKS | ADD_REACTIONS"
 )]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
+    let serenity_context = ctx.serenity_context();
     let ctx_data = ctx.data();
 
     let character = ctx_data
@@ -33,7 +43,6 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let built_quotes = &interactions_registry.messages.built;
 
     let commands_registry = &ctx_data.config.commands_registry;
-    let help_command = commands_registry.get_command(&Command::Help);
 
     let (avatar_url, author_name) = {
         let user = ctx.serenity_context().cache.current_user();
@@ -46,7 +55,8 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     let select_menu = CreateSelectMenu::new(
-        help_command
+        commands_registry
+            .get_command(&Command::Help)
             .action
             .clone()
             .unwrap_or("help_menu".to_string()),
@@ -55,20 +65,20 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                 .categories
                 .keys()
                 .map(|cat| {
-                    let cat_name = format!(
-                        "{}{}",
-                        &cat.to_string()[..1].to_string(),
-                        &cat.to_string()[1..]
-                    );
+                    let cat_name = cat.to_string();
                     CreateSelectMenuOption::new(
-                        format!("{} {}", commands_registry.get_cat_emoji(cat), cat_name),
-                        cat_name.to_lowercase(),
+                        format!(
+                            "{} {}",
+                            commands_registry.get_cat_emoji(cat),
+                            format!("{}{}", &cat_name[..1].to_uppercase(), &cat_name[1..])
+                        ),
+                        cat_name,
                     )
                 })
                 .collect(),
         },
     )
-    .placeholder(&help_command.description);
+    .placeholder("Select a command for more information ⌘");
 
     let embed = CreateEmbed::new()
         .title("Hello,")
@@ -85,12 +95,82 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
             .icon_url(&ctx_data.config.info_registry.owner.icon_url),
         );
 
-    ctx.send(
-        CreateReply::default()
-            .embed(embed)
-            .components(vec![CreateActionRow::SelectMenu(select_menu)]),
-    )
-    .await?;
+    let reply = ctx
+        .send(
+            CreateReply::default()
+                .embed(embed)
+                .components(vec![CreateActionRow::SelectMenu(select_menu)]),
+        )
+        .await?;
 
+    let message = reply.into_message().await?;
+
+    let mut interaction_stream = ComponentInteractionCollector::new(&serenity_context)
+        .message_id(message.id)
+        .timeout(Duration::from_secs(30))
+        .stream();
+
+    while let Some(interaction) = interaction_stream.next().await {
+        let selected_cat = match &interaction.data.kind {
+            ComponentInteractionDataKind::StringSelect { values } => values.first().clone(),
+            _ => None,
+        }
+        .ok_or("invalid categoery")?;
+
+        let category = Category::from_str(selected_cat)?;
+        let cat_commands = commands_registry.get_cmds_from_cat(&category);
+        let prefix = &ctx_data.config.info_registry.prefix;
+
+        interaction
+            .create_response(
+                serenity_context,
+                CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new()
+                        .embed(
+                            CreateEmbed::new()
+                                .title(format!(
+                                    "{} - {} {} Command ⌘\n\n*Command List*:\n-----------------",
+                                    &cat_commands.len(),
+                                    commands_registry.get_cat_emoji(&category),
+                                    format!(
+                                        "{}{}",
+                                        &selected_cat[..1].to_uppercase(),
+                                        &selected_cat[1..]
+                                    ),
+                                ))
+                                .description(format!(
+                                    "{}",
+                                    cat_commands
+                                        .iter()
+                                        .map(|cmd| {
+                                            let name = cmd.name.as_str();
+                                            let cmd_name = format!(
+                                                "{}{}",
+                                                &name[..1].to_uppercase(),
+                                                &name[1..]
+                                            );
+
+                                            format!(
+                                                "**{cmd_name}**: *{}*\nusage: `{} or /{name}`\n",
+                                                cmd.description,
+                                                cmd.keys
+                                                    .iter()
+                                                    .map(|k| format!("{prefix}{k}"))
+                                                    .collect::<Vec<_>>()
+                                                    .join(", ")
+                                            )
+                                        })
+                                        .collect::<Vec<_>>()
+                                        .join("\n")
+                                ))
+                                .colour(interactions_registry.colors.action),
+                        )
+                        .ephemeral(true),
+                ),
+            )
+            .await?;
+    }
+
+    message.delete(ctx).await?;
     Ok(())
 }
