@@ -1,7 +1,7 @@
 /target
-/ffmpeg*
-/yt-dlp*
 /.env*
 /!.env.example
 /Cargo.lock
 /.rustc_info.json
+/bin/engines/media/ffmpeg*
+/bin/providers/youtube/yt-dlp*
