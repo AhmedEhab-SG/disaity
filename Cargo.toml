@@ -23,6 +23,9 @@ tracing-subscriber = { version = "0.3" }
 strum = { version = "0.28", features = ["derive"] }
 scraper = "0.26.0"
 
+[build-dependencies]
+ureq = "2.9"
+
 [profile.dist]
 inherits = "release"
 lto = "thin"
