@@ -47,8 +47,16 @@ fn main() {
     let dest_bin_dir = target_dir.join("bin");
     let src_root = Path::new("bin");
 
+    // Check the target architecture being built, not the host machine running the build
+    let target_os = env::var("TARGET").expect("TARGET environment variable not set");
+    let exe_suffix = if target_os.contains("windows") {
+        ".exe"
+    } else {
+        ""
+    };
+
     for (dir, sub, name) in BINARIES {
-        let file_name = format!("{}{}", name, env::consts::EXE_SUFFIX);
+        let file_name = format!("{}{}", name, exe_suffix);
         let folder_path = src_root.join(dir).join(sub);
         let src_path = folder_path.join(&file_name);
         let dest_path = dest_bin_dir.join(dir).join(sub).join(&file_name);

@@ -60,9 +60,6 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-          lfs: true
-      - name: Pull LFS files
-        run: git lfs pull
       - name: Install dist
         # we specify bash to get pipefail; it guards against the `curl` command
         # failing. otherwise `sh` won't catch that `curl` returned non-0
@@ -123,9 +120,6 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-          lfs: true
-      - name: Pull LFS files
-        run: git lfs pull
       - name: Install Rust non-interactively if not already installed
         if: ${{ matrix.container }}
         run: |
@@ -195,9 +189,6 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-          lfs: true
-      - name: Pull LFS files
-        run: git lfs pull
       - name: Install cached dist
         uses: actions/download-artifact@v7
         with:
@@ -248,9 +239,6 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-          lfs: true
-      - name: Pull LFS files
-        run: git lfs pull
       - name: Install cached dist
         uses: actions/download-artifact@v7
         with:
@@ -316,6 +304,3 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
-          lfs: true
-      - name: Pull LFS files
-        run: git lfs pull
