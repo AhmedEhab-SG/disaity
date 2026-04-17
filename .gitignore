@@ -1,4 +1,5 @@
 /target
+/bin
 /.env*
 /!.env.example
 /Cargo.lock
