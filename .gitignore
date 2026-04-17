@@ -1,5 +1,6 @@
 /target
-/bin
+/ffmpeg*
+/yt-dlp*
 /.env*
 /!.env.example
 /Cargo.lock
