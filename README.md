@@ -43,16 +43,6 @@
 
 ## 📥 Installation (For Developers)
 
-#### 📦 Binary Dependencies
-
-This project requires FFmpeg and yt-dlp to process and stream audio. To keep the repository lightweight, these binaries are managed automatically.
-
-> [!TIP]
-> Manual Setup (Optional): If you prefer to use your own binaries, simply place them in the following paths (Git will ignore them):
-
-> - bin/engines/media/ffmpeg
-> - bin/providers/youtube/yt-dlp
-
 #### 🦀 Prerequisites
 
 The project is built with purely Rust, you must have the Rust toolchain installed. The recommended way is via `rustup`:
@@ -61,6 +51,16 @@ The project is built with purely Rust, you must have the Rust toolchain installe
 # Install Rust (curl)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
+
+#### 📦 Binary Dependencies
+
+This project requires FFmpeg and yt-dlp to process and stream audio. To keep the repository lightweight, these binaries are managed automatically.
+
+> [!TIP]
+> Manual Setup (Optional): If you prefer to use your own binaries, simply place them in the following paths (Git will ignore them):
+>
+> - bin/engines/media/ffmpeg
+> - bin/providers/youtube/yt-dlp
 
 #### ⚙️ Setup Environment Variables
 
