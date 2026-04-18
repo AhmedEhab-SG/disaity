@@ -43,25 +43,15 @@
 
 ## 📥 Installation (For Developers)
 
-#### 📦 Large File Handling (Git LFS)
+#### 📦 Binary Dependencies
 
-This repository uses Git LFS to manage the large binary engines required for audio processing. Before cloning, ensure you have Git LFS installed on your system.
+This project requires FFmpeg and yt-dlp to process and stream audio. To keep the repository lightweight, these binaries are managed automatically.
 
-```bash
-# Install Git LFS
-git lfs install
+> [!TIP]
+> Manual Setup (Optional): If you prefer to use your own binaries, simply place them in the following paths (Git will ignore them):
 
-# Clone the repository (this will automatically pull the binaries)
-git clone https://github.com/AhmedEhab-SG/disaity
-
-# pull the bin/ pointer
-git lfs pull
-```
-
-> [!IMPORTANT]
-> If you don't use **Git LFS**, the files in `bin/` will be empty pointers.
-> You will need to manually download [FFmpeg](https://ffmpeg.org/download.html)
-> and [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation) for your system and replace the empty pointers with your downloaded binaires.
+> - bin/engines/media/ffmpeg
+> - bin/providers/youtube/yt-dlp
 
 #### 🦀 Prerequisites
 
