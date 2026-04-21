@@ -2,13 +2,11 @@ use poise::command;
 use songbird::tracks::PlayMode;
 
 use crate::{
-    commands::{
-        checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
-        macros::say,
-    },
+    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
     core::{
         context::{Context, ContextExt},
-        error::Error,
+        errors::Error,
+        macros::say,
     },
 };
 

@@ -1,6 +1,7 @@
 pub mod bin;
 pub mod context;
-pub mod error;
+pub mod errors;
+pub mod macros;
 pub mod utils;
 
 use ::serenity::all::{ClientBuilder, GatewayIntents};
@@ -10,7 +11,10 @@ use songbird::SerenityInit;
 
 use crate::{
     commands::CommandsRegistry,
-    core::{context::Data, error::Error},
+    core::{
+        context::Data,
+        errors::{Error, error_hanlder},
+    },
     handlers::ready::start_status_loop,
 };
 
@@ -30,25 +34,15 @@ pub async fn core() -> Result<(), Error> {
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            // handles only check errors for now
-            on_error: |error| {
-                Box::pin(async move {
-                    match error {
-                        // This catches errors returned specifically from 'check' functions
-                        poise::FrameworkError::CommandCheckFailed { ctx, error, .. } => {
-                            if let Some(err_msg) = error {
-                                ctx.say(format!("{}", err_msg)).await.ok();
-                            }
-                        }
-                        // Handle other errors...
-                        _ => poise::builtins::on_error(error).await.unwrap(),
-                    }
-                })
-            },
-            commands,
             prefix_options: PrefixFrameworkOptions {
                 prefix: Some(data.config.info_registry.prefix.clone()),
                 ..Default::default()
+            },
+            commands,
+            on_error: |error| {
+                Box::pin(async move {
+                    error_hanlder(error).await.ok();
+                })
             },
             ..Default::default()
         })

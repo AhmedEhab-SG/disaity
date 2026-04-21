@@ -9,7 +9,7 @@ use crate::{
     commands::checks::{not_empty_queue, same_vc},
     core::{
         context::{Context, ContextExt},
-        error::Error,
+        errors::Error,
     },
     handlers::SongMetadata,
 };

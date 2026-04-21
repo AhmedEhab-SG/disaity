@@ -4,7 +4,7 @@ use serenity::async_trait;
 
 use crate::{
     config::Config,
-    core::{error::Error, utils::Utils},
+    core::{errors::Error, utils::Utils},
 };
 
 pub type Context<'a> = BaseContext<'a, Data, Error>;

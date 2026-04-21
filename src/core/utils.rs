@@ -11,7 +11,7 @@ use tokio::{process::Command, sync::Mutex};
 
 use crate::{
     config::interactions::Provider,
-    core::{context::Context, error::Error},
+    core::{context::Context, errors::Error},
     handlers::{SongMetadata, register_all},
 };
 
@@ -32,6 +32,11 @@ pub trait ReactionUtils {
     ) -> Result<(), Error>;
 
     async fn delete_all_self_reactions(&self) -> Result<(), Error>;
+
+    async fn on_error_react(
+        &self,
+        emojis: Option<&[impl Into<ReactionType> + Clone + Send + Sync]>,
+    ) -> Result<(), Error>;
 }
 
 #[async_trait]
@@ -59,7 +64,7 @@ impl ReactionUtils for Utils<'_> {
     ) -> Result<(), Error> {
         if let Context::Prefix(p_ctx) = self.ctx {
             for emoji in emojis {
-                p_ctx.msg.react(self.ctx, emoji.clone().into()).await?;
+                p_ctx.msg.react(self.ctx, emoji.clone()).await?;
             }
         }
         Ok(())
@@ -111,6 +116,18 @@ impl ReactionUtils for Utils<'_> {
                     .delete_reaction(self.ctx, None, reaction.reaction_type.clone())
                     .await?;
             }
+        }
+        Ok(())
+    }
+
+    async fn on_error_react(
+        &self,
+        emojis: Option<&[impl Into<ReactionType> + Clone + Send + Sync]>,
+    ) -> Result<(), Error> {
+        self.delete_all_self_reactions().await?;
+        match emojis {
+            Some(emojis) => self.add_reactions(emojis).await?,
+            None => self.add_reactions(&['❌']).await?,
         }
         Ok(())
     }

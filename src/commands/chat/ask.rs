@@ -5,7 +5,7 @@ use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 use crate::{
     commands::checks::dm_with_auth,
     config::{Config, characters::Character, commands::Command},
-    core::{context::Context, error::Error},
+    core::{context::Context, errors::Error},
 };
 
 fn get_history(

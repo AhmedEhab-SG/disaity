@@ -1,14 +1,14 @@
 use poise::{ChoiceParameter, command};
+use serenity::all::ReactionType;
 use songbird::tracks::LoopState;
 
 use crate::{
-    commands::{
-        checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
-        macros::say,
-    },
+    commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
     core::{
         context::{Context, ContextExt},
-        error::Error,
+        errors::Error,
+        macros::say,
+        utils::ReactionUtils,
     },
 };
 
@@ -62,11 +62,13 @@ pub async fn repeat(
             // Force loop ON
             current_track.enable_loop().ok();
             say!(ctx, "🔁 **Loop enabled** for the current track.");
+            ctx_utils.end_loading_react().await?;
         }
         Some(RepeatMode::Disable) => {
             // Force loop OFF
             current_track.disable_loop().ok();
             say!(ctx, "➡️ **Loop disabled**");
+            ctx_utils.end_loading_react().await?;
         }
         Some(RepeatMode::Toggle) => {
             // Get current state to decide whether to turn it on or off
@@ -82,15 +84,20 @@ pub async fn repeat(
                     say!(ctx, "🔁 **Loop enabled**.");
                 }
             }
+
+            ctx_utils.end_loading_react().await?;
         }
-        None => {
+        _ => {
             say!(
                 ctx,
                 "Invalid option! Use `song`, `disable`, `toggle`, or leave empty to toggle."
             );
+            ctx_utils.end_loading_react().await?;
+            ctx_utils
+                .on_error_react(Some(&[ReactionType::Unicode("⁉️".into())]))
+                .await?;
         }
     }
-    ctx_utils.end_loading_react().await?;
 
     Ok(())
 }

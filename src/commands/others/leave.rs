@@ -2,7 +2,7 @@ use poise::command;
 
 use crate::{
     commands::checks::same_vc,
-    core::{context::Context, error::Error},
+    core::{context::Context, errors::Error},
 };
 
 #[command(

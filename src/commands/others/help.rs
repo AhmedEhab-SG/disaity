@@ -19,7 +19,7 @@ use crate::{
         characters::Character,
         commands::{Category, Command},
     },
-    core::{context::Context, error::Error},
+    core::{context::Context, errors::Error},
 };
 
 #[command(

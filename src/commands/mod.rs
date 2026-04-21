@@ -1,6 +1,5 @@
 pub mod chat;
 pub mod checks;
-pub mod macros;
 pub mod music;
 pub mod others;
 
@@ -9,7 +8,7 @@ use std::str::FromStr;
 
 use crate::{
     config::commands::{Command as CommandEnum, CommandRegistry},
-    core::{context::Data, error::Error},
+    core::{context::Data, errors::Error},
 };
 
 #[derive(Debug)]

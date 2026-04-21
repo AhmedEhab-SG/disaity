@@ -2,14 +2,12 @@ use poise::command;
 use tokio::time::{Duration, timeout};
 
 use crate::{
-    commands::{
-        checks::{not_mute, user_not_deafen},
-        macros::say,
-    },
+    commands::checks::{not_mute, user_not_deafen},
     config::commands::Command,
     core::{
         context::{Context, ContextExt},
-        error::Error,
+        errors::Error,
+        macros::say,
         utils::{ReactionUtils, VoiceUtils},
     },
 };

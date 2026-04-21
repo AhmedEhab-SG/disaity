@@ -4,7 +4,7 @@ use crate::{
     commands::checks::{diff_vc, not_mute, user_not_deafen},
     core::{
         context::{Context, ContextExt},
-        error::Error,
+        errors::Error,
         utils::VoiceUtils,
     },
 };
