@@ -3,8 +3,8 @@ use std::{collections::HashMap, fmt::Debug, str::FromStr};
 use strum::{Display, EnumString};
 
 #[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum Command {
     Ask,
     Help,
@@ -22,15 +22,18 @@ pub enum Command {
     Skip,
     Stop,
     Volume,
+    SubscribePrayer,
+    UnsubscribePrayer,
 }
 
 #[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum Category {
     Chat,
     Music,
-    Others,
+    Announcement,
+    Other,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -119,8 +122,9 @@ impl CommandRegistry {
     pub fn get_cat_emoji(&self, cat: &Category) -> &str {
         match cat {
             Category::Music => "🎶",
+            Category::Announcement => "📢",
             Category::Chat => "🗨️",
-            Category::Others => "⚙️",
+            Category::Other => "⚙️",
         }
     }
 }

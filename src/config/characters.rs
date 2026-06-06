@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use strum::Display;
 
 #[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum Character {
     Emilia,
 }

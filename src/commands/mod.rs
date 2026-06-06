@@ -1,7 +1,8 @@
 pub mod chat;
 pub mod checks;
 pub mod music;
-pub mod others;
+pub mod other;
+pub mod subscription;
 
 use poise::Command;
 use std::str::FromStr;
@@ -32,9 +33,11 @@ impl CommandsRegistry {
             music::seek::seek(),
             music::volume::volume(),
             chat::ask::ask(),
-            others::help::help(),
-            others::join::join(),
-            others::leave::leave(),
+            other::help::help(),
+            other::join::join(),
+            other::leave::leave(),
+            subscription::prayer::prayer(),
+            subscription::clear_prayer::clear_prayer(),
         ]
         .into_iter()
         .map(|mut cmd| {

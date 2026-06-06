@@ -45,7 +45,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let commands_registry = &ctx_data.config.commands_registry;
 
     let (avatar_url, author_name) = {
-        let user = ctx.serenity_context().cache.current_user();
+        let user = serenity_context.cache.current_user();
 
         (
             user.avatar_url()

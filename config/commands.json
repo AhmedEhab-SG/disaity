@@ -54,14 +54,14 @@
   "join": {
     "name": "join",
     "keys": ["join", "j"],
-    "category": "others",
+    "category": "other",
     "description": "I will join your channel."
   },
 
   "leave": {
     "name": "leave",
     "keys": ["leave", "l"],
-    "category": "others",
+    "category": "other",
     "description": "I will leave your channel."
   },
 
@@ -172,8 +172,38 @@
   "help": {
     "name": "help",
     "keys": ["help", "h"],
-    "category": "others",
+    "category": "other",
     "description": "Displays all the commands. ⌘",
     "action": "help_menu"
+  },
+
+  "prayer": {
+    "name": "prayer",
+    "keys": ["prayer", "py"],
+    "category": "subscription",
+    "description": "Subscribe to pray time in target a chennel and ping a role.",
+    "timeout": 40,
+    "options": [
+      {
+        "name": "channel",
+        "description": "Enter the channel id you want to send the notification on.",
+        "type": 3,
+        "required": true
+      },
+      {
+        "name": "role",
+        "description": "Enter the role id you want to to ping it. (optinal)",
+        "type": 3,
+        "required": false
+      }
+    ]
+  },
+
+  "clear_prayer": {
+    "name": "clear prayer",
+    "keys": ["clear_prayer", "cpy"],
+    "category": "subscription",
+    "description": "Unsubscribe to pray time in the server",
+    "timeout": 40
   }
 }
