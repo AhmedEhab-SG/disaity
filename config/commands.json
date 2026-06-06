@@ -185,6 +185,18 @@
     "timeout": 40,
     "options": [
       {
+        "name": "city",
+        "description": "The city name (e.g., Cairo, Riyadh, New York).",
+        "type": 3,
+        "required": true
+      },
+      {
+        "name": "country",
+        "description": "The country name (e.g., Egypt, Saudi Arabia, USA).",
+        "type": 3,
+        "required": true
+      },
+      {
         "name": "channel",
         "description": "Enter the channel id you want to send the notification on.",
         "type": 3,
@@ -200,7 +212,7 @@
   },
 
   "clear_prayer": {
-    "name": "clear prayer",
+    "name": "clear_prayer",
     "keys": ["clear_prayer", "cpy"],
     "category": "subscription",
     "description": "Unsubscribe to pray time in the server",

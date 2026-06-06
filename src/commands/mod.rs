@@ -36,8 +36,8 @@ impl CommandsRegistry {
             other::help::help(),
             other::join::join(),
             other::leave::leave(),
-            subscription::prayer::prayer(),
-            subscription::clear_prayer::clear_prayer(),
+            subscription::prayer_manager::prayer::prayer(),
+            subscription::prayer_manager::clear_prayer::clear_prayer(),
         ]
         .into_iter()
         .map(|mut cmd| {
