@@ -10,6 +10,7 @@ use crate::core::{
     slash_command,
     prefix_command,
     broadcast_typing,
+    guild_only,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | EMBED_LINKS | ADD_REACTIONS"
 )]
 pub async fn clear_prayer(ctx: Context<'_>) -> Result<(), Error> {
