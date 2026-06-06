@@ -22,8 +22,8 @@ pub enum Command {
     Skip,
     Stop,
     Volume,
-    SubscribePrayer,
-    UnsubscribePrayer,
+    Prayer,
+    ClearPrayer,
 }
 
 #[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString)]
@@ -32,7 +32,7 @@ pub enum Command {
 pub enum Category {
     Chat,
     Music,
-    Announcement,
+    Subscription,
     Other,
 }
 
@@ -122,7 +122,7 @@ impl CommandRegistry {
     pub fn get_cat_emoji(&self, cat: &Category) -> &str {
         match cat {
             Category::Music => "🎶",
-            Category::Announcement => "📢",
+            Category::Subscription => "📢",
             Category::Chat => "🗨️",
             Category::Other => "⚙️",
         }
