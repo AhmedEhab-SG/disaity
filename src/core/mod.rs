@@ -15,7 +15,7 @@ use crate::{
         context::Data,
         errors::{Error, error_hanlder},
     },
-    handlers::ready::start_status_loop,
+    handlers::{prayer::start_prayer_loop, ready::start_status_loop},
 };
 
 pub async fn core() -> Result<(), Error> {
@@ -50,6 +50,11 @@ pub async fn core() -> Result<(), Error> {
             Box::pin(async move {
                 builtins::register_globally(ctx, &framework.options().commands).await?;
                 start_status_loop(ctx.clone());
+                start_prayer_loop(
+                    ctx.clone(),
+                    data.subscription.prayer_subscription.clone(),
+                    data.http.clone(),
+                );
                 Ok(data)
             })
         })

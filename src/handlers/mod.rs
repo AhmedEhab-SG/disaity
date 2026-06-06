@@ -1,5 +1,6 @@
 pub mod idle;
 pub mod playing;
+pub mod prayer;
 pub mod ready;
 
 use serenity::all::{Cache, ChannelId, GuildId, Http};

@@ -33,6 +33,7 @@ tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.3" }
 strum = { version = "0.28", features = ["derive"] }
 scraper = "0.26.0"
+chrono = "0.4.45"
 
 [build-dependencies]
 ureq = "2.9"

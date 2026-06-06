@@ -12,16 +12,24 @@ pub fn start_status_loop(ctx: Context) {
         ];
 
         let mut index = 0;
+        let mut minutes_passed = 0;
 
         loop {
             // Set the bot's current activity
             ctx.set_activity(Some(statuses[index].clone()));
 
             // Move to the next status, wrapping back to 0 at the end of the list
-            index = (index + 1) % statuses.len();
 
             // Wait 15 minutes (15 * 60 seconds) before changing again
             sleep(Duration::from_secs(15 * 60)).await;
+
+            minutes_passed += 1;
+
+            // Once 15 minutes have passed, cycle to the next status and reset the timer
+            if minutes_passed >= 15 {
+                index = (index + 1) % statuses.len();
+                minutes_passed = 0;
+            }
         }
     });
 }
