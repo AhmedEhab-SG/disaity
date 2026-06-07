@@ -49,7 +49,7 @@ pub async fn core() -> Result<(), Error> {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 builtins::register_globally(ctx, &framework.options().commands).await?;
-                start_status_loop(ctx.clone());
+                start_status_loop(framework.shard_manager().clone());
                 start_prayer_loop(
                     ctx.clone(),
                     data.subscription.prayer_subscription.clone(),

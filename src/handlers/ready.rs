@@ -1,8 +1,8 @@
-use serenity::all::{ActivityData, Context};
-use std::time::Duration;
+use serenity::{all::ActivityData, gateway::ShardManager};
+use std::{sync::Arc, time::Duration};
 use tokio::time::sleep;
 
-pub fn start_status_loop(ctx: Context) {
+pub fn start_status_loop(shard_manager: Arc<ShardManager>) {
     tokio::spawn(async move {
         // Map your JSON array directly into Serenity ActivityData
         let statuses = vec![
@@ -16,16 +16,20 @@ pub fn start_status_loop(ctx: Context) {
 
         loop {
             // Set the bot's current activity
-            ctx.set_activity(Some(statuses[index].clone()));
+            let runners = shard_manager.runners.lock().await;
 
-            // Move to the next status, wrapping back to 0 at the end of the list
+            // Loop through every active shard runner and update its activity
+            for runner in runners.values() {
+                runner.runner_tx.set_activity(Some(statuses[index].clone()));
+            }
 
-            // Wait 15 minutes (15 * 60 seconds) before changing again
-            sleep(Duration::from_secs(15 * 60)).await;
+            // Explicitly drop the lock so we aren't holding it while sleeping
+            drop(runners);
 
+            sleep(Duration::from_secs(60)).await;
             minutes_passed += 1;
 
-            // Once 15 minutes have passed, cycle to the next status and reset the timer
+            // Only switch status text when 15 minutes are up
             if minutes_passed >= 15 {
                 index = (index + 1) % statuses.len();
                 minutes_passed = 0;
