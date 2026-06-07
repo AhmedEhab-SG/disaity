@@ -18,7 +18,7 @@ fn download_file(url: &str, path: &Path) -> Result<(), String> {
         .call()
         .map_err(|e| format!("Failed to download {}: {}", url, e))?;
 
-    let mut reader = response.into_reader();
+    let mut reader = response.into_body().into_reader();
     let mut file = fs::File::create(path).map_err(|e| e.to_string())?;
     io::copy(&mut reader, &mut file).map_err(|e| e.to_string())?;
 

@@ -1,5 +1,6 @@
 use gemini_rust::Gemini;
 use poise::Context as BaseContext;
+use reqwest::Client;
 use serenity::async_trait;
 
 use crate::{
@@ -11,7 +12,7 @@ use crate::{
 pub type Context<'a> = BaseContext<'a, Data, Error>;
 
 pub struct Data {
-    pub http: reqwest::Client,
+    pub http: Client,
     pub agent: Gemini,
     pub config: Config,
     pub subscription: Subscription,
@@ -33,7 +34,7 @@ impl Default for Data {
     fn default() -> Self {
         let config = Config::new();
         let agent = Gemini::new(&config.env.gemini_api_key).expect("failed to connect to gemini");
-        let http = reqwest::Client::new();
+        let http = Client::new();
         let subscription = Subscription::new();
 
         Self {
