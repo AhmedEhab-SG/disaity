@@ -74,6 +74,7 @@ cd disaity
 # create your environment variables
 echo "DISCORD_TOKEN=your_token" > .env
 echo "GEMINI_API_KEY=your_key" >> .env
+echo "DB_PATH=your_db_path" >> .env
 
 # Build and run
 cargo run --release
@@ -102,6 +103,7 @@ The bot requires API keys to function. We have provided a template file to make 
 ```bash
 DISCORD_TOKEN=your_discord_bot_token_here
 GEMINI_API_KEY=your_google_gemini_api_key_here
+DB_PATH=your_storage_path_here
 ```
 
 #### 🚀 Step 3: Launch
