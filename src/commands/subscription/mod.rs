@@ -9,7 +9,11 @@ pub struct Subscription {
 }
 
 impl Subscription {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(db_path: &String) -> Self {
+        Self {
+            prayer_subscription: Arc::new(RwLock::new(prayer_manager::PrayerSubscription::new(
+                &db_path,
+            ))),
+        }
     }
 }

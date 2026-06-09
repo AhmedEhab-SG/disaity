@@ -5,3 +5,4 @@
 /.rustc_info.json
 /bin/engines/media/ffmpeg*
 /bin/providers/youtube/yt-dlp*
+/db

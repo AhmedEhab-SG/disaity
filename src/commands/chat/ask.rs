@@ -1,4 +1,4 @@
-use gemini_rust::Tool;
+use gemini_rust::{Gemini, Tool};
 use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
@@ -125,23 +125,39 @@ pub async fn ask(
         .characters_registry
         .get_character(&Character::Emilia);
 
-    let mut req = data
-        .agent
-        .generate_content()
-        .with_system_instruction(character.personality.clone())
-        .with_tool(Tool::google_search());
+    // could use a clean up
+    let build = |agent: &Gemini, history: &Vec<(bool, String)>| {
+        let mut req = agent
+            .generate_content()
+            .with_dynamic_thinking()
+            .with_tool(Tool::google_search())
+            .with_system_instruction(character.personality.clone());
 
-    for (is_bot, content) in history {
-        if is_bot {
-            req = req.with_model_message(content);
-        } else {
-            req = req.with_user_message(content);
+        for (is_bot, content) in history {
+            if *is_bot {
+                req = req.with_model_message(content);
+            } else {
+                req = req.with_user_message(content);
+            }
         }
-    }
 
-    req = req.with_user_message(chat.trim());
+        req = req.with_user_message(chat.trim());
 
-    let res_text = req.execute().await?.text();
+        req
+    };
+
+    let res_text = match build(&data.ai.agent, &history).execute().await {
+        Ok(res) => res.text(),
+        Err(e) if e.to_string().contains("503") || e.to_string().contains("UNAVAILABLE") => {
+            tracing::warn!("Gemini primary model busy (503), falling back to flash-lite");
+
+            build(&data.ai.fallback_agent, &history)
+                .execute()
+                .await?
+                .text()
+        }
+        Err(e_rest) => return Err(e_rest.into()),
+    };
 
     let char_vec: Vec<char> = res_text.chars().collect();
     let chunks = char_vec.chunks(1900);
