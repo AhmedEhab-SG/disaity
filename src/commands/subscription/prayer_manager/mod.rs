@@ -16,6 +16,7 @@ pub struct PrayerSubscriptionInfo {
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct PrayerSubscription {
+    #[serde(skip)]
     path: String,
     pub subscription: HashMap<GuildId, PrayerSubscriptionInfo>,
 }
@@ -55,10 +56,16 @@ impl PrayerSubscription {
     }
 
     fn save(&self) {
+        let tmp = format!("{}.tmp", self.path);
         match serde_json::to_string_pretty(&self) {
             Ok(json) => {
-                if let Err(e) = fs::write(&self.path, json) {
-                    tracing::error!("Failed to write prayer subscriptions DB: {e}")
+                if let Err(e) = fs::write(&tmp, &json) {
+                    tracing::error!("Failed to write tmp file: {e}");
+                    return;
+                }
+
+                if let Err(e) = fs::rename(&tmp, &self.path) {
+                    tracing::error!("Failed to rename tmp file: {e}");
                 }
             }
 
