@@ -37,13 +37,18 @@ impl PrayerSubscription {
         }
 
         match fs::read_to_string(&path) {
-            Ok(contents) => serde_json::from_str(&contents).unwrap_or_else(|e| {
-                tracing::error!("Failed to parse prayer subscriptions DB: {e}");
-                return Self {
-                    path,
-                    ..Default::default()
-                };
-            }),
+            Ok(contents) => serde_json::from_str::<PrayerSubscription>(&contents)
+                .map(|mut sub| {
+                    sub.path = path.clone();
+                    sub
+                })
+                .unwrap_or_else(|e| {
+                    tracing::error!("Failed to parse prayer subscriptions DB: {e}");
+                    Self {
+                        path,
+                        ..Default::default()
+                    }
+                }),
 
             Err(e) => {
                 tracing::error!("Failed to read prayer subscriptions DB: {e}");
