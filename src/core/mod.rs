@@ -13,7 +13,7 @@ use crate::{
     commands::CommandsRegistry,
     core::{
         context::Data,
-        errors::{Error, error_hanlder},
+        errors::{Error, on_error_handler},
     },
     handlers::{prayer::start_prayer_loop, ready::start_status_loop},
 };
@@ -41,7 +41,7 @@ pub async fn core() -> Result<(), Error> {
             commands,
             on_error: |error| {
                 Box::pin(async move {
-                    error_hanlder(error).await.ok();
+                    on_error_handler(error).await.ok();
                 })
             },
             ..Default::default()

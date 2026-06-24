@@ -7,7 +7,7 @@ use poise::FrameworkError;
 use serenity::all::ReactionType;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
-pub async fn error_hanlder(error: FrameworkError<'_, Data, Error>) -> Result<(), Error> {
+pub async fn on_error_handler(error: FrameworkError<'_, Data, Error>) -> Result<(), Error> {
     match error {
         FrameworkError::CommandCheckFailed { ctx, error, .. } => {
             if let Some(err_msg) = error {
