@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const VERSION: &str = "v0.1.1-deps"; // Update this to your release tag
+const VERSION: &str = "v0.1.1-deps";
 const BASE_URL: &str = "https://github.com/AhmedEhab-SG/disaity/releases/download";
 
 const BINARIES: [(&str, &str, &str); 2] = [
