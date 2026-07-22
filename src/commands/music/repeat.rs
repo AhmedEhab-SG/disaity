@@ -4,12 +4,7 @@ use songbird::tracks::LoopState;
 
 use crate::{
     commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
-    core::{
-        context::{Context, ContextExt},
-        errors::Error,
-        macros::say,
-        utils::ReactionUtils,
-    },
+    core::{Context, ContextExt, Error, ReactionUtils, macros::say},
 };
 
 #[derive(Debug, ChoiceParameter)]

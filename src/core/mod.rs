@@ -1,24 +1,21 @@
-pub mod bin;
-pub mod context;
-pub mod errors;
+mod bin;
+mod context;
+mod errors;
 pub mod macros;
-pub mod utils;
+mod utils;
 
 use ::serenity::all::{ClientBuilder, GatewayIntents};
 use poise::{Framework, FrameworkOptions, PrefixFrameworkOptions, builtins};
 
 use songbird::SerenityInit;
 
-use crate::{
-    commands::CommandsRegistry,
-    core::{
-        context::Data,
-        errors::{Error, on_error_handler},
-    },
-    handlers::{prayer::start_prayer_loop, ready::start_status_loop},
-};
+use crate::handlers::{prayer::start_prayer_loop, ready::start_status_loop};
+pub use bin::BinariesExt;
+pub use context::{Context, ContextExt, Data};
+pub use errors::{Error, on_error_handler};
+pub use utils::{ReactionUtils, VoiceUtils};
 
-pub async fn core() -> Result<(), Error> {
+pub async fn create() -> Result<(), Error> {
     let intents = GatewayIntents::non_privileged()
         | GatewayIntents::GUILDS
         | GatewayIntents::GUILD_MEMBERS
@@ -28,9 +25,11 @@ pub async fn core() -> Result<(), Error> {
         | GatewayIntents::MESSAGE_CONTENT
         | GatewayIntents::DIRECT_MESSAGES;
 
-    let data = Data::new();
-    let commands = CommandsRegistry::new(&data.config.commands_registry).commands;
+    let mut data = Data::new();
+
     let token = data.config.env.client_token.clone();
+    let commands = std::mem::take(&mut data.registry.commands);
+    let subscription = std::mem::take(&mut data.registry.subscription);
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
@@ -50,11 +49,7 @@ pub async fn core() -> Result<(), Error> {
             Box::pin(async move {
                 builtins::register_globally(ctx, &framework.options().commands).await?;
                 start_status_loop(framework.shard_manager().clone());
-                start_prayer_loop(
-                    ctx.clone(),
-                    data.subscription.prayer_subscription.clone(),
-                    data.http.clone(),
-                );
+                start_prayer_loop(ctx.clone(), subscription, data.http.clone());
                 Ok(data)
             })
         })

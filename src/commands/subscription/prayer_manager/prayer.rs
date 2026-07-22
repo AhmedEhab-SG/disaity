@@ -6,11 +6,7 @@ use serenity::{
 
 use crate::{
     commands::subscription::prayer_manager::PrayerSubscriptionInfo,
-    core::{
-        context::{Context, ContextExt},
-        errors::Error,
-        macros::say,
-    },
+    core::{Context, ContextExt, Error, macros::say},
 };
 
 #[command(
@@ -60,7 +56,13 @@ pub async fn prayer(
 
     ctx_utils.start_loading_react().await?;
 
-    let mut prayer_sub = ctx.data().subscription.prayer_subscription.write().await;
+    let mut prayer_sub = ctx
+        .data()
+        .registry
+        .subscription
+        .prayer_subscription
+        .write()
+        .await;
 
     prayer_sub.add_subscription(
         guild.id,

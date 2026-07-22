@@ -10,7 +10,7 @@ use std::{collections::HashSet, sync::Arc};
 use tokio::{process::Command, sync::Mutex};
 
 use crate::{
-    config::interactions::Provider,
+    config::Provider,
     core::{context::Context, errors::Error},
     handlers::{SongMetadata, register_all},
 };

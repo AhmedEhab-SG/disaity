@@ -1,4 +1,4 @@
-use disaity::core::{bin::BinariesExt, core};
+use disaity::core::{BinariesExt, create};
 
 #[tokio::main]
 async fn main() {
@@ -6,5 +6,5 @@ async fn main() {
 
     BinariesExt::load();
 
-    core().await.unwrap();
+    create().await.unwrap();
 }

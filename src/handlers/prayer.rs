@@ -1,13 +1,12 @@
-use crate::commands::subscription::prayer_manager::PrayerSubscription;
 use chrono::{Local, Timelike};
 use reqwest::Client;
 use serde::Deserialize;
 use serenity::all::{Context as SerenityContext, CreateMessage};
 use serenity::builder::CreateAllowedMentions;
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::RwLock;
+
+use crate::commands::Subscription;
 
 #[derive(Deserialize)]
 struct AladhanResponse {
@@ -19,11 +18,7 @@ struct PrayerData {
     timings: HashMap<String, String>,
 }
 
-pub fn start_prayer_loop(
-    ctx: SerenityContext,
-    prayer_subscription: Arc<RwLock<PrayerSubscription>>,
-    http: Client,
-) {
+pub fn start_prayer_loop(ctx: SerenityContext, subscription: Subscription, http: Client) {
     tokio::spawn(async move {
         let mut last_notified_minute = 99;
 
@@ -33,7 +28,7 @@ pub fn start_prayer_loop(
 
             if current_minute != last_notified_minute {
                 let current_time_str = now.format("%H:%M").to_string();
-                let subs_guard = prayer_subscription.read().await;
+                let subs_guard = subscription.prayer_subscription.read().await;
 
                 for sub in subs_guard.subscription.values() {
                     let url = format!(

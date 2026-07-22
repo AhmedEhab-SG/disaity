@@ -3,13 +3,8 @@ use tokio::time::{Duration, timeout};
 
 use crate::{
     commands::checks::{not_mute, user_not_deafen},
-    config::commands::Command,
-    core::{
-        context::{Context, ContextExt},
-        errors::Error,
-        macros::say,
-        utils::{ReactionUtils, VoiceUtils},
-    },
+    config::Command,
+    core::{Context, ContextExt, Error, ReactionUtils, VoiceUtils, macros::say},
 };
 
 #[command(

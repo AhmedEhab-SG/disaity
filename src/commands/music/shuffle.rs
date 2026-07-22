@@ -4,11 +4,7 @@ use rand::{rng, seq::SliceRandom};
 
 use crate::{
     commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
-    core::{
-        context::{Context, ContextExt},
-        errors::Error,
-        macros::say,
-    },
+    core::{Context, ContextExt, Error, macros::say},
 };
 
 #[command(

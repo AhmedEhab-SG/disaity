@@ -3,11 +3,7 @@ use songbird::tracks::PlayMode;
 
 use crate::{
     commands::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
-    core::{
-        context::{Context, ContextExt},
-        errors::Error,
-        macros::say,
-    },
+    core::{Context, ContextExt, Error, macros::say},
     uitls::{format_duration_human, parse_timestamp},
 };
 

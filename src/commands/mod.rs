@@ -1,43 +1,51 @@
-pub mod chat;
-pub mod checks;
-pub mod music;
-pub mod other;
-pub mod subscription;
+mod chat;
+mod checks;
+mod music;
+mod other;
+mod subscription;
+
+use chat::ask;
+use music::{clear, jump, pause, play, queue, repeat, resume, seek, shuffle, skip, stop, volume};
+use other::{help, join, leave};
+
+pub use subscription::Subscription;
+use subscription::{clear_prayer, prayer};
 
 use poise::Command;
 use std::str::FromStr;
 
 use crate::{
-    config::commands::{Command as CommandEnum, CommandRegistry},
-    core::{context::Data, errors::Error},
+    config::{Command as CommandEnum, CommandRegistry},
+    core::{Data, Error},
 };
 
 #[derive(Debug)]
 pub struct CommandsRegistry {
     pub commands: Vec<Command<Data, Error>>,
+    pub subscription: Subscription,
 }
 
 impl CommandsRegistry {
-    pub fn new(cmds_registery: &CommandRegistry) -> Self {
+    pub fn new(cmds_registery: &CommandRegistry, db_path: &String) -> Self {
         let commands = vec![
-            music::play::play(),
-            music::pause::pause(),
-            music::stop::stop(),
-            music::skip::skip(),
-            music::clear::clear(),
-            music::resume::resume(),
-            music::jump::jump(),
-            music::repeat::repeat(),
-            music::queue::queue(),
-            music::shuffle::shuffle(),
-            music::seek::seek(),
-            music::volume::volume(),
-            chat::ask::ask(),
-            other::help::help(),
-            other::join::join(),
-            other::leave::leave(),
-            subscription::prayer_manager::prayer::prayer(),
-            subscription::prayer_manager::clear_prayer::clear_prayer(),
+            ask(),
+            clear(),
+            jump(),
+            pause(),
+            play(),
+            queue(),
+            repeat(),
+            resume(),
+            seek(),
+            shuffle(),
+            skip(),
+            stop(),
+            volume(),
+            help(),
+            join(),
+            leave(),
+            clear_prayer(),
+            prayer(),
         ]
         .into_iter()
         .map(|mut cmd| {
@@ -76,6 +84,11 @@ impl CommandsRegistry {
         })
         .collect();
 
-        Self { commands }
+        let subscription = Subscription::new(db_path);
+
+        Self {
+            commands,
+            subscription,
+        }
     }
 }

@@ -2,11 +2,7 @@ use poise::command;
 
 use crate::{
     commands::checks::{diff_vc, not_mute, user_not_deafen},
-    core::{
-        context::{Context, ContextExt},
-        errors::Error,
-        utils::VoiceUtils,
-    },
+    core::{Context, ContextExt, Error, VoiceUtils},
 };
 
 #[command(

@@ -1,7 +1,7 @@
 macro_rules! say {
     ($ctx:expr, $msg:expr, color = $color:expr) => {{
         match $ctx {
-            $crate::core::context::Context::Application(_) => {
+            $crate::core::Context::Application(_) => {
                 $ctx.send(
                     poise::CreateReply::default().embed(
                         serenity::all::CreateEmbed::new()
@@ -11,14 +11,14 @@ macro_rules! say {
                 )
                 .await?;
             }
-            $crate::core::context::Context::Prefix(_) => {
+            $crate::core::Context::Prefix(_) => {
                 $ctx.say($msg).await?;
             }
         };
     }};
 
     ($ctx:expr, $msg:expr, application_only, color = $color:expr) => {{
-        if let $crate::core::context::Context::Application(_) = $ctx {
+        if let $crate::core::Context::Application(_) = $ctx {
             $ctx.send(
                 poise::CreateReply::default().embed(
                     serenity::all::CreateEmbed::new()
@@ -41,7 +41,7 @@ macro_rules! say {
     }};
 
     ($ctx:expr, $msg:expr, prefix_only) => {{
-        if let $crate::core::context::Context::Prefix(_) = $ctx {
+        if let $crate::core::Context::Prefix(_) = $ctx {
             $ctx.say($msg).await?;
         }
     }};

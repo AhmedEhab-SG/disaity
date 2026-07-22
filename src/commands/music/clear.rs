@@ -2,11 +2,7 @@ use poise::command;
 
 use crate::{
     commands::checks::{not_empty_queue, same_vc},
-    core::{
-        context::{Context, ContextExt},
-        errors::Error,
-        macros::say,
-    },
+    core::{Context, ContextExt, Error, macros::say},
 };
 
 #[command(

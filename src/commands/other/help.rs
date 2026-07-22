@@ -15,11 +15,8 @@ use serenity::{
 };
 
 use crate::{
-    config::{
-        characters::Character,
-        commands::{Category, Command},
-    },
-    core::{context::Context, errors::Error},
+    config::{Category, Character, Command},
+    core::{Context, Error},
 };
 
 #[command(

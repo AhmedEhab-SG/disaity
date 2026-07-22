@@ -1,10 +1,6 @@
 use poise::command;
 
-use crate::core::{
-    context::{Context, ContextExt},
-    errors::Error,
-    macros::say,
-};
+use crate::core::{Context, ContextExt, Error, macros::say};
 
 #[command(
     slash_command,
@@ -22,7 +18,13 @@ pub async fn clear_prayer(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx_utils.start_loading_react().await?;
 
-    let mut prayer_sub = ctx.data().subscription.prayer_subscription.write().await;
+    let mut prayer_sub = ctx
+        .data()
+        .registry
+        .subscription
+        .prayer_subscription
+        .write()
+        .await;
 
     let removed = prayer_sub.remove_subscription(guild_id);
 

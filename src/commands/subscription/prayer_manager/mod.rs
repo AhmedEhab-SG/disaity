@@ -3,8 +3,11 @@ use std::{collections::HashMap, fs, path::Path};
 use serde::{Deserialize, Serialize};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
 
-pub mod clear_prayer;
-pub mod prayer;
+mod clear_prayer;
+mod prayer;
+
+pub use clear_prayer::clear_prayer;
+pub use prayer::prayer;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PrayerSubscriptionInfo {

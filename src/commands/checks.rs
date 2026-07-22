@@ -1,4 +1,4 @@
-use crate::core::{context::Context, errors::Error};
+use crate::core::{Context, Error};
 
 pub async fn dm_with_auth(ctx: Context<'_>) -> Result<bool, Error> {
     if ctx.guild_id().is_some() && ctx.author().id != ctx.data().config.info_registry.owner.id {
