@@ -9,7 +9,7 @@ use poise::{Framework, FrameworkOptions, PrefixFrameworkOptions, builtins};
 
 use songbird::SerenityInit;
 
-use crate::handlers::{prayer::start_prayer_loop, ready::start_status_loop};
+use crate::handlers::{start_prayer_loop, start_status_loop};
 pub use bin::BinariesExt;
 pub use context::{Context, ContextExt, Data};
 pub use errors::{Error, on_error_handler};

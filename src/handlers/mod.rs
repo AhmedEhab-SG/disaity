@@ -1,12 +1,15 @@
-pub mod idle;
-pub mod playing;
-pub mod prayer;
-pub mod ready;
+mod idle;
+mod playing;
+mod prayer;
+mod ready;
 
 use serenity::all::{Cache, ChannelId, GuildId, Http};
 use songbird::{Call, Songbird};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
+
+pub use prayer::start_prayer_loop;
+pub use ready::start_status_loop;
 
 use crate::handlers::{idle::register_idle_timeout, playing::register_playing_info};
 
