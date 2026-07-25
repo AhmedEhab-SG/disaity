@@ -1,4 +1,4 @@
-use gemini_rust::{Gemini, Tool};
+use gemini_rust::{Gemini, InteractionContent, InteractionThinkingLevel, Step};
 use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
@@ -127,34 +127,43 @@ pub async fn ask(
 
     // could use a clean up
     let build = |agent: &Gemini, history: &Vec<(bool, String)>| {
-        let mut req = agent
-            .generate_content()
-            .with_dynamic_thinking()
-            .with_tool(Tool::google_search())
-            .with_system_instruction(character.personality.clone());
+        let mut steps: Vec<Step> = history
+            .iter()
+            .map(|(is_bot, content)| {
+                if *is_bot {
+                    Step::ModelOutput {
+                        content: vec![InteractionContent::text(content.as_str())],
+                        error: None,
+                    }
+                } else {
+                    Step::UserInput {
+                        content: vec![InteractionContent::text(content.as_str())],
+                    }
+                }
+            })
+            .collect();
 
-        for (is_bot, content) in history {
-            if *is_bot {
-                req = req.with_model_message(content);
-            } else {
-                req = req.with_user_message(content);
-            }
-        }
+        steps.push(Step::UserInput {
+            content: vec![InteractionContent::text(chat.trim())],
+        });
 
-        req = req.with_user_message(chat.trim());
-
-        req
+        agent
+            .create_interaction()
+            .with_thinking_level(InteractionThinkingLevel::High)
+            .with_google_search()
+            .with_system_instruction(character.personality.clone())
+            .with_step_input(steps)
     };
 
     let res_text = match build(&data.ai.agent, &history).execute().await {
-        Ok(res) => res.text(),
+        Ok(res) => res.output_text(),
         Err(e) if e.to_string().contains("503") || e.to_string().contains("UNAVAILABLE") => {
             tracing::warn!("Gemini primary model busy (503), falling back to flash-lite");
 
             build(&data.ai.fallback_agent, &history)
                 .execute()
                 .await?
-                .text()
+                .output_text()
         }
         Err(e_rest) => return Err(e_rest.into()),
     };
