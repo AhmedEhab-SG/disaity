@@ -60,3 +60,43 @@ impl Data {
         Self::default()
     }
 }
+
+#[derive(Default)]
+pub struct DataBuilder {
+    config: Option<Config>,
+    http: Option<Client>,
+}
+
+impl DataBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_config(mut self, config: Config) -> Self {
+        self.config = Some(config);
+        self
+    }
+
+    pub fn with_http(mut self, http: Client) -> Self {
+        self.http = Some(http);
+        self
+    }
+
+    pub fn build(self) -> Data {
+        let config = self.config.unwrap_or_default();
+        let agent = Gemini::new(&config.env.gemini_api_key).expect("failed to connect to gemini");
+        let fallback_agent =
+            Gemini::with_model(&config.env.gemini_api_key, Model::Gemini25FlashLite)
+                .expect("failed to connect to gemini");
+
+        Data {
+            http: self.http.unwrap_or_default(),
+            ai: AiAgent {
+                agent,
+                fallback_agent,
+            },
+            subscription: Subscription::new(&config.env.db_path),
+            config,
+        }
+    }
+}
