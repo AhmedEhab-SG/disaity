@@ -7,8 +7,7 @@ use serenity::all::{
 
 use crate::{
     commands::checks::{not_empty_queue, same_vc},
-    core::{Context, ContextExt, Error},
-    handlers::SongMetadata,
+    core::{Context, ContextExt, Error, SongMetadata},
 };
 
 #[command(

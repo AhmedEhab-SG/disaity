@@ -20,7 +20,6 @@ pub async fn clear_prayer(ctx: Context<'_>) -> Result<(), Error> {
 
     let mut prayer_sub = ctx
         .data()
-        .registry
         .subscription
         .prayer_subscription
         .write()

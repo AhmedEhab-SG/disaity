@@ -6,7 +6,7 @@ use serenity::builder::CreateAllowedMentions;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::commands::Subscription;
+use crate::core::state::Subscription;
 
 #[derive(Deserialize)]
 struct AladhanResponse {

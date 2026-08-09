@@ -4,9 +4,8 @@ use reqwest::Client;
 use serenity::async_trait;
 
 use crate::{
-    commands::CommandsRegistry,
     config::Config,
-    core::{errors::Error, utils::Utils},
+    core::{errors::Error, state::Subscription, utils::Utils},
 };
 
 pub type Context<'a> = BaseContext<'a, Data, Error>;
@@ -20,7 +19,7 @@ pub struct Data {
     pub http: Client,
     pub ai: AiAgent,
     pub config: Config,
-    pub registry: CommandsRegistry,
+    pub subscription: Subscription,
 }
 
 #[async_trait]
@@ -43,7 +42,7 @@ impl Default for Data {
             Gemini::with_model(&config.env.gemini_api_key, Model::Gemini25FlashLite)
                 .expect("failed to connect to gemini");
         let http = Client::new();
-        let registry = CommandsRegistry::new(&config.commands_registry, &config.env.db_path);
+        let subscription = Subscription::new(&config.env.db_path);
 
         Self {
             http,
@@ -52,7 +51,7 @@ impl Default for Data {
                 fallback_agent,
             },
             config,
-            registry,
+            subscription,
         }
     }
 }

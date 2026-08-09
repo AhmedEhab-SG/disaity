@@ -1,4 +1,4 @@
-use crate::handlers::SongMetadata;
+use crate::core::voice::SongMetadata;
 use serenity::{
     all::{
         ChannelId, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage, Http,

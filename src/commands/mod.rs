@@ -8,7 +8,6 @@ use chat::ask;
 use music::{clear, jump, pause, play, queue, repeat, resume, seek, shuffle, skip, stop, volume};
 use other::{help, join, leave};
 
-pub use subscription::Subscription;
 use subscription::{clear_prayer, prayer};
 
 use poise::Command;
@@ -22,11 +21,10 @@ use crate::{
 #[derive(Debug)]
 pub struct CommandsRegistry {
     pub commands: Vec<Command<Data, Error>>,
-    pub subscription: Subscription,
 }
 
 impl CommandsRegistry {
-    pub fn new(cmds_registery: &CommandRegistry, db_path: &String) -> Self {
+    pub fn new(cmds_registery: &CommandRegistry) -> Self {
         let commands = vec![
             ask(),
             clear(),
@@ -84,11 +82,6 @@ impl CommandsRegistry {
         })
         .collect();
 
-        let subscription = Subscription::new(db_path);
-
-        Self {
-            commands,
-            subscription,
-        }
+        Self { commands }
     }
 }

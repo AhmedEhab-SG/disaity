@@ -11,8 +11,7 @@ use tokio::{process::Command, sync::Mutex};
 
 use crate::{
     config::Provider,
-    core::{context::Context, errors::Error},
-    handlers::{SongMetadata, register_all},
+    core::{context::Context, errors::Error, voice::{SongMetadata, register_all}},
 };
 
 pub struct Utils<'a> {

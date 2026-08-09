@@ -4,10 +4,7 @@ use serenity::{
     model::id::{ChannelId, RoleId},
 };
 
-use crate::{
-    commands::subscription::prayer_manager::PrayerSubscriptionInfo,
-    core::{Context, ContextExt, Error, macros::say},
-};
+use crate::core::{Context, ContextExt, Error, macros::say, state::PrayerSubscriptionInfo};
 
 #[command(
     slash_command,
@@ -58,7 +55,6 @@ pub async fn prayer(
 
     let mut prayer_sub = ctx
         .data()
-        .registry
         .subscription
         .prayer_subscription
         .write()
