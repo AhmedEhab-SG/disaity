@@ -1,6 +1,6 @@
 <div align=center>
-    <img src="./logo.png" width="200" alt="ferris-logo" />
- 
+    <img src="./assets/logo.png" width="200" alt="ferris-logo" />
+
 <h3>Disaity</h3>
 
 <p>

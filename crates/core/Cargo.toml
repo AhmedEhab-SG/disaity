@@ -1,0 +1,17 @@
+[package]
+name = "disaity-core"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+disaity-config.workspace = true
+serenity.workspace = true
+poise.workspace = true
+songbird.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+reqwest.workspace = true
+gemini-rust.workspace = true
+scraper.workspace = true
+serde.workspace = true
+serde_json.workspace = true

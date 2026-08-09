@@ -1,0 +1,15 @@
+[package]
+name = "disaity-commands"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+disaity-core.workspace = true
+disaity-config.workspace = true
+poise.workspace = true
+serenity.workspace = true
+songbird.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+gemini-rust.workspace = true
+rand.workspace = true

@@ -1,0 +1,12 @@
+[package]
+name = "disaity-handlers"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+disaity-core.workspace = true
+serenity.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+chrono.workspace = true
+serde.workspace = true

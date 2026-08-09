@@ -1,0 +1,27 @@
+[package]
+name = "disaity"
+edition.workspace = true
+version.workspace = true
+repository.workspace = true
+build = "build.rs"
+
+[[bin]]
+name = "disaity"
+path = "src/main.rs"
+
+[dependencies]
+disaity-core.workspace = true
+disaity-config.workspace = true
+disaity-commands.workspace = true
+disaity-handlers.workspace = true
+songbird.workspace = true
+serenity.workspace = true
+poise.workspace = true
+tokio.workspace = true
+tracing-subscriber = "0.3.23"
+
+[build-dependencies]
+ureq = "3.3.0"
+
+[package.metadata.dist]
+include = ["../../bin/", "../../.env.example", "../../README.md"]
