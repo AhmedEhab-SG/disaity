@@ -26,7 +26,7 @@ pub struct InfoRegistry {
 
 impl Default for InfoRegistry {
     fn default() -> Self {
-        let json_data = include_str!("../config/info.json");
+        let json_data = include_str!("../default/info.json");
         serde_json::from_str(json_data).expect("Critical Error: info.json is malformed!")
     }
 }

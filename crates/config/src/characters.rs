@@ -23,7 +23,7 @@ pub struct CharacterRegistry {
 
 impl Default for CharacterRegistry {
     fn default() -> Self {
-        let yaml_data = include_str!("../config/characters.yaml");
+        let yaml_data = include_str!("../default/characters.yaml");
         serde_yaml::from_str(yaml_data).expect("Critical Error: character.yaml is malformed!")
     }
 }

@@ -75,7 +75,7 @@ pub struct CommandRegistry {
 
 impl Default for CommandRegistry {
     fn default() -> Self {
-        let json_data = include_str!("../config/commands.json");
+        let json_data = include_str!("../default/commands.json");
         let commands: HashMap<Command, CommandConfig> =
             serde_json::from_str(json_data).expect("Critical Error: commands.json is malformed!");
 
