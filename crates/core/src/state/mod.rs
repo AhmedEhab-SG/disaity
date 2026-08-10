@@ -1,3 +1,4 @@
+mod db;
 mod prayer;
 
 use std::sync::Arc;

@@ -16,3 +16,4 @@ gemini-rust.workspace = true
 scraper.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sqlx.workspace = true

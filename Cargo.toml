@@ -23,6 +23,10 @@ dotenv = "0.15.0"
 chrono = "0.4.45"
 rand = "0.10.2"
 tracing = "0.1.44"
+sqlx = { version = "0.9.0", default-features = false, features = [
+  "runtime-tokio",
+  "sqlite",
+] }
 # async / net
 tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
 reqwest = { version = "0.12.28", features = ["json", "rustls-tls"] }
