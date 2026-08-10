@@ -15,6 +15,7 @@ disaity-config.workspace = true
 disaity-commands.workspace = true
 disaity-handlers.workspace = true
 songbird.workspace = true
+symphonia.workspace = true
 serenity.workspace = true
 poise.workspace = true
 tokio.workspace = true
