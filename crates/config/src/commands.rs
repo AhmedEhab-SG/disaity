@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use std::{collections::HashMap, fmt::Debug, str::FromStr};
-use strum::{Display, EnumString};
+use strum::{Display, EnumString, VariantArray};
 
 #[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString)]
 #[serde(rename_all = "snake_case")]
@@ -26,7 +26,7 @@ pub enum Command {
     ClearPrayer,
 }
 
-#[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString)]
+#[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString, VariantArray)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Category {

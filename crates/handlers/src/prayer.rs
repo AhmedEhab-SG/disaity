@@ -1,12 +1,31 @@
+use std::{collections::HashMap, time::Duration};
+
 use chrono::{Local, Timelike};
 use reqwest::Client;
 use serde::Deserialize;
-use serenity::all::{Context as SerenityContext, CreateMessage};
-use serenity::builder::CreateAllowedMentions;
-use std::collections::HashMap;
-use std::time::Duration;
+use serenity::{
+    all::{Context as SerenityContext, CreateMessage},
+    async_trait,
+    builder::CreateAllowedMentions,
+};
 
 use disaity_core::state::Subscription;
+use disaity_core::{Error, Handler, HandlerCx};
+
+pub struct PrayerHandler;
+
+#[async_trait]
+impl Handler for PrayerHandler {
+    async fn setup(&self, cx: &HandlerCx<'_>) -> Result<(), Error> {
+        // Same Arc the `prayer` command mutates → runtime subs reach the loop.
+        start_prayer_loop(
+            cx.serenity.clone(),
+            cx.data.subscription.clone(),
+            cx.data.http.clone(),
+        );
+        Ok(())
+    }
+}
 
 #[derive(Deserialize)]
 struct AladhanResponse {
@@ -18,7 +37,7 @@ struct PrayerData {
     timings: HashMap<String, String>,
 }
 
-pub fn start_prayer_loop(ctx: SerenityContext, subscription: Subscription, http: Client) {
+fn start_prayer_loop(ctx: SerenityContext, subscription: Subscription, http: Client) {
     tokio::spawn(async move {
         let mut last_notified_minute = 99;
 

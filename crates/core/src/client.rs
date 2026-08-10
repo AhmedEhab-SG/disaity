@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use poise::{Command, Framework, FrameworkOptions, PrefixFrameworkOptions, builtins, framework};
+use poise::{Command, Framework, FrameworkOptions, PrefixFrameworkOptions, builtins};
 use serenity::{
     all::{ClientBuilder, Context as SerenityContext, prelude::GatewayIntents},
     async_trait,

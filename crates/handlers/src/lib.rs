@@ -1,5 +1,5 @@
 mod prayer;
-mod ready;
+mod status;
 
-pub use prayer::start_prayer_loop;
-pub use ready::start_status_loop;
+pub use prayer::PrayerHandler;
+pub use status::StatusHandler;

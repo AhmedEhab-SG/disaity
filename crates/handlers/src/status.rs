@@ -1,8 +1,20 @@
-use serenity::{all::ActivityData, gateway::ShardManager};
+use serenity::{all::ActivityData, async_trait, gateway::ShardManager};
 use std::{sync::Arc, time::Duration};
 use tokio::time::sleep;
 
-pub fn start_status_loop(shard_manager: Arc<ShardManager>) {
+use disaity_core::{Error, Handler, HandlerCx};
+
+pub struct StatusHandler;
+
+#[async_trait]
+impl Handler for StatusHandler {
+    async fn setup(&self, cx: &HandlerCx<'_>) -> Result<(), Error> {
+        start_status_loop(cx.shared_manager.clone());
+        Ok(())
+    }
+}
+
+fn start_status_loop(shard_manager: Arc<ShardManager>) {
     tokio::spawn(async move {
         // Map your JSON array directly into Serenity ActivityData
         let statuses = vec![

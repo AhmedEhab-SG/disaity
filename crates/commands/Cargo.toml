@@ -13,3 +13,4 @@ tokio.workspace = true
 tracing.workspace = true
 gemini-rust.workspace = true
 rand.workspace = true
+strum.workspace = true
