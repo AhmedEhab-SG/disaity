@@ -18,7 +18,6 @@ pub struct Permission {
 #[derive(Deserialize, Debug)]
 pub struct InfoRegistry {
     pub prefix: String,
-    pub client_id: u64,
     pub owner: Owner,
     pub permission: Permission,
     pub invite_ul: String,
