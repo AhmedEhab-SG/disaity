@@ -33,17 +33,17 @@ impl<'a> ContextExt<'a> for Context<'a> {
     }
 }
 
-impl Default for Data {
-    fn default() -> Self {
+impl Data {
+    pub async fn new() -> Result<Self, Error> {
         let config = Config::new();
         let agent = Gemini::new(&config.env.gemini_api_key).expect("failed to connect to gemini");
         let fallback_agent =
             Gemini::with_model(&config.env.gemini_api_key, Model::Gemini25FlashLite)
                 .expect("failed to connect to gemini");
         let http = Client::new();
-        let subscription = Subscription::new(&config.env.db_path);
+        let subscription = Subscription::connect(&config.env.db_path).await?;
 
-        Self {
+        Ok(Self {
             http,
             ai: AiAgent {
                 agent,
@@ -51,13 +51,7 @@ impl Default for Data {
             },
             config,
             subscription,
-        }
-    }
-}
-
-impl Data {
-    pub fn new() -> Self {
-        Self::default()
+        })
     }
 }
 
@@ -82,21 +76,21 @@ impl DataBuilder {
         self
     }
 
-    pub fn build(self) -> Data {
+    pub async fn build(self) -> Result<Data, Error> {
         let config = self.config.unwrap_or_default();
         let agent = Gemini::new(&config.env.gemini_api_key).expect("failed to connect to gemini");
         let fallback_agent =
             Gemini::with_model(&config.env.gemini_api_key, Model::Gemini25FlashLite)
                 .expect("failed to connect to gemini");
 
-        Data {
+        Ok(Data {
             http: self.http.unwrap_or_default(),
             ai: AiAgent {
                 agent,
                 fallback_agent,
             },
-            subscription: Subscription::new(&config.env.db_path),
+            subscription: Subscription::connect(&config.env.db_path).await?,
             config,
-        }
+        })
     }
 }

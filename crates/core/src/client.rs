@@ -91,7 +91,10 @@ impl Client {
             data,
         } = self;
 
-        let data = data.unwrap_or_else(|| DataBuilder::new().build());
+        let data = match data {
+            Some(d) => d,
+            None => DataBuilder::new().build().await?,
+        };
 
         let framework = Framework::builder()
             .options(FrameworkOptions {

@@ -8,7 +8,7 @@ async fn main() -> Result<(), Error> {
 
     BinariesExt::load();
 
-    let data = DataBuilder::new().build();
+    let data = DataBuilder::new().build().await?;
     let token = data.config.env.client_token.clone();
     let prefix = data.config.info_registry.prefix.clone();
     let cmd_factory = CommandFactory::new(&data.config.commands_registry);

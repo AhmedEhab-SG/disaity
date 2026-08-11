@@ -1,6 +1,8 @@
 use std::fs::create_dir_all;
 
-use sqlx::{Error, SqlitePool, sqlite::SqliteConnectOptions};
+use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
+
+use crate::Error;
 
 pub struct Database {
     pub pool: SqlitePool,
@@ -8,7 +10,7 @@ pub struct Database {
 
 impl Database {
     pub async fn connect(db_path: &str) -> Result<Self, Error> {
-        create_dir_all(db_path).ok();
+        create_dir_all(db_path)?;
         let file = format!("{db_path}/disaity.db");
 
         let opts = SqliteConnectOptions::new()

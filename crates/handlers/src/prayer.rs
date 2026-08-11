@@ -47,9 +47,13 @@ fn start_prayer_loop(ctx: SerenityContext, subscription: Subscription, http: Cli
 
             if current_minute != last_notified_minute {
                 let current_time_str = now.format("%H:%M").to_string();
-                let subs_guard = subscription.prayer_subscription.read().await;
+                let subscriptions = subscription
+                    .prayer_subscription
+                    .get_all()
+                    .await
+                    .unwrap_or_default();
 
-                for sub in subs_guard.subscription.values() {
+                for sub in subscriptions {
                     let url = format!(
                         "https://api.aladhan.com/v1/timingsByCity?city={}&country={}&method=5",
                         sub.city, sub.country

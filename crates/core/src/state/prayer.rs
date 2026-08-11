@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
-use sqlx::{Error, Row, SqlitePool, sqlite::SqliteRow};
+use sqlx::{Row, SqlitePool, sqlite::SqliteRow};
+
+use crate::Error;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PrayerSubscriptionInfo {
@@ -64,7 +66,7 @@ impl PrayerSubscription {
 
     pub async fn get(&self, guild_id: GuildId) -> Result<Option<PrayerSubscriptionInfo>, Error> {
         let row = sqlx::query(
-            "SELECT channel_id, role_id, country, city FROM prayer_subscription WHERE guild_id = ?",
+            "SELECT channel_id, role_id, country, city FROM prayer_subscriptions WHERE guild_id = ?",
         )
         .bind(guild_id.to_string())
         .fetch_optional(&self.pool)
@@ -78,46 +80,34 @@ impl PrayerSubscription {
         guild_id: GuildId,
         info: PrayerSubscriptionInfo,
     ) -> Result<(), Error> {
-        sqlx::query(r#""#);
-        todo!()
+        sqlx::query(
+            r#"
+            INSERT INTO prayer_subscriptions (guild_id, channel_id, role_id, city, country)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(guild_id) DO UPDATE SET
+                channel_id = excluded.channel_id,
+                role_id = excluded.role_id,
+                city = excluded.city,
+                country = excluded.country
+            "#,
+        )
+        .bind(guild_id.get().to_string())
+        .bind(info.channel_id.get().to_string())
+        .bind(info.role_id.map(|r| r.get().to_string()))
+        .bind(&info.city)
+        .bind(&info.country)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
     }
 
-    pub async fn delete() {
-        todo!()
-    }
+    pub async fn delete(&self, guild_id: GuildId) -> Result<bool, Error> {
+        let res = sqlx::query("DELETE FROM prayer_subscriptions WHERE guild_id = ?")
+            .bind(guild_id.get().to_string())
+            .execute(&self.pool)
+            .await?;
 
-    // fn save(&self) {
-    //     let tmp = format!("{}.tmp", self.path);
-    //     match serde_json::to_string_pretty(&self) {
-    //         Ok(json) => {
-    //             if let Err(e) = fs::write(&tmp, &json) {
-    //                 tracing::error!("Failed to write tmp file: {e}");
-    //                 return;
-    //             }
-    //
-    //             if let Err(e) = fs::rename(&tmp, &self.path) {
-    //                 tracing::error!("Failed to rename tmp file: {e}");
-    //             }
-    //         }
-    //
-    //         Err(e) => tracing::error!("Failed to serialize prayer subscriptions: {e}"),
-    //     }
-    // }
-    //
-    // pub fn get_subscription(&self, guild_id: GuildId) -> Option<&PrayerSubscriptionInfo> {
-    //     self.subscription.get(&guild_id)
-    // }
-    //
-    // pub fn add_subscription(&mut self, guild_id: GuildId, info: PrayerSubscriptionInfo) {
-    //     self.subscription.insert(guild_id, info);
-    //     self.save();
-    // }
-    //
-    // pub fn remove_subscription(&mut self, guild_id: GuildId) -> Option<PrayerSubscriptionInfo> {
-    //     let removed = self.subscription.remove(&guild_id);
-    //     if removed.is_some() {
-    //         self.save();
-    //     }
-    //     removed
-    // }
+        Ok(res.rows_affected() > 0)
+    }
 }

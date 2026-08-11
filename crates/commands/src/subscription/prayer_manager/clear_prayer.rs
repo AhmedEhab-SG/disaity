@@ -18,13 +18,16 @@ pub async fn clear_prayer(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx_utils.start_loading_react().await?;
 
-    let mut prayer_sub = ctx.data().subscription.prayer_subscription.write().await;
-
-    let removed = prayer_sub.remove_subscription(guild_id);
+    let removed = ctx
+        .data()
+        .subscription
+        .prayer_subscription
+        .delete(guild_id)
+        .await?;
 
     ctx_utils.end_loading_react().await?;
 
-    if removed.is_some() {
+    if removed {
         say!(
             ctx,
             "❌ Successfully disabled and cleared prayer time notifications for this server."

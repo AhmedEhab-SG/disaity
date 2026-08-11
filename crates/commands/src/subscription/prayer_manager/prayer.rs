@@ -53,17 +53,19 @@ pub async fn prayer(
 
     ctx_utils.start_loading_react().await?;
 
-    let mut prayer_sub = ctx.data().subscription.prayer_subscription.write().await;
-
-    prayer_sub.add_subscription(
-        guild.id,
-        PrayerSubscriptionInfo {
-            channel_id,
-            role_id,
-            city: city.trim().to_string(),
-            country: country.trim().to_string(),
-        },
-    );
+    ctx.data()
+        .subscription
+        .prayer_subscription
+        .create(
+            guild.id,
+            PrayerSubscriptionInfo {
+                channel_id,
+                role_id,
+                city: city.trim().to_string(),
+                country: country.trim().to_string(),
+            },
+        )
+        .await?;
 
     ctx_utils.end_loading_react().await?;
 
