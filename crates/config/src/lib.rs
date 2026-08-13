@@ -3,6 +3,8 @@ mod commands;
 mod env;
 mod info;
 mod interactions;
+mod persona;
+mod utils;
 
 pub use characters::{Character, CharacterRegistry};
 pub use commands::{Category, Command, CommandRegistry};

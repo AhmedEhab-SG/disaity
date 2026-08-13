@@ -1,0 +1,9 @@
+prefix = "-"
+
+permissions = ["SendMessages", "Administrator", "Connect"]
+
+[owner]
+username = "Goblo"
+id = 291260815716253696
+url = "https://ahmedehab-sg.com/"
+icon_url = "https://i.ibb.co/hFNhYk2/AES-solid-colors-512.png"
