@@ -4,29 +4,21 @@ use serde::Deserialize;
 pub struct Owner {
     pub username: String,
     pub id: u64,
-    pub url: String,
-    pub icon_url: String,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct Permission {
-    pub send_message: String,
-    pub admin: String,
-    pub voice_join: String,
+    pub url: Option<String>,
+    pub icon_url: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct InfoRegistry {
     pub prefix: String,
     pub owner: Owner,
-    pub permission: Permission,
-    pub invite_ul: String,
+    pub permissions: Vec<String>,
 }
 
 impl Default for InfoRegistry {
     fn default() -> Self {
-        let json_data = include_str!("../default/info.json");
-        serde_json::from_str(json_data).expect("Critical Error: info.json is malformed!")
+        toml::from_str(include_str!("../default/info.toml"))
+            .expect("Critical Error: info.json is malformed!")
     }
 }
 
