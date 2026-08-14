@@ -32,12 +32,12 @@ macro_rules! say {
     }};
 
     ($ctx:expr, $msg:expr) => {{
-        let color = $ctx.data().config.interactions_registry.colors.action;
+        let color = $ctx.data().config.persona.interactions.colors.accent;
         $crate::say!($ctx, $msg, color = color);
     }};
 
     ($ctx:expr, $msg:expr, application_only) => {{
-        let color = $ctx.data().config.interactions_registry.colors.action;
+        let color = $ctx.data().config.persona.interactions.colors.accent;
         $crate::say!($ctx, $msg, application_only, color = color);
     }};
 

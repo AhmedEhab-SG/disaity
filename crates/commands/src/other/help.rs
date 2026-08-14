@@ -14,7 +14,7 @@ use serenity::{
     futures::StreamExt,
 };
 
-use disaity_config::{Category, Character, Command};
+use disaity_config::{Category, Command};
 use disaity_core::{Context, Error};
 
 #[command(
@@ -29,12 +29,9 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let serenity_context = ctx.serenity_context();
     let ctx_data = ctx.data();
 
-    let character = ctx_data
-        .config
-        .characters_registry
-        .get_character(&Character::Emilia);
+    let persona = &ctx_data.config.persona;
 
-    let interactions_registry = &ctx_data.config.interactions_registry;
+    let interactions = persona.interactions;
     let built_quotes = &interactions_registry.messages.built;
 
     let commands_registry = &ctx_data.config.commands_registry;
@@ -75,20 +72,20 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     )
     .placeholder("Select a command for more information ⌘");
 
-    let embed = CreateEmbed::new()
+    let mut embed = CreateEmbed::new()
         .title("Hello,")
-        .description(&character.summary)
+        .description(&persona.summary)
         .thumbnail(&avatar_url)
-        .color(interactions_registry.colors.help)
-        .author(CreateEmbedAuthor::new(author_name).icon_url(avatar_url))
-        .footer(
-            CreateEmbedFooter::new(
-                built_quotes
-                    .choose(&mut rand::rng())
-                    .unwrap_or(&"".to_string()),
-            )
-            .icon_url(&ctx_data.config.info_registry.owner.icon_url),
-        );
+        .color(persona.interactions.colors.primary)
+        .author(CreateEmbedAuthor::new(author_name).icon_url(avatar_url));
+    // .footer(
+    //     CreateEmbedFooter::new(
+    //         built_quotes
+    //             .choose(&mut rand::rng())
+    //             .unwrap_or(&"".to_string()),
+    //     )
+    //     .icon_url(&ctx_data.config.info.owner.icon_url),
+    // );
 
     let reply = ctx
         .send(
@@ -114,7 +111,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
 
         let category = Category::from_str(selected_cat)?;
         let cat_commands = commands_registry.get_cmds_from_cat(&category);
-        let prefix = &ctx_data.config.info_registry.prefix;
+        let prefix = &ctx_data.config.info.prefix;
 
         interaction
             .create_response(
@@ -158,7 +155,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                                         .collect::<Vec<_>>()
                                         .join("\n")
                                 ))
-                                .colour(interactions_registry.colors.action),
+                                .colour(persona.interactions.colors.accent),
                         )
                         .ephemeral(true),
                 ),

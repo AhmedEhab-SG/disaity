@@ -3,7 +3,7 @@ use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
 use crate::checks::dm_with_auth;
-use disaity_config::{Character, Command, Config};
+use disaity_config::{Command, Config};
 use disaity_core::{Context, Error};
 
 fn get_history(
@@ -12,7 +12,7 @@ fn get_history(
     user_id: UserId,
     config: &Config,
 ) -> Vec<(bool, String)> {
-    let prefix = &config.info_registry.prefix;
+    let prefix = &config.info.prefix;
     let keys = &config.commands_registry.get_command(&Command::Ask).keys;
 
     let mut history: Vec<(bool, String)> = messages
@@ -118,10 +118,7 @@ pub async fn ask(
     };
 
     let history = get_history(messages, current_msg_id, ctx.author().id, &data.config);
-    let character = data
-        .config
-        .characters_registry
-        .get_character(&Character::Emilia);
+    let persona = &data.config.persona;
 
     // could use a clean up
     let build = |agent: &Gemini, history: &Vec<(bool, String)>| {
@@ -149,7 +146,7 @@ pub async fn ask(
             .create_interaction()
             .with_thinking_level(InteractionThinkingLevel::High)
             .with_google_search()
-            .with_system_instruction(character.personality.clone())
+            .with_system_instruction(persona.personality.system.clone())
             .with_step_input(steps)
     };
 

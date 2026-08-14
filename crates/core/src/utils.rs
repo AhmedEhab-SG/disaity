@@ -570,12 +570,7 @@ impl ProviderUtils for Utils<'_> {
                 .take()
                 .unwrap_or_else(|| "Unknown Author".to_string()),
 
-            provider_logo_url: self
-                .ctx
-                .data()
-                .config
-                .interactions_registry
-                .get_logo(provider_logo),
+            provider_logo_url: self.ctx.data().config.assets.get_logo(provider_logo),
         };
 
         let track = Track::new_with_data(src.into(), Arc::new(info.clone()));

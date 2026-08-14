@@ -41,7 +41,7 @@ pub async fn play(
         .await
         .map_err(|_|format!( "The playlist or song took too long to load ({timeout_duration}s limit). Try a shorter query!"))??;
 
-    if ctx.author().id != ctx.data().config.info_registry.owner.id {
+    if ctx.author().id != ctx.data().config.info.owner.id {
         if call_lock.queue().len() <= 0 {
             call_lock.deafen(true).await?;
         }
