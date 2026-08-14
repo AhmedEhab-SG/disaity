@@ -18,3 +18,29 @@ pub trait Merge {
         }
     }
 }
+
+// Error wrapper
+#[derive(Debug)]
+pub enum ConfigError {
+    Io(std::io::Error),
+    TomlDe(toml::de::Error),
+    TomlSer(toml::ser::Error),
+}
+
+impl From<std::io::Error> for ConfigError {
+    fn from(e: std::io::Error) -> Self {
+        Self::Io(e)
+    }
+}
+
+impl From<toml::de::Error> for ConfigError {
+    fn from(e: toml::de::Error) -> Self {
+        Self::TomlDe(e)
+    }
+}
+
+impl From<toml::ser::Error> for ConfigError {
+    fn from(e: toml::ser::Error) -> Self {
+        Self::TomlSer(e)
+    }
+}

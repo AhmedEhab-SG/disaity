@@ -8,14 +8,14 @@ mod utils;
 pub use assets::{Assets, Provider};
 pub use commands::{Category, Command, CommandRegistry};
 use env::Env;
-use info::InfoRegistry;
+use info::Info;
 pub use persona::{Persona, Preset};
 
 #[derive(Default, Debug)]
 pub struct Config {
     pub persona: Persona,
     pub commands_registry: CommandRegistry,
-    pub info_registry: InfoRegistry,
+    pub info: Info,
     pub assets: Assets,
     pub env: Env,
 }
@@ -28,5 +28,5 @@ impl Config {
 
 pub struct ConfigBuilder {
     pub persona: Option<Persona>,
-    pub info: Option<InfoRegistry>,
+    pub info: Option<Info>,
 }

@@ -1,8 +1,9 @@
 use std::{fs, path::Path};
 
 use serde::{Deserialize, Serialize};
+use toml::Value;
 
-use crate::utils::Merge;
+use crate::utils::{ConfigError, Merge};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Persona {
@@ -82,27 +83,6 @@ pub enum Preset {
     Rem,
 }
 
-// Error wrapper
-#[derive(Debug)]
-pub enum ConfigError {
-    Io(std::io::Error),
-    Toml(toml::de::Error),
-}
-
-impl From<std::io::Error> for ConfigError {
-    fn from(e: std::io::Error) -> Self {
-        Self::Io(e)
-    }
-}
-
-impl From<toml::de::Error> for ConfigError {
-    fn from(e: toml::de::Error) -> Self {
-        Self::Toml(e)
-    }
-}
-
-impl Merge for Preset {}
-
 impl Preset {
     pub fn raw(self) -> &'static str {
         match self {
@@ -118,26 +98,24 @@ impl Default for Persona {
     }
 }
 
+impl Merge for Persona {}
+
 impl Persona {
     pub fn new(base: Preset) -> Self {
         toml::from_str(base.raw()).expect("malformed default persona")
     }
 
-    pub fn to_raw(&self) -> Result<String, toml::ser::Error> {
-        toml::to_string(self)
-    }
-
     pub fn from_default_over(self, path: &Path) -> Result<Self, ConfigError> {
-        let mut default: toml::Value = self.to_raw().expect("malformed default persona").into();
-        let user_value: toml::Value = toml::from_str(&fs::read_to_string(path)?)?;
-        Preset::safe_merge(&mut default, user_value);
+        let mut default = Value::try_from(&self)?;
+        let user_value: Value = toml::from_str(&fs::read_to_string(path)?)?;
+        Self::safe_merge(&mut default, user_value);
         Ok(default.try_into()?)
     }
 
     pub fn from_file_over(base: Preset, path: &Path) -> Result<Self, ConfigError> {
-        let mut base_val: toml::Value = toml::from_str(base.raw())?;
-        let user_val: toml::Value = toml::from_str(&fs::read_to_string(path)?)?;
-        Preset::safe_merge(&mut base_val, user_val);
+        let mut base_val: Value = toml::from_str(base.raw())?;
+        let user_val: Value = toml::from_str(&fs::read_to_string(path)?)?;
+        Self::safe_merge(&mut base_val, user_val);
         Ok(base_val.try_into()?)
     }
 }
