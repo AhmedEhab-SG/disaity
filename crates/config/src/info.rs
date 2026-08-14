@@ -13,7 +13,7 @@ pub struct Owner {
     pub icon_url: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Serialize)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 pub struct Info {
     pub prefix: String,
     pub owner: Owner,
