@@ -1,5 +1,6 @@
 use std::{fs, path::Path};
 
+use rand::seq::IndexedRandom;
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
@@ -7,7 +8,6 @@ use crate::utils::{ConfigError, Merge};
 
 #[derive(Deserialize, Debug, Clone, Serialize)]
 pub struct Owner {
-    pub username: String,
     pub id: u64,
     pub url: Option<String>,
     pub icon_url: Option<String>,
@@ -17,6 +17,7 @@ pub struct Owner {
 pub struct Info {
     pub prefix: String,
     pub owner: Owner,
+    pub signature: Vec<String>,
     pub permissions: Vec<String>,
 }
 
@@ -32,6 +33,12 @@ impl Merge for Info {}
 impl Info {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn signature_for(&self, username: &str) -> Option<String> {
+        self.signature
+            .choose(&mut rand::rng())
+            .map(|s| s.replace("{username}", username))
     }
 
     pub fn from_file_over(self, path: &Path) -> Result<Info, ConfigError> {

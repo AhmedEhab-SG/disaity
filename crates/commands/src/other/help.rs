@@ -4,7 +4,6 @@ use poise::{
     CreateReply, command,
     serenity_prelude::{CreateEmbed, CreateEmbedFooter},
 };
-use rand::seq::IndexedRandom;
 use serenity::{
     all::{
         ComponentInteractionCollector, ComponentInteractionDataKind, CreateActionRow,
@@ -12,6 +11,7 @@ use serenity::{
         CreateSelectMenu, CreateSelectMenuKind, CreateSelectMenuOption,
     },
     futures::StreamExt,
+    model::id::UserId,
 };
 
 use disaity_config::{Category, Command};
@@ -30,9 +30,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let ctx_data = ctx.data();
 
     let persona = &ctx_data.config.persona;
-
-    let interactions = persona.interactions;
-    let built_quotes = &interactions_registry.messages.built;
+    let info = &ctx_data.config.info;
 
     let commands_registry = &ctx_data.config.commands_registry;
 
@@ -72,20 +70,25 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     )
     .placeholder("Select a command for more information ⌘");
 
+    let owner = UserId::new(info.owner.id).to_user(&ctx).await?;
+
     let mut embed = CreateEmbed::new()
         .title("Hello,")
         .description(&persona.summary)
         .thumbnail(&avatar_url)
         .color(persona.interactions.colors.primary)
         .author(CreateEmbedAuthor::new(author_name).icon_url(avatar_url));
-    // .footer(
-    //     CreateEmbedFooter::new(
-    //         built_quotes
-    //             .choose(&mut rand::rng())
-    //             .unwrap_or(&"".to_string()),
-    //     )
-    //     .icon_url(&ctx_data.config.info.owner.icon_url),
-    // );
+
+    let mut footer = CreateEmbedFooter::new(
+        info.signature_for(owner.global_name.as_deref().unwrap_or(&owner.name))
+            .unwrap_or_default(),
+    );
+
+    if let Some(icon_url) = &info.owner.icon_url {
+        footer = footer.icon_url(icon_url);
+    };
+
+    embed = embed.footer(footer);
 
     let reply = ctx
         .send(

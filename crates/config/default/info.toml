@@ -2,8 +2,13 @@ prefix = "-"
 
 permissions = ["SendMessages", "Administrator", "Connect"]
 
+signature = [
+  "Built with love by {username}.",
+  "Lovely built by {username}.",
+  "Handcrafted by {username}.",
+]
+
 [owner]
-username = "Goblo"
 id = 291260815716253696
 url = "https://ahmedehab-sg.com/"
 icon_url = "https://i.ibb.co/hFNhYk2/AES-solid-colors-512.png"
