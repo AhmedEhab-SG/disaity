@@ -8,6 +8,7 @@ mod utils;
 pub use assets::{Assets, Provider};
 pub use commands::{Category, Command, CommandRegistry};
 use env::Env;
+pub use env::EnvBuilder;
 use info::Info;
 pub use persona::{Persona, Preset};
 
@@ -30,6 +31,7 @@ impl Config {
 pub struct ConfigBuilder {
     pub persona: Option<Persona>,
     pub info: Option<Info>,
+    pub env: Option<Env>,
 }
 
 impl ConfigBuilder {
@@ -37,13 +39,18 @@ impl ConfigBuilder {
         Self::default()
     }
 
-    pub fn persona(mut self, persona: Persona) -> Self {
+    pub fn with_persona(mut self, persona: Persona) -> Self {
         self.persona = Some(persona);
         self
     }
 
-    pub fn info(mut self, info: Info) -> Self {
+    pub fn with_info(mut self, info: Info) -> Self {
         self.info = Some(info);
+        self
+    }
+
+    pub fn with_env(mut self, env: Env) -> Self {
+        self.env = Some(env);
         self
     }
 
@@ -51,6 +58,7 @@ impl ConfigBuilder {
         Config {
             persona: self.persona.unwrap_or_default(),
             info: self.info.unwrap_or_default(),
+            env: self.env.unwrap_or_default(),
             ..Default::default()
         }
     }

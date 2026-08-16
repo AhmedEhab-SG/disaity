@@ -12,7 +12,7 @@ async fn main() -> Result<(), Error> {
     let data = DataBuilder::new()
         .with_config(
             ConfigBuilder::new()
-                .persona(Persona::new(Preset::Emilia))
+                .with_persona(Persona::new(Preset::Emilia))
                 .build(),
         )
         .build()
