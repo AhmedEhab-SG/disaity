@@ -41,6 +41,11 @@ impl Info {
             .map(|s| s.replace("{username}", username))
     }
 
+    pub fn with_prefix(mut self, prefix: impl Into<String>) -> Self {
+        self.prefix = prefix.into();
+        self
+    }
+
     pub fn from_file_over(self, path: &Path) -> Result<Info, ConfigError> {
         let mut default = Value::try_from(&self)?;
         let user_val: Value = toml::from_str(&fs::read_to_string(path)?)?;

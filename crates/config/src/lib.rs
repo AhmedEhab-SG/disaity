@@ -9,7 +9,7 @@ pub use assets::{Assets, Provider};
 pub use commands::{Category, Command, CommandRegistry};
 use env::Env;
 pub use env::EnvBuilder;
-use info::Info;
+pub use info::Info;
 pub use persona::{Persona, Preset};
 
 #[derive(Default, Debug)]
