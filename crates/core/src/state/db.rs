@@ -9,9 +9,9 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn connect(db_path: &str) -> Result<Self, Error> {
+    pub async fn connect(db_path: &str, persona_name: &str) -> Result<Self, Error> {
         create_dir_all(db_path)?;
-        let file = format!("{db_path}/disaity.db");
+        let file = format!("{db_path}/{persona_name}.db");
 
         let opts = SqliteConnectOptions::new()
             .filename(&file)

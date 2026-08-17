@@ -11,8 +11,8 @@ pub struct Subscription {
 }
 
 impl Subscription {
-    pub async fn connect(db_path: &str) -> Result<Self, Error> {
-        let db = Database::connect(db_path).await?;
+    pub async fn connect(db_path: &str, persona_name: &str) -> Result<Self, Error> {
+        let db = Database::connect(db_path, persona_name).await?;
 
         let prayer_subscription = PrayerSubscription::new(db.pool.clone());
 

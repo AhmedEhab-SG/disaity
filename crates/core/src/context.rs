@@ -41,7 +41,7 @@ impl Data {
             Gemini::with_model(&config.env.gemini_api_key, Model::Gemini25FlashLite)
                 .expect("failed to connect to gemini");
         let http = Client::new();
-        let subscription = Subscription::connect(&config.env.db_path).await?;
+        let subscription = Subscription::connect(&config.env.db_path, &config.persona.name).await?;
 
         Ok(Self {
             http,
@@ -89,7 +89,7 @@ impl DataBuilder {
                 agent,
                 fallback_agent,
             },
-            subscription: Subscription::connect(&config.env.db_path).await?,
+            subscription: Subscription::connect(&config.env.db_path, &config.persona.name).await?,
             config,
         })
     }
