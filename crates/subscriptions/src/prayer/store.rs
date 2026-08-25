@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
 use sqlx::{Row, SqlitePool, sqlite::SqliteRow};
 
-use crate::Error;
+use disaity_core::Error;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PrayerSubscriptionInfo {
@@ -64,16 +64,16 @@ impl PrayerSubscription {
         Ok(rows.into_iter().map(|row| self.into_info(&row)).collect())
     }
 
-    pub async fn get(&self, guild_id: GuildId) -> Result<Option<PrayerSubscriptionInfo>, Error> {
-        let row = sqlx::query(
-            "SELECT channel_id, role_id, country, city FROM prayer_subscriptions WHERE guild_id = ?",
-        )
-        .bind(guild_id.to_string())
-        .fetch_optional(&self.pool)
-        .await?;
-
-        Ok(row.as_ref().map(|r| self.into_info(r)))
-    }
+    // pub async fn get(&self, guild_id: GuildId) -> Result<Option<PrayerSubscriptionInfo>, Error> {
+    //     let row = sqlx::query(
+    //         "SELECT channel_id, role_id, country, city FROM prayer_subscriptions WHERE guild_id = ?",
+    //     )
+    //     .bind(guild_id.to_string())
+    //     .fetch_optional(&self.pool)
+    //     .await?;
+    //
+    //     Ok(row.as_ref().map(|r| self.into_info(r)))
+    // }
 
     pub async fn create(
         &self,

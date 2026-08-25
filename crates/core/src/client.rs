@@ -8,7 +8,11 @@ use serenity::{
 };
 use songbird::SerenityInit;
 
-use crate::{Data, Error, context::DataBuilder, on_error_handler};
+use crate::{
+    AsSubscription, Data, Database, Error, Feature, SubscriptionModule,
+    context::{AiAgent, DataBuilder},
+    on_error_handler,
+};
 
 pub struct HandlerCx<'a> {
     pub serenity: &'a SerenityContext,
@@ -27,6 +31,7 @@ pub struct Client {
     prefix: Option<String>,
     commands: Vec<Command<Data, Error>>,
     handlers: Vec<Arc<dyn Handler>>,
+    features: Vec<Box<dyn Feature>>,
     data: Option<Data>,
 }
 
@@ -36,6 +41,7 @@ impl Client {
             token: token.into(),
             intents: Self::default_intents(),
             prefix: None,
+            features: Vec::new(),
             commands: Vec::new(),
             handlers: Vec::new(),
             data: None,
@@ -71,6 +77,15 @@ impl Client {
         self
     }
 
+    pub fn with_feature(mut self, feature: impl Feature + 'static) -> Self {
+        self.features.push(Box::new(feature));
+        self
+    }
+
+    pub fn with_subscription(self, sub: impl SubscriptionModule) -> Self {
+        self.with_feature(AsSubscription(sub))
+    }
+
     pub fn with_handler(mut self, handler: impl Handler) -> Self {
         self.handlers.push(Arc::new(handler));
         self
@@ -86,15 +101,49 @@ impl Client {
             token,
             intents,
             prefix,
-            commands,
-            handlers,
+            mut commands,
+            mut handlers,
+            features,
             data,
         } = self;
 
-        let data = match data {
+        let mut data = match data {
             Some(d) => d,
             None => DataBuilder::new().build().await?,
         };
+
+        if features.iter().any(|feature| feature.needs_ai()) {
+            let key = data
+                .config
+                .env
+                .gemini_api_key
+                .as_deref()
+                .ok_or("an AI feature is registered but GEMINI_API_KEY is not set")?;
+
+            data.ai = Some(AiAgent::connect(key)?);
+        }
+
+        if features.iter().any(|feature| feature.needs_db()) {
+            let db_path = data
+                .config
+                .env
+                .db_path
+                .as_deref()
+                .ok_or("a subscription feature is registered but DB_PATH is not set")?;
+
+            data.db = Some(Database::connect(db_path, &data.config.persona.name).await?);
+        }
+
+        for feature in &features {
+            if !feature.enabled(&data) {
+                continue;
+            }
+
+            commands.extend(feature.commands(&data));
+            if let Some(handler) = feature.handler() {
+                handlers.push(handler);
+            }
+        }
 
         let framework = Framework::builder()
             .options(FrameworkOptions {

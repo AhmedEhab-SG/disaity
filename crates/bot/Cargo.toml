@@ -14,6 +14,7 @@ disaity-core.workspace = true
 disaity-config.workspace = true
 disaity-commands.workspace = true
 disaity-handlers.workspace = true
+disaity-subscriptions.workspace = true
 songbird.workspace = true
 symphonia.workspace = true
 serenity.workspace = true

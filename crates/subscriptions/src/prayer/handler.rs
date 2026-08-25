@@ -9,8 +9,9 @@ use serenity::{
     builder::CreateAllowedMentions,
 };
 
-use disaity_core::state::Subscription;
 use disaity_core::{Error, Handler, HandlerCx};
+
+use crate::prayer::store::PrayerSubscription;
 
 pub struct PrayerHandler;
 
@@ -18,11 +19,12 @@ pub struct PrayerHandler;
 impl Handler for PrayerHandler {
     async fn setup(&self, cx: &HandlerCx<'_>) -> Result<(), Error> {
         // Same Arc the `prayer` command mutates → runtime subs reach the loop.
-        start_prayer_loop(
-            cx.serenity.clone(),
-            cx.data.subscription.clone(),
-            cx.data.http.clone(),
-        );
+        let Some(db) = cx.data.db.as_ref() else {
+            return Ok(());
+        };
+        let prayer = PrayerSubscription::new(db.pool.clone());
+        prayer.init().await?;
+        start_prayer_loop(cx.serenity.clone(), prayer, cx.data.http.clone());
         Ok(())
     }
 }
@@ -37,7 +39,7 @@ struct PrayerData {
     timings: HashMap<String, String>,
 }
 
-fn start_prayer_loop(ctx: SerenityContext, subscription: Subscription, http: Client) {
+fn start_prayer_loop(ctx: SerenityContext, prayer: PrayerSubscription, http: Client) {
     tokio::spawn(async move {
         let mut last_notified_minute = 99;
 
@@ -47,11 +49,7 @@ fn start_prayer_loop(ctx: SerenityContext, subscription: Subscription, http: Cli
 
             if current_minute != last_notified_minute {
                 let current_time_str = now.format("%H:%M").to_string();
-                let subscriptions = subscription
-                    .prayer_subscription
-                    .get_all()
-                    .await
-                    .unwrap_or_default();
+                let subscriptions = prayer.get_all().await.unwrap_or_default();
 
                 for sub in subscriptions {
                     let url = format!(

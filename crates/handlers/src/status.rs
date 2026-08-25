@@ -2,7 +2,15 @@ use serenity::{all::ActivityData, async_trait, gateway::ShardManager};
 use std::{sync::Arc, time::Duration};
 use tokio::time::sleep;
 
-use disaity_core::{Error, Handler, HandlerCx};
+use disaity_core::{Error, Feature, Handler, HandlerCx};
+
+pub struct StatusFeature;
+
+impl Feature for StatusFeature {
+    fn handler(&self) -> Option<Arc<dyn Handler>> {
+        Some(Arc::new(StatusHandler))
+    }
+}
 
 pub struct StatusHandler;
 

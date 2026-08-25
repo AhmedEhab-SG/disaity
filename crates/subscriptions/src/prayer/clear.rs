@@ -2,6 +2,8 @@ use poise::command;
 
 use disaity_core::{Context, ContextExt, Error, say};
 
+use super::store::PrayerSubscription;
+
 #[command(
     slash_command,
     prefix_command,
@@ -18,10 +20,13 @@ pub async fn clear_prayer(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx_utils.start_loading_react().await?;
 
-    let removed = ctx
+    let db = ctx
         .data()
-        .subscription
-        .prayer_subscription
+        .db
+        .as_ref()
+        .ok_or("Subscriptions are not configured on this bot.")?;
+
+    let removed = PrayerSubscription::new(db.pool.clone())
         .delete(guild_id)
         .await?;
 

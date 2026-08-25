@@ -4,7 +4,9 @@ use serenity::{
     model::id::{ChannelId, RoleId},
 };
 
-use disaity_core::{Context, ContextExt, Error, say, state::PrayerSubscriptionInfo};
+use disaity_core::{Context, ContextExt, Error, say};
+
+use super::store::{PrayerSubscription, PrayerSubscriptionInfo};
 
 #[command(
     slash_command,
@@ -53,9 +55,13 @@ pub async fn prayer(
 
     ctx_utils.start_loading_react().await?;
 
-    ctx.data()
-        .subscription
-        .prayer_subscription
+    let db = ctx
+        .data()
+        .db
+        .as_ref()
+        .ok_or("Subscriptions are not configured on this bot.")?;
+
+    PrayerSubscription::new(db.pool.clone())
         .create(
             guild.id,
             PrayerSubscriptionInfo {

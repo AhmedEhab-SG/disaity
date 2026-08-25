@@ -5,20 +5,32 @@ use serenity::async_trait;
 
 use disaity_config::Config;
 
-use crate::{errors::Error, state::Subscription, utils::Utils};
+use crate::{errors::Error, state::Database, utils::Utils};
 
-pub type Context<'a> = BaseContext<'a, Data, Error>;
+pub type Context<'ctx> = BaseContext<'ctx, Data, Error>;
 
 pub struct AiAgent {
     pub agent: Gemini,
     pub fallback_agent: Gemini,
 }
 
+impl AiAgent {
+    pub fn connect(key: &str) -> Result<Self, Error> {
+        let agent = Gemini::new(key).map_err(|e| format!("failed to connect to gemini: {e}"))?;
+        let fallback_agent = Gemini::with_model(key, Model::Gemini25FlashLite)
+            .map_err(|e| format!("failed to connect to gemini: {e}"))?;
+        Ok(Self {
+            agent,
+            fallback_agent,
+        })
+    }
+}
+
 pub struct Data {
     pub http: Client,
-    pub ai: AiAgent,
+    pub ai: Option<AiAgent>,
     pub config: Config,
-    pub subscription: Subscription,
+    pub db: Option<Database>,
 }
 
 #[async_trait]
@@ -36,21 +48,13 @@ impl<'a> ContextExt<'a> for Context<'a> {
 impl Data {
     pub async fn new() -> Result<Self, Error> {
         let config = Config::new();
-        let agent = Gemini::new(&config.env.gemini_api_key).expect("failed to connect to gemini");
-        let fallback_agent =
-            Gemini::with_model(&config.env.gemini_api_key, Model::Gemini25FlashLite)
-                .expect("failed to connect to gemini");
         let http = Client::new();
-        let subscription = Subscription::connect(&config.env.db_path, &config.persona.name).await?;
 
         Ok(Self {
             http,
-            ai: AiAgent {
-                agent,
-                fallback_agent,
-            },
             config,
-            subscription,
+            ai: None,
+            db: None,
         })
     }
 }
@@ -78,19 +82,12 @@ impl DataBuilder {
 
     pub async fn build(self) -> Result<Data, Error> {
         let config = self.config.unwrap_or_default();
-        let agent = Gemini::new(&config.env.gemini_api_key).expect("failed to connect to gemini");
-        let fallback_agent =
-            Gemini::with_model(&config.env.gemini_api_key, Model::Gemini25FlashLite)
-                .expect("failed to connect to gemini");
 
         Ok(Data {
             http: self.http.unwrap_or_default(),
-            ai: AiAgent {
-                agent,
-                fallback_agent,
-            },
-            subscription: Subscription::connect(&config.env.db_path, &config.persona.name).await?,
             config,
+            ai: None,
+            db: None,
         })
     }
 }

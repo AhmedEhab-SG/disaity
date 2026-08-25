@@ -1,0 +1,14 @@
+[package]
+name = "disaity-subscriptions"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+disaity-core.workspace = true
+sqlx.workspace = true
+poise.workspace = true
+serenity.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+chrono.workspace = true
+serde.workspace = true

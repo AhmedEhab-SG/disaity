@@ -1,7 +1,8 @@
-use disaity_commands::CommandFactory;
+use disaity_commands::{chat, music, other};
 use disaity_config::{ConfigBuilder, EnvBuilder, Info, Persona, Preset};
 use disaity_core::{BinariesExt, Client, DataBuilder, Error};
-use disaity_handlers::{PrayerHandler, StatusHandler};
+use disaity_handlers::StatusFeature;
+use disaity_subscriptions::PrayerModule;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -20,9 +21,11 @@ async fn main() -> Result<(), Error> {
 
     let client = Client::new(&data.config.env.client_token)
         .with_prefix(&data.config.info.prefix)
-        .with_commands(CommandFactory::new(&data.config.commands_registry).all())
-        .with_handler(StatusHandler)
-        .with_handler(PrayerHandler)
+        .with_feature(music())
+        .with_feature(other())
+        .with_feature(chat())
+        .with_feature(StatusFeature)
+        .with_subscription(PrayerModule)
         .with_data(data);
 
     let data_alt = DataBuilder::new()
@@ -42,8 +45,10 @@ async fn main() -> Result<(), Error> {
 
     let client_alt = Client::new(&data_alt.config.env.client_token)
         .with_prefix(&data_alt.config.info.prefix)
-        .with_commands(CommandFactory::new(&data_alt.config.commands_registry).all())
-        .with_handler(StatusHandler)
+        .with_feature(music())
+        .with_feature(other())
+        .with_feature(chat())
+        .with_feature(StatusFeature)
         .with_data(data_alt);
 
     let handle_emilia = tokio::spawn(client.run());

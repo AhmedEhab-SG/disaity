@@ -6,11 +6,12 @@ members = [
   "crates/config",
   "crates/core",
   "crates/handlers",
+  "crates/subscriptions",
 ]
 
 [workspace.package]
 edition = "2024"
-version = "0.3.6"
+version = "0.4.0"
 repository = "https://github.com/AhmedEhab-SG/disaity"
 
 [workspace.dependencies]
@@ -54,7 +55,7 @@ disaity-config = { path = "crates/config" }
 disaity-core = { path = "crates/core" }
 disaity-commands = { path = "crates/commands" }
 disaity-handlers = { path = "crates/handlers" }
-
+disaity-subscriptions = { path = "crates/subscriptions" }
 
 [profile.dist]
 inherits = "release"

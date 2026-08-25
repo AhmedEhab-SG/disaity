@@ -5,8 +5,8 @@ use dotenv::var;
 #[derive(Debug, Clone)]
 pub struct Env {
     pub client_token: String,
-    pub gemini_api_key: String,
-    pub db_path: String,
+    pub gemini_api_key: Option<String>,
+    pub db_path: Option<String>,
 }
 
 impl Default for Env {
@@ -28,12 +28,12 @@ impl Env {
         var("CLIENT_TOKEN").expect("missing client token as an env")
     }
 
-    pub fn get_gemini_api_key() -> String {
-        var("GEMINI_API_KEY").expect("missing gemini api key as an env")
+    pub fn get_gemini_api_key() -> Option<String> {
+        var("GEMINI_API_KEY").ok()
     }
 
-    pub fn get_db_path() -> String {
-        var("DB_PATH").expect("missing db path as an env")
+    pub fn get_db_path() -> Option<String> {
+        var("DB_PATH").ok()
     }
 }
 
@@ -54,15 +54,15 @@ impl EnvBuilder {
     }
 
     pub fn with_gemini_api_key(mut self, key: impl AsRef<OsStr>) -> Self {
-        self.gemini_api_key = Some(var(key).expect("missing gemini api key as an env"));
+        self.gemini_api_key = var(key).ok();
         self
     }
 
     pub fn build(self) -> Env {
         Env {
-            client_token: self.client_token.unwrap_or(Env::get_client_token()),
-            gemini_api_key: self.gemini_api_key.unwrap_or(Env::get_gemini_api_key()),
-            ..Default::default()
+            client_token: self.client_token.unwrap_or_else(Env::get_client_token),
+            gemini_api_key: self.gemini_api_key.or_else(Env::get_gemini_api_key),
+            db_path: Env::get_db_path(),
         }
     }
 }

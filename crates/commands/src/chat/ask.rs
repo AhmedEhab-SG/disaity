@@ -105,6 +105,11 @@ pub async fn ask(
 ) -> Result<(), Error> {
     let data = &ctx.data();
 
+    let ai = data
+        .ai
+        .as_ref()
+        .ok_or("AI is not configured on this bot.")?;
+
     let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let messages = ctx
@@ -150,12 +155,12 @@ pub async fn ask(
             .with_step_input(steps)
     };
 
-    let res_text = match build(&data.ai.agent, &history).execute().await {
+    let res_text = match build(&ai.agent, &history).execute().await {
         Ok(res) => res.output_text(),
         Err(e) if e.to_string().contains("503") || e.to_string().contains("UNAVAILABLE") => {
             tracing::warn!("Gemini primary model busy (503), falling back to flash-lite");
 
-            build(&data.ai.fallback_agent, &history)
+            build(&ai.fallback_agent, &history)
                 .execute()
                 .await?
                 .output_text()
