@@ -2,6 +2,9 @@
 name = "disaity-commands"
 edition.workspace = true
 version.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "Built-in music, chat and utility commands for the disaity Discord bot framework."
 
 [dependencies]
 disaity-core.workspace = true

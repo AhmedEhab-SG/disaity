@@ -26,9 +26,9 @@ pub async fn same_vc(ctx: Context<'_>) -> Result<bool, Error> {
 
     match (user_vc, client_vc) {
         (Some(c), Some(u)) if c == u => Ok(true),
-        (None, _) => return Err("You must be in a voice channel".into()),
-        (_, None) => return Err("I'm not in any channel".into()),
-        _ => return Err("We must be in the same voice channel".into()),
+        (None, _) => Err("You must be in a voice channel".into()),
+        (_, None) => Err("I'm not in any channel".into()),
+        _ => Err("We must be in the same voice channel".into()),
     }
 }
 
@@ -50,8 +50,8 @@ pub async fn diff_vc(ctx: Context<'_>) -> Result<bool, Error> {
     };
 
     match (user_vc, client_vc) {
-        (None, _) => return Err("You need to be in a voice channel for me to join you!".into()),
-        (Some(b), Some(u)) if b == u => return Err("I'm already in your voice channel!".into()),
+        (None, _) => Err("You need to be in a voice channel for me to join you!".into()),
+        (Some(b), Some(u)) if b == u => Err("I'm already in your voice channel!".into()),
         _ => Ok(true),
     }
 }
@@ -87,7 +87,7 @@ pub async fn user_not_deafen(ctx: Context<'_>) -> Result<bool, Error> {
     if is_deaf {
         return Err("You must be not deaffen to use that command".into());
     }
-    return Ok(true);
+    Ok(true)
 }
 
 pub async fn not_mute(ctx: Context<'_>) -> Result<bool, Error> {

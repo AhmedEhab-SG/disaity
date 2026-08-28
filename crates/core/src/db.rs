@@ -2,7 +2,7 @@ use std::fs::create_dir_all;
 
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
 
-use crate::Error;
+use super::Error;
 
 pub struct Database {
     pub pool: SqlitePool,

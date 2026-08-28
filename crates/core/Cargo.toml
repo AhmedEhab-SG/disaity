@@ -2,6 +2,9 @@
 name = "disaity-core"
 edition.workspace = true
 version.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "Client, context and voice plumbing for the disaity Discord bot framework."
 
 [dependencies]
 disaity-config.workspace = true
@@ -11,9 +14,11 @@ songbird.workspace = true
 symphonia.workspace = true
 tokio.workspace = true
 tracing.workspace = true
+tracing-subscriber.workspace = true
 reqwest.workspace = true
 gemini-rust.workspace = true
 scraper.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
+strum.workspace = true

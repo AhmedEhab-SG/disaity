@@ -14,7 +14,7 @@ use serenity::{
     model::id::UserId,
 };
 
-use disaity_config::{Category, Command};
+use disaity_config::{Category, CommandId};
 use disaity_core::{Context, Error};
 
 #[command(
@@ -46,7 +46,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
 
     let select_menu = CreateSelectMenu::new(
         commands_registry
-            .get_command(&Command::Help)
+            .get_command(&CommandId::Help)
             .action
             .clone()
             .unwrap_or("help_menu".to_string()),
@@ -58,9 +58,10 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                     let cat_name = cat.to_string();
                     CreateSelectMenuOption::new(
                         format!(
-                            "{} {}",
+                            "{} {}{}",
                             commands_registry.get_cat_emoji(cat),
-                            format!("{}{}", &cat_name[..1].to_uppercase(), &cat_name[1..])
+                            cat_name[..1].to_uppercase(),
+                            &cat_name[1..]
                         ),
                         cat_name,
                     )
@@ -100,14 +101,14 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
 
     let message = reply.into_message().await?;
 
-    let mut interaction_stream = ComponentInteractionCollector::new(&serenity_context)
+    let mut interaction_stream = ComponentInteractionCollector::new(serenity_context)
         .message_id(message.id)
         .timeout(Duration::from_secs(30))
         .stream();
 
     while let Some(interaction) = interaction_stream.next().await {
         let selected_cat = match &interaction.data.kind {
-            ComponentInteractionDataKind::StringSelect { values } => values.first().clone(),
+            ComponentInteractionDataKind::StringSelect { values } => values.first(),
             _ => None,
         }
         .ok_or("invalid categoery")?;
@@ -124,24 +125,20 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                         .embed(
                             CreateEmbed::new()
                                 .title(format!(
-                                    "{} - {} {} Command ⌘\n\n*Command List*:\n-----------------",
-                                    &cat_commands.len(),
+                                    "{} - {} {}{} Command ⌘\n\n*Command List*:\n-----------------",
+                                    cat_commands.len(),
                                     commands_registry.get_cat_emoji(&category),
-                                    format!(
-                                        "{}{}",
-                                        &selected_cat[..1].to_uppercase(),
-                                        &selected_cat[1..]
-                                    ),
+                                    selected_cat[..1].to_uppercase(),
+                                    &selected_cat[1..]
                                 ))
-                                .description(format!(
-                                    "{}",
+                                .description(
                                     cat_commands
                                         .iter()
                                         .map(|cmd| {
                                             let name = cmd.name.as_str();
                                             let cmd_name = format!(
                                                 "{}{}",
-                                                &name[..1].to_uppercase(),
+                                                name[..1].to_uppercase(),
                                                 &name[1..]
                                             );
 
@@ -156,8 +153,8 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                                             )
                                         })
                                         .collect::<Vec<_>>()
-                                        .join("\n")
-                                ))
+                                        .join("\n"),
+                                )
                                 .colour(persona.interactions.colors.accent),
                         )
                         .ephemeral(true),

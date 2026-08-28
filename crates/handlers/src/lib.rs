@@ -1,3 +1,3 @@
 mod status;
 
-pub use status::{StatusFeature, StatusHandler};
+pub use status::StatusHandler;

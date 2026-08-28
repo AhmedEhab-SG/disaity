@@ -25,6 +25,7 @@ pub enum ConfigError {
     Io(std::io::Error),
     TomlDe(toml::de::Error),
     TomlSer(toml::ser::Error),
+    SerdeJson(serde_json::Error),
 }
 
 impl From<std::io::Error> for ConfigError {
@@ -42,5 +43,11 @@ impl From<toml::de::Error> for ConfigError {
 impl From<toml::ser::Error> for ConfigError {
     fn from(e: toml::ser::Error) -> Self {
         Self::TomlSer(e)
+    }
+}
+
+impl From<serde_json::Error> for ConfigError {
+    fn from(e: serde_json::Error) -> Self {
+        Self::SerdeJson(e)
     }
 }

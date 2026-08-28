@@ -1,0 +1,20 @@
+[package]
+name = "disaity"
+description = "A batteries-included wrapper over serenity, poise and songbird for building Discord music and chat bots."
+edition.workspace = true
+version.workspace = true
+repository.workspace = true
+license.workspace = true
+readme = "../../README.md"
+keywords = ["discord", "bot", "music", "serenity", "poise"]
+categories = ["api-bindings"]
+
+[dependencies]
+disaity-commands.workspace = true
+disaity-config.workspace = true
+disaity-core.workspace = true
+disaity-handlers.workspace = true
+disaity-subscriptions.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

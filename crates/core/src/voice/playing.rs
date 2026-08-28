@@ -1,4 +1,5 @@
-use crate::voice::SongMetadata;
+use std::{sync::Arc, time::Duration};
+
 use serenity::{
     all::{
         ChannelId, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage, Http,
@@ -7,8 +8,57 @@ use serenity::{
     async_trait,
 };
 use songbird::{Call, Event, EventContext, EventHandler, TrackEvent};
-use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
+
+use super::{RegisterVoiceEvent, SongMetadata, VoiceEventCtx};
+
+pub(super) struct PlayingEvent;
+
+impl RegisterVoiceEvent for PlayingEvent {
+    async fn register(call_lock: &mut Call, cx: &VoiceEventCtx) {
+        let VoiceEventCtx {
+            call,
+            http,
+            text_channel_id,
+            ..
+        } = cx;
+
+        let message_id = Arc::new(Mutex::new(None));
+
+        call_lock.add_global_event(
+            Event::Track(TrackEvent::Play),
+            TrackStartNotifier {
+                call: call.clone(),
+                http: http.clone(),
+                channel_id: *text_channel_id,
+                message_id: message_id.clone(),
+            },
+        );
+
+        call_lock.add_global_event(
+            Event::Track(TrackEvent::End),
+            TrackEndNotifier {
+                http: http.clone(),
+                message_id,
+                channel_id: *text_channel_id,
+            },
+        );
+    }
+}
+
+impl PlayingEvent {
+    fn format_duration(d: Option<std::time::Duration>) -> String {
+        match d {
+            Some(d) => {
+                let seconds = d.as_secs();
+                let minutes = seconds / 60;
+                let rem_seconds = seconds % 60;
+                format!("{:02}:{:02}", minutes, rem_seconds)
+            }
+            None => "Live/Unknown".to_string(),
+        }
+    }
+}
 
 struct TrackStartNotifier {
     call: Arc<Mutex<Call>>,
@@ -21,18 +71,6 @@ struct TrackEndNotifier {
     message_id: Arc<Mutex<Option<MessageId>>>,
     channel_id: ChannelId,
     http: Arc<Http>,
-}
-
-fn format_duration(d: Option<std::time::Duration>) -> String {
-    match d {
-        Some(d) => {
-            let seconds = d.as_secs();
-            let minutes = seconds / 60;
-            let rem_seconds = seconds % 60;
-            format!("{:02}:{:02}", minutes, rem_seconds)
-        }
-        None => "Live/Unknown".to_string(),
-    }
 }
 
 #[async_trait]
@@ -79,8 +117,7 @@ impl EventHandler for TrackStartNotifier {
                         let len = current_queue.len();
                         let total: Duration = current_queue
                             .iter()
-                            .filter_map(|h| Some(h.data::<SongMetadata>()))
-                            .filter_map(|d| d.duration)
+                            .filter_map(|h| h.data::<SongMetadata>().duration)
                             .sum();
 
                         (len, total)
@@ -93,7 +130,7 @@ impl EventHandler for TrackStartNotifier {
                         .color(0x0099ff)
                         .field(
                             "Duration",
-                            format!("`{}`", format_duration(data.duration)),
+                            format!("`{}`", PlayingEvent::format_duration(data.duration)),
                             true,
                         )
                         .thumbnail(&data.thumbnail)
@@ -102,7 +139,7 @@ impl EventHandler for TrackStartNotifier {
                             format!(
                                 "`{} for {}`",
                                 queue_len,
-                                format_duration(Some(total_duration))
+                                PlayingEvent::format_duration(Some(total_duration))
                             ),
                             true,
                         )
@@ -121,9 +158,8 @@ impl EventHandler for TrackStartNotifier {
                         .send_message(&http, CreateMessage::new().embed(embed))
                         .await
                         .map(|msg| *message_id_lock = Some(msg.id))
-                        .map_err(|e| {
+                        .inspect_err(|_e| {
                             *message_id_lock = None;
-                            e
                         })
                         .ok();
                 });
@@ -132,32 +168,4 @@ impl EventHandler for TrackStartNotifier {
 
         None
     }
-}
-
-pub async fn register_playing_info(
-    call_lock: &mut Call,
-    call: Arc<Mutex<Call>>,
-    text_channel_id: ChannelId,
-    http: Arc<Http>,
-) {
-    let message_id = Arc::new(Mutex::new(None));
-
-    call_lock.add_global_event(
-        Event::Track(TrackEvent::Play),
-        TrackStartNotifier {
-            call,
-            http: http.clone(),
-            channel_id: text_channel_id,
-            message_id: message_id.clone(),
-        },
-    );
-
-    call_lock.add_global_event(
-        Event::Track(TrackEvent::End),
-        TrackEndNotifier {
-            http,
-            message_id,
-            channel_id: text_channel_id,
-        },
-    );
 }

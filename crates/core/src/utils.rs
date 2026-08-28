@@ -12,13 +12,25 @@ use tokio::{process::Command, sync::Mutex};
 use disaity_config::Provider;
 
 use crate::{
+    binaries::Binaries,
     context::Context,
     errors::Error,
-    voice::{SongMetadata, register_all},
+    voice::{SongMetadata, VoiceEventCtx},
 };
 
 pub struct Utils<'a> {
     pub ctx: Context<'a>,
+}
+
+/// Tells a spawned yt-dlp which ffmpeg to use, so it does not have to find one
+/// on the `PATH`. Empty when ffmpeg resolved to a bare `PATH` lookup anyway.
+fn ffmpeg_args(binaries: &'static Binaries) -> Vec<String> {
+    binaries
+        .ffmpeg
+        .dir()
+        .filter(|dir| !dir.as_os_str().is_empty())
+        .map(|dir| vec!["--ffmpeg-location".to_string(), dir.display().to_string()])
+        .unwrap_or_default()
 }
 
 #[async_trait]
@@ -168,18 +180,17 @@ impl VoiceUtils for Utils<'_> {
         };
 
         if is_new_call {
-            let mut call_lock = call.lock().await;
-
-            register_all(
-                &mut call_lock,
-                call.clone(),
+            let cx = VoiceEventCtx {
+                call: call.clone(),
                 guild_id,
-                self.ctx.channel_id(),
-                serenity_context.http.clone(),
                 manager,
-                serenity_context.cache.clone(),
-            )
-            .await;
+                text_channel_id: self.ctx.channel_id(),
+                http: serenity_context.http.clone(),
+                cache: serenity_context.cache.clone(),
+            };
+
+            let mut call_lock = call.lock().await;
+            cx.register_all(&mut call_lock).await;
         }
 
         Ok(call)
@@ -228,13 +239,11 @@ impl ExtractorUtils for Utils<'_> {
                 .header("Accept-Language", "en-US,en;q=0.9")
                 .send()
                 .await
+                && let Ok(text) = resp.text().await
+                && !text.is_empty()
             {
-                if let Ok(text) = resp.text().await {
-                    if !text.is_empty() {
-                        html_text = Some(text);
-                        break;
-                    }
-                }
+                html_text = Some(text);
+                break;
             }
         }
 
@@ -288,10 +297,10 @@ impl ExtractorUtils for Utils<'_> {
 
         fn string_from_keys(obj: &Map<String, Value>, keys: &[&str]) -> Option<String> {
             for key in keys {
-                if let Some(s) = obj.get(*key).and_then(|v| v.as_str()) {
-                    if !s.trim().is_empty() {
-                        return Some(s.trim().to_string());
-                    }
+                if let Some(s) = obj.get(*key).and_then(|v| v.as_str())
+                    && !s.trim().is_empty()
+                {
+                    return Some(s.trim().to_string());
                 }
             }
             None
@@ -414,12 +423,11 @@ impl ExtractorUtils for Utils<'_> {
                 Value::String(s) => {
                     let s = s.trim();
 
-                    if (s.starts_with('{') && s.ends_with('}'))
-                        || (s.starts_with('[') && s.ends_with(']'))
+                    if ((s.starts_with('{') && s.ends_with('}'))
+                        || (s.starts_with('[') && s.ends_with(']')))
+                        && let Ok(parsed) = serde_json::from_str::<Value>(s)
                     {
-                        if let Ok(parsed) = serde_json::from_str::<Value>(s) {
-                            walk(&parsed, out, seen, title_hint, artist_hint);
-                        }
+                        walk(&parsed, out, seen, title_hint, artist_hint);
                     }
                 }
                 _ => {}
@@ -469,7 +477,10 @@ impl ExtractorUtils for Utils<'_> {
             return self.spotify_playlist_extractor(url).await;
         }
 
-        let output = Command::new("yt-dlp")
+        let binaries = Binaries::get()?;
+
+        let output = Command::new(binaries.ytdlp.path())
+            .args(ffmpeg_args(binaries))
             .args([
                 "--flat-playlist",
                 "--yes-playlist",
@@ -522,12 +533,15 @@ impl ProviderUtils for Utils<'_> {
         };
 
         let http_client = self.ctx.data().http.clone();
+        let binaries = Binaries::get()?;
+        let ytdlp = binaries.ytdlp.program();
 
         let src_input = if do_search {
-            YoutubeDl::new_search(http_client, query)
+            YoutubeDl::new_search_ytdl_like(ytdlp, http_client, query)
         } else {
-            YoutubeDl::new(http_client, query)
-        };
+            YoutubeDl::new_ytdl_like(ytdlp, http_client, query)
+        }
+        .user_args(ffmpeg_args(binaries));
 
         let mut src: Input = src_input.into();
 
@@ -573,7 +587,7 @@ impl ProviderUtils for Utils<'_> {
             provider_logo_url: self.ctx.data().config.assets.get_logo(provider_logo),
         };
 
-        let track = Track::new_with_data(src.into(), Arc::new(info.clone()));
+        let track = Track::new_with_data(src, Arc::new(info.clone()));
 
         Ok((track, info))
     }

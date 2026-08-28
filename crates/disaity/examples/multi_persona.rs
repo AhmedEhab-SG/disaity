@@ -1,14 +1,17 @@
-use disaity_commands::{chat, music, other};
-use disaity_config::{ConfigBuilder, EnvBuilder, Info, Persona, Preset};
-use disaity_core::{BinariesExt, Client, DataBuilder, Error};
-use disaity_handlers::StatusFeature;
-use disaity_subscriptions::PrayerModule;
+//! Two personas from one process, each with its own token, prefix and database.
+//!
+//! ```sh
+//! cargo run --example multi_persona
+//! ```
+//!
+//! Needs `CLIENT_TOKEN` and `CLIENT_TOKEN_ALT` in your `.env`. Set `LOG_LEVEL`
+//! there too — `debug` or `trace` — to watch both personas on stderr.
+
+use disaity::{EnvBuilder, PrayerModule, StatusHandler, prelude::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    tracing_subscriber::fmt::init();
-
-    BinariesExt::load();
+    Binaries::ensure().await?;
 
     let data = DataBuilder::new()
         .with_config(
@@ -20,11 +23,12 @@ async fn main() -> Result<(), Error> {
         .await?;
 
     let client = Client::new(&data.config.env.client_token)
+        .with_tracing()
         .with_prefix(&data.config.info.prefix)
-        .with_feature(music())
-        .with_feature(other())
-        .with_feature(chat())
-        .with_feature(StatusFeature)
+        .with_feature(Commands::music())
+        .with_feature(Commands::other())
+        .with_feature(Commands::chat())
+        .with_handler(StatusHandler)
         .with_subscription(PrayerModule)
         .with_data(data);
 
@@ -44,11 +48,12 @@ async fn main() -> Result<(), Error> {
         .await?;
 
     let client_alt = Client::new(&data_alt.config.env.client_token)
+        .with_tracing()
         .with_prefix(&data_alt.config.info.prefix)
-        .with_feature(music())
-        .with_feature(other())
-        .with_feature(chat())
-        .with_feature(StatusFeature)
+        .with_feature(Commands::music())
+        .with_feature(Commands::other())
+        .with_feature(Commands::chat())
+        .with_handler(StatusHandler)
         .with_data(data_alt);
 
     let handle_emilia = tokio::spawn(client.run());

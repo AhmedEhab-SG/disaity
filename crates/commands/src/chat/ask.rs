@@ -3,7 +3,7 @@ use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
 use crate::checks::dm_with_auth;
-use disaity_config::{Command, Config};
+use disaity_config::{CommandId, Config};
 use disaity_core::{Context, Error};
 
 fn get_history(
@@ -13,7 +13,7 @@ fn get_history(
     config: &Config,
 ) -> Vec<(bool, String)> {
     let prefix = &config.info.prefix;
-    let keys = &config.commands_registry.get_command(&Command::Ask).keys;
+    let keys = &config.commands_registry.get_command(&CommandId::Ask).keys;
 
     let mut history: Vec<(bool, String)> = messages
         .into_iter()
@@ -34,7 +34,7 @@ fn get_history(
 
                 if !&keys
                     .iter()
-                    .any(|k| content.starts_with(&format!("{} ", format!("{prefix}{k}"))))
+                    .any(|k| content.starts_with(&format!("{prefix}{k} ")))
                 {
                     return None;
                 }
@@ -65,14 +65,14 @@ fn get_history(
             // SLASH COMMAND HISTORY EXTRACTION
             // If the bot replied to a slash command, it formatted it with "> prompt \n\n response"
             if is_interaction_for_user {
-                if let Some((prompt_block, response)) = content.split_once("\n\n") {
-                    if prompt_block.starts_with("> ") {
-                        let user_prompt = prompt_block[2..].trim().to_string();
-                        let bot_response = response.trim().to_string();
+                if let Some((prompt_block, response)) = content.split_once("\n\n")
+                    && prompt_block.starts_with("> ")
+                {
+                    let user_prompt = prompt_block[2..].trim().to_string();
+                    let bot_response = response.trim().to_string();
 
-                        // Yield two messages from one Discord message
-                        return Some(vec![(is_bot, bot_response), (!is_bot, user_prompt)]);
-                    }
+                    // Yield two messages from one Discord message
+                    return Some(vec![(is_bot, bot_response), (!is_bot, user_prompt)]);
                 }
 
                 // then its other command
@@ -158,7 +158,10 @@ pub async fn ask(
     let res_text = match build(&ai.agent, &history).execute().await {
         Ok(res) => res.output_text(),
         Err(e) if e.to_string().contains("503") || e.to_string().contains("UNAVAILABLE") => {
-            tracing::warn!("Gemini primary model busy (503), falling back to flash-lite");
+            tracing::warn!(
+                message = %persona.name,
+                "Gemini primary model busy (503), falling back to flash-lite"
+            );
 
             build(&ai.fallback_agent, &history)
                 .execute()

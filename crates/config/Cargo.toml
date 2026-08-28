@@ -2,6 +2,9 @@
 name = "disaity-config"
 edition.workspace = true
 version.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "Configuration, personas and command registry for the disaity Discord bot framework."
 
 [dependencies]
 serde.workspace = true

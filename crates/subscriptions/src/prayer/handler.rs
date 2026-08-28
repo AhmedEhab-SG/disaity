@@ -57,44 +57,44 @@ fn start_prayer_loop(ctx: SerenityContext, prayer: PrayerSubscription, http: Cli
                         sub.city, sub.country
                     );
 
-                    if let Ok(res) = http.get(&url).send().await {
-                        if let Ok(json) = res.json::<AladhanResponse>().await {
-                            let timings = json.data.timings;
-                            let prayers_to_check = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+                    if let Ok(res) = http.get(&url).send().await
+                        && let Ok(json) = res.json::<AladhanResponse>().await
+                    {
+                        let timings = json.data.timings;
+                        let prayers_to_check = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
 
-                            for prayer in prayers_to_check {
-                                if let Some(prayer_time) = timings.get(prayer) {
-                                    let clean_prayer_time =
-                                        prayer_time.split_whitespace().next().unwrap_or("");
+                        for prayer in prayers_to_check {
+                            if let Some(prayer_time) = timings.get(prayer) {
+                                let clean_prayer_time =
+                                    prayer_time.split_whitespace().next().unwrap_or("");
 
-                                    if clean_prayer_time == current_time_str {
-                                        last_notified_minute = current_minute;
+                                if clean_prayer_time == current_time_str {
+                                    last_notified_minute = current_minute;
 
-                                        let mention_prefix = match sub.role_id {
-                                            Some(role_id) => format!("<@&{}> ", role_id),
-                                            None => String::new(),
-                                        };
+                                    let mention_prefix = match sub.role_id {
+                                        Some(role_id) => format!("<@&{}> ", role_id),
+                                        None => String::new(),
+                                    };
 
-                                        let text_content = format!(
-                                            "{}🕌 **It's time for {}** in {}, {}!**",
-                                            mention_prefix, prayer, sub.city, sub.country
-                                        );
+                                    let text_content = format!(
+                                        "{}🕌 **It's time for {}** in {}, {}!**",
+                                        mention_prefix, prayer, sub.city, sub.country
+                                    );
 
-                                        let mut message_payload =
-                                            CreateMessage::new().content(text_content);
+                                    let mut message_payload =
+                                        CreateMessage::new().content(text_content);
 
-                                        if let Some(role_id) = sub.role_id {
-                                            let allowed_mentions =
-                                                CreateAllowedMentions::new().roles(vec![role_id]);
-                                            message_payload =
-                                                message_payload.allowed_mentions(allowed_mentions);
-                                        }
-
-                                        sub.channel_id
-                                            .send_message(&ctx.http, message_payload)
-                                            .await
-                                            .ok();
+                                    if let Some(role_id) = sub.role_id {
+                                        let allowed_mentions =
+                                            CreateAllowedMentions::new().roles(vec![role_id]);
+                                        message_payload =
+                                            message_payload.allowed_mentions(allowed_mentions);
                                     }
+
+                                    sub.channel_id
+                                        .send_message(&ctx.http, message_payload)
+                                        .await
+                                        .ok();
                                 }
                             }
                         }

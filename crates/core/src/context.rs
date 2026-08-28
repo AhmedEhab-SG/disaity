@@ -5,7 +5,7 @@ use serenity::async_trait;
 
 use disaity_config::Config;
 
-use crate::{errors::Error, state::Database, utils::Utils};
+use super::{db::Database, errors::Error, utils::Utils};
 
 pub type Context<'ctx> = BaseContext<'ctx, Data, Error>;
 

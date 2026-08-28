@@ -40,7 +40,7 @@ impl PrayerSubscription {
         Ok(())
     }
 
-    fn into_info(&self, row: &SqliteRow) -> PrayerSubscriptionInfo {
+    fn from_row(row: &SqliteRow) -> PrayerSubscriptionInfo {
         PrayerSubscriptionInfo {
             channel_id: ChannelId::new(
                 row.get::<String, _>("channel_id")
@@ -61,7 +61,7 @@ impl PrayerSubscription {
                 .fetch_all(&self.pool)
                 .await?;
 
-        Ok(rows.into_iter().map(|row| self.into_info(&row)).collect())
+        Ok(rows.iter().map(Self::from_row).collect())
     }
 
     // pub async fn get(&self, guild_id: GuildId) -> Result<Option<PrayerSubscriptionInfo>, Error> {
@@ -72,7 +72,7 @@ impl PrayerSubscription {
     //     .fetch_optional(&self.pool)
     //     .await?;
     //
-    //     Ok(row.as_ref().map(|r| self.into_info(r)))
+    //     Ok(row.as_ref().map(Self::from_row))
     // }
 
     pub async fn create(

@@ -6,7 +6,22 @@ use songbird::{Call, Songbird};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
-use crate::voice::{idle::register_idle_timeout, playing::register_playing_info};
+use idle::IdleEvent;
+use playing::PlayingEvent;
+
+#[derive(Clone)]
+pub struct VoiceEventCtx {
+    pub call: Arc<Mutex<Call>>,
+    pub guild_id: GuildId,
+    pub text_channel_id: ChannelId,
+    pub http: Arc<Http>,
+    pub cache: Arc<Cache>,
+    pub manager: Arc<Songbird>,
+}
+
+pub trait RegisterVoiceEvent {
+    async fn register(call_lock: &mut Call, cx: &VoiceEventCtx);
+}
 
 #[derive(Debug, Clone)]
 pub struct SongMetadata {
@@ -20,19 +35,13 @@ pub struct SongMetadata {
     pub provider_logo_url: String,
 }
 
-pub async fn register_all(
-    call_lock: &mut Call,
-    call: Arc<Mutex<Call>>,
-    guild_id: GuildId,
-    text_channel_id: ChannelId,
-    http: Arc<Http>,
-    manager: Arc<Songbird>,
-    cache: Arc<Cache>,
-) {
-    // Clear default or old handlers to prevent duplicates
-    call_lock.remove_all_global_events();
+impl VoiceEventCtx {
+    pub async fn register_all(&self, call_lock: &mut Call) {
+        // Clear default or old handlers to prevent duplicates
+        call_lock.remove_all_global_events();
 
-    register_playing_info(call_lock, call, text_channel_id, http).await;
+        PlayingEvent::register(call_lock, self).await;
 
-    register_idle_timeout(call_lock, guild_id, manager, cache).await;
+        IdleEvent::register(call_lock, self).await;
+    }
 }

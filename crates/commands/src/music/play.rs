@@ -2,7 +2,7 @@ use poise::command;
 use tokio::time::{Duration, timeout};
 
 use crate::checks::{not_mute, user_not_deafen};
-use disaity_config::Command;
+use disaity_config::CommandId;
 use disaity_core::{Context, ContextExt, Error, ReactionUtils, VoiceUtils, say};
 
 #[command(
@@ -34,17 +34,15 @@ pub async fn play(
         .data()
         .config
         .commands_registry
-        .get_command(&Command::Play)
+        .get_command(&CommandId::Play)
         .timeout
         .unwrap_or(30);
     let tracks_data = timeout(Duration::from_secs(timeout_duration), ctx_utils.play(song))
         .await
         .map_err(|_|format!( "The playlist or song took too long to load ({timeout_duration}s limit). Try a shorter query!"))??;
 
-    if ctx.author().id != ctx.data().config.info.owner.id {
-        if call_lock.queue().len() <= 0 {
-            call_lock.deafen(true).await?;
-        }
+    if ctx.author().id != ctx.data().config.info.owner.id && call_lock.queue().is_empty() {
+        call_lock.deafen(true).await?;
     }
 
     let is_playlist = tracks_data.len() > 1;

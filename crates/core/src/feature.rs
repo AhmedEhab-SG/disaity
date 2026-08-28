@@ -1,6 +1,6 @@
 use std::{str::FromStr, sync::Arc};
 
-use disaity_config::{Command as CommandEnum, CommandRegistry};
+use disaity_config::{CommandId, CommandRegistry};
 use poise::Command;
 
 use crate::{Data, Error, Handler};
@@ -23,16 +23,24 @@ pub trait Feature: Send + Sync + 'static {
     }
 }
 
-pub fn decorate(mut cmd: Command<Data, Error>, registry: &CommandRegistry) -> Command<Data, Error> {
-    let cmd_enum =
-        CommandEnum::from_str(cmd.name.as_str()).expect("command missing from registry enum");
-    let config = registry.get_command(&cmd_enum);
+pub trait Decorate {
+    fn decorate(self, registry: &CommandRegistry) -> Self;
+}
 
-    cmd.name = config.name.clone();
-    cmd.description = Some(config.description.clone());
-    cmd.aliases = config.keys.clone();
-    cmd.category = Some(config.category.clone());
-    cmd
+impl Decorate for Command<Data, Error> {
+    fn decorate(mut self, registry: &CommandRegistry) -> Self {
+        let Ok(id) = CommandId::from_str(self.name.as_str()) else {
+            return self;
+        };
+
+        let entry = registry.get_command(&id);
+
+        self.name = entry.name.clone();
+        self.description = Some(entry.description.clone());
+        self.aliases = entry.keys.clone();
+        self.category = Some(entry.category.clone());
+        self
+    }
 }
 
 pub trait SubscriptionModule: Send + Sync + 'static {
@@ -53,7 +61,7 @@ impl<S: SubscriptionModule> Feature for AsSubscription<S> {
 
     fn commands(&self, data: &Data) -> Vec<Command<Data, Error>> {
         let reg = &data.config.commands_registry;
-        vec![decorate(self.0.add(), reg), decorate(self.0.clear(), reg)]
+        vec![self.0.add().decorate(reg), self.0.clear().decorate(reg)]
     }
 
     fn handler(&self) -> Option<Arc<dyn Handler>> {
@@ -116,13 +124,13 @@ impl Feature for FeatureBuilder {
         self.needs_ai
     }
     fn enabled(&self, data: &Data) -> bool {
-        self.gate.as_ref().map_or(true, |g| g(data))
+        self.gate.as_ref().is_none_or(|g| g(data))
     }
     fn commands(&self, data: &Data) -> Vec<Command<Data, Error>> {
         let reg = &data.config.commands_registry;
         self.commands
             .iter()
-            .map(|make| decorate(make(), reg))
+            .map(|make| make().decorate(reg))
             .collect()
     }
     fn handler(&self) -> Option<Arc<dyn Handler>> {

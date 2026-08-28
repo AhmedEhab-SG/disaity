@@ -1,6 +1,6 @@
 /target
 /.env*
-/!.env.example
+!/.env.example
 /Cargo.lock
 /.rustc_info.json
 /bin/engines/media/ffmpeg*

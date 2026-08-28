@@ -27,7 +27,7 @@ pub async fn volume(
 
     // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    if percentage < 0.0 || percentage > 200.0 {
+    if !(0.0..=200.0).contains(&percentage) {
         return Err("Please enter a volume percentage between 0 and 200.".into());
     }
 

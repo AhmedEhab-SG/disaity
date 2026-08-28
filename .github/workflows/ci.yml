@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main, next]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake libopus-dev
+
+      - name: Formatting
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets
+      - name: Tests
+        run: cargo test --workspace
+      - name: Docs
+        run: cargo doc --workspace --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  # Proves the framework still builds for someone who only runs `cargo add
+  # disaity`, without the workspace's `.cargo/config.toml` in scope.
+  minimal-consumer:
+    name: Consumer build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: disaity
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake libopus-dev
+
+      - name: Scaffold a consumer crate
+        run: |
+          cargo new --bin consumer
+          cd consumer
+          cargo add --path ../disaity/crates/disaity
+          cargo add tokio -F tokio/macros,tokio/rt-multi-thread
+          cp ../disaity/crates/disaity/examples/basic.rs src/main.rs
+      - name: Build it
+        run: cargo build --manifest-path consumer/Cargo.toml

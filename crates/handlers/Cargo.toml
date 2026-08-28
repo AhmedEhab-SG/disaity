@@ -2,10 +2,15 @@
 name = "disaity-handlers"
 edition.workspace = true
 version.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "Built-in event handlers for the disaity Discord bot framework."
 
 [dependencies]
+disaity-config.workspace = true
 disaity-core.workspace = true
 serenity.workspace = true
+tracing.workspace = true
 tokio.workspace = true
 reqwest.workspace = true
 chrono.workspace = true

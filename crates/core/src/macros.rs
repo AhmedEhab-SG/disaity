@@ -4,8 +4,8 @@ macro_rules! say {
         match $ctx {
             $crate::Context::Application(_) => {
                 $ctx.send(
-                    poise::CreateReply::default().embed(
-                        serenity::all::CreateEmbed::new()
+                    $crate::poise::CreateReply::default().embed(
+                        $crate::serenity::all::CreateEmbed::new()
                             .description($msg)
                             .color($color),
                     ),
@@ -21,8 +21,8 @@ macro_rules! say {
     ($ctx:expr, $msg:expr, application_only, color = $color:expr) => {{
         if let $crate::Context::Application(_) = $ctx {
             $ctx.send(
-                poise::CreateReply::default().embed(
-                    serenity::all::CreateEmbed::new()
+                $crate::poise::CreateReply::default().embed(
+                    $crate::serenity::all::CreateEmbed::new()
                         .description($msg)
                         .color($color),
                 ),
@@ -42,7 +42,7 @@ macro_rules! say {
     }};
 
     ($ctx:expr, $msg:expr, prefix_only) => {{
-        if let $crate::core::Context::Prefix(_) = $ctx {
+        if let $crate::Context::Prefix(_) = $ctx {
             $ctx.say($msg).await?;
         }
     }};

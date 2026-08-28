@@ -1,4 +1,6 @@
 [env]
-# force CMake to emulate v 3.5 behavior
+# force CMake to emulate v 3.5 behavior libs needed that
 CMAKE_POLICY_VERSION_MINIMUM = "3.5"
 
+# Point every crate in this workspace at the one `bin/` tree at the repo root,
+DISAITY_HOME = { value = "", relative = true, force = true }

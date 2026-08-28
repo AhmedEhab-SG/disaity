@@ -6,11 +6,10 @@ mod persona;
 mod utils;
 
 pub use assets::{Assets, Provider};
-pub use commands::{Category, Command, CommandRegistry};
-use env::Env;
-pub use env::EnvBuilder;
+pub use commands::{Category, CommandId, CommandRegistry};
+pub use env::{Env, EnvBuilder, LogLevel};
 pub use info::Info;
-pub use persona::{Persona, Preset};
+pub use persona::{ActivityType, Persona, Preset, Status};
 
 #[derive(Default, Debug)]
 pub struct Config {
@@ -32,6 +31,7 @@ pub struct ConfigBuilder {
     pub persona: Option<Persona>,
     pub info: Option<Info>,
     pub env: Option<Env>,
+    pub commands_registry: Option<CommandRegistry>,
 }
 
 impl ConfigBuilder {
@@ -54,11 +54,17 @@ impl ConfigBuilder {
         self
     }
 
+    pub fn with_commands_registry(mut self, registry: CommandRegistry) -> Self {
+        self.commands_registry = Some(registry);
+        self
+    }
+
     pub fn build(self) -> Config {
         Config {
             persona: self.persona.unwrap_or_default(),
             info: self.info.unwrap_or_default(),
             env: self.env.unwrap_or_default(),
+            commands_registry: self.commands_registry.unwrap_or_default(),
             ..Default::default()
         }
     }

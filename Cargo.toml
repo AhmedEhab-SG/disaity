@@ -1,10 +1,10 @@
 [workspace]
 resolver = "3"
 members = [
-  "crates/bot",
   "crates/commands",
   "crates/config",
   "crates/core",
+  "crates/disaity",
   "crates/handlers",
   "crates/subscriptions",
 ]
@@ -13,6 +13,7 @@ members = [
 edition = "2024"
 version = "0.4.0"
 repository = "https://github.com/AhmedEhab-SG/disaity"
+license = "CC0-1.0"
 
 [workspace.dependencies]
 # leaf / data
@@ -24,6 +25,7 @@ dotenv = "0.15.0"
 chrono = "0.4.45"
 rand = "0.10.2"
 tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 sqlx = { version = "0.9.0", default-features = false, features = [
   "runtime-tokio",
   "sqlite",
@@ -50,20 +52,11 @@ serenity = { version = "0.12.5", default-features = false, features = [
   "rustls_backend",
   "voice",
 ] }
-# internal crates
-disaity-config = { path = "crates/config" }
-disaity-core = { path = "crates/core" }
-disaity-commands = { path = "crates/commands" }
-disaity-handlers = { path = "crates/handlers" }
-disaity-subscriptions = { path = "crates/subscriptions" }
+disaity-config = { path = "crates/config", version = "0.4.0" }
+disaity-core = { path = "crates/core", version = "0.4.0" }
+disaity-commands = { path = "crates/commands", version = "0.4.0" }
+disaity-handlers = { path = "crates/handlers", version = "0.4.0" }
+disaity-subscriptions = { path = "crates/subscriptions", version = "0.4.0" }
 
-[profile.dist]
-inherits = "release"
+[profile.release]
 lto = "thin"
-
-[workspace.metadata.dist]
-cargo-dist-version = "0.31.0"
-ci = "github"
-allow-dirty = ["ci"]
-targets = ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-gnu"]
-installers = []

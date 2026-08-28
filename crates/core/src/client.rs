@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use disaity_config::Env;
 use poise::{Command, Framework, FrameworkOptions, PrefixFrameworkOptions, builtins};
 use serenity::{
     all::{ClientBuilder, Context as SerenityContext, prelude::GatewayIntents},
@@ -7,6 +8,8 @@ use serenity::{
     gateway::ShardManager,
 };
 use songbird::SerenityInit;
+use tracing::Instrument;
+use tracing_subscriber::EnvFilter;
 
 use crate::{
     AsSubscription, Data, Database, Error, Feature, SubscriptionModule,
@@ -69,7 +72,7 @@ impl Client {
         self
     }
 
-    pub fn with_commands(
+    pub fn with_raw_commands(
         mut self,
         commands: impl IntoIterator<Item = Command<Data, Error>>,
     ) -> Self {
@@ -96,6 +99,31 @@ impl Client {
         self
     }
 
+    pub fn with_tracing(self) -> Self {
+        let filter = match (EnvFilter::try_from_default_env(), Env::get_log_level()) {
+            (Ok(rust_log), _) => rust_log,
+            (Err(_), Some(level)) => EnvFilter::new(format!(
+                "warn,\
+                 disaity_core={level},\
+                 disaity_commands={level},\
+                 disaity_config={level},\
+                 disaity_handlers={level},\
+                 disaity_subscriptions={level},\
+                 serenity={level},\
+                 poise={level},\
+                 songbird={level}"
+            )),
+            (Err(_), None) => return self,
+        };
+
+        tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .try_init()
+            .ok();
+
+        self
+    }
+
     pub async fn run(self) -> Result<(), Error> {
         let Client {
             token,
@@ -112,79 +140,95 @@ impl Client {
             None => DataBuilder::new().build().await?,
         };
 
-        if features.iter().any(|feature| feature.needs_ai()) {
-            let key = data
-                .config
-                .env
-                .gemini_api_key
-                .as_deref()
-                .ok_or("an AI feature is registered but GEMINI_API_KEY is not set")?;
+        let span = tracing::error_span!("", message = %data.config.persona.name);
+        let setup_span = span.clone();
 
-            data.ai = Some(AiAgent::connect(key)?);
-        }
+        async move {
+            if features.iter().any(|feature| feature.needs_ai()) {
+                let key = data
+                    .config
+                    .env
+                    .gemini_api_key
+                    .as_deref()
+                    .ok_or("an AI feature is registered but GEMINI_API_KEY is not set")?;
 
-        if features.iter().any(|feature| feature.needs_db()) {
-            let db_path = data
-                .config
-                .env
-                .db_path
-                .as_deref()
-                .ok_or("a subscription feature is registered but DB_PATH is not set")?;
-
-            data.db = Some(Database::connect(db_path, &data.config.persona.name).await?);
-        }
-
-        for feature in &features {
-            if !feature.enabled(&data) {
-                continue;
+                data.ai = Some(AiAgent::connect(key)?);
             }
 
-            commands.extend(feature.commands(&data));
-            if let Some(handler) = feature.handler() {
-                handlers.push(handler);
-            }
-        }
+            if features.iter().any(|feature| feature.needs_db()) {
+                let db_path = data
+                    .config
+                    .env
+                    .db_path
+                    .as_deref()
+                    .ok_or("a subscription feature is registered but DB_PATH is not set")?;
 
-        let framework = Framework::builder()
-            .options(FrameworkOptions {
-                prefix_options: PrefixFrameworkOptions {
-                    prefix,
+                data.db = Some(Database::connect(db_path, &data.config.persona.name).await?);
+            }
+
+            for feature in &features {
+                if !feature.enabled(&data) {
+                    continue;
+                }
+
+                commands.extend(feature.commands(&data));
+                if let Some(handler) = feature.handler() {
+                    handlers.push(handler);
+                }
+            }
+
+            let framework = Framework::builder()
+                .options(FrameworkOptions {
+                    prefix_options: PrefixFrameworkOptions {
+                        prefix,
+                        ..Default::default()
+                    },
+                    commands,
+                    on_error: |error| {
+                        Box::pin(async move {
+                            on_error_handler(error).await.ok();
+                        })
+                    },
                     ..Default::default()
-                },
-                commands,
-                on_error: |error| {
-                    Box::pin(async move {
-                        on_error_handler(error).await.ok();
-                    })
-                },
-                ..Default::default()
-            })
-            .setup(|ctx, _ready, framework| {
-                Box::pin(async move {
-                    builtins::register_globally(ctx, &framework.options().commands).await?;
-
-                    let cx = HandlerCx {
-                        serenity: ctx,
-                        shared_manager: framework.shard_manager().clone(),
-                        data: &data,
-                    };
-
-                    for handler in &handlers {
-                        handler.setup(&cx).await?;
-                    }
-
-                    Ok(data)
                 })
-            })
-            .build();
+                .setup(move |ctx, _ready, framework| {
+                    Box::pin(
+                        async move {
+                            builtins::register_globally(ctx, &framework.options().commands).await?;
 
-        ClientBuilder::new(token, intents)
-            .framework(framework)
-            .register_songbird()
-            .await?
-            .start()
-            .await?;
+                            let cx = HandlerCx {
+                                serenity: ctx,
+                                shared_manager: framework.shard_manager().clone(),
+                                data: &data,
+                            };
 
-        Ok(())
+                            tracing::debug!(
+                                handlers = handlers.len(),
+                                commands = framework.options().commands.len(),
+                                "registered, running handler setup"
+                            );
+
+                            for handler in &handlers {
+                                handler.setup(&cx).await?;
+                            }
+
+                            Ok(data)
+                        }
+                        .instrument(setup_span),
+                    )
+                })
+                .build();
+
+            ClientBuilder::new(token, intents)
+                .framework(framework)
+                .register_songbird()
+                .await?
+                .start()
+                .await?;
+
+            Ok(())
+        }
+        .instrument(span)
+        .await
     }
 }

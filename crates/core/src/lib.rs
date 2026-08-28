@@ -1,18 +1,22 @@
-mod bin;
+mod binaries;
 mod client;
 mod context;
+mod db;
 mod errors;
 mod feature;
 pub mod macros;
-mod state;
 mod utils;
 mod voice;
 
-pub use bin::BinariesExt;
+pub use poise;
+pub use serenity;
+pub use songbird;
+
+pub use binaries::{Binaries, BinarySpec, FFMPEG, ResolvedBinary, YTDLP};
 pub use client::{Client, Handler, HandlerCx};
 pub use context::{Context, ContextExt, Data, DataBuilder};
+pub use db::Database;
 pub use errors::{Error, on_error_handler};
-pub use feature::{AsSubscription, Feature, FeatureBuilder, SubscriptionModule, decorate};
-pub use state::Database;
+pub use feature::{AsSubscription, Decorate, Feature, FeatureBuilder, SubscriptionModule};
 pub use utils::{ReactionUtils, VoiceUtils};
 pub use voice::SongMetadata;

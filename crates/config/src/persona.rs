@@ -65,6 +65,8 @@ pub struct Colors {
 pub struct Status {
     pub name: String,
     pub activity_type: ActivityType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
