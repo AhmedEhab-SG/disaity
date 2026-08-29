@@ -55,8 +55,8 @@ pub use disaity_core::{poise, serenity, songbird};
 
 pub use disaity_commands::Commands;
 pub use disaity_config::{
-    ActivityType, Assets, Category, CommandId, CommandRegistry, Config, ConfigBuilder, Env,
-    EnvBuilder, Info, LogLevel, Persona, Preset, Provider, Status,
+    ActivityType, Assets, Category, CommandId, CommandRegistry, Config, ConfigBuilder, Env, Info,
+    LogLevel, Persona, Preset, Provider, Status,
 };
 pub use disaity_core::{
     AsSubscription, Binaries, BinarySpec, Client, Context, ContextExt, Data, DataBuilder, Database,

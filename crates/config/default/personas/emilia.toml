@@ -72,9 +72,11 @@ accent = 15110828
 [[interactions.status]]
 name = "hide & seek with Puck"
 activity_type = "playing"
+
 [[interactions.status]]
 name = "stories with Rem & Ram"
 activity_type = "listening"
+
 [[interactions.status]]
 name = "a Man becomes a Hero"
 activity_type = "watching"

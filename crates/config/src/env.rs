@@ -15,7 +15,7 @@ pub enum LogLevel {
 
 #[derive(Debug, Clone)]
 pub struct Env {
-    pub client_token: String,
+    pub client_token: Option<String>,
     pub gemini_api_key: Option<String>,
     pub db_path: Option<String>,
     pub log_level: Option<LogLevel>,
@@ -37,16 +37,26 @@ impl Env {
         Self::default()
     }
 
-    pub fn get_client_token() -> String {
-        var("CLIENT_TOKEN").expect("missing client token as an env")
+    fn get_client_token() -> Option<String> {
+        var("CLIENT_TOKEN").ok()
     }
 
-    pub fn get_gemini_api_key() -> Option<String> {
+    fn get_gemini_api_key() -> Option<String> {
         var("GEMINI_API_KEY").ok()
     }
 
-    pub fn get_db_path() -> Option<String> {
+    fn get_db_path() -> Option<String> {
         var("DB_PATH").ok()
+    }
+
+    pub fn with_client_token(mut self, key: impl AsRef<OsStr>) -> Self {
+        self.client_token = var(key).ok();
+        self
+    }
+
+    pub fn with_gemini_api_key(mut self, key: impl AsRef<OsStr>) -> Self {
+        self.gemini_api_key = var(key).ok();
+        self
     }
 
     pub fn get_log_level() -> Option<LogLevel> {
@@ -56,36 +66,5 @@ impl Env {
                 LogLevel::Debug
             })
         })
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct EnvBuilder {
-    pub client_token: Option<String>,
-    pub gemini_api_key: Option<String>,
-}
-
-impl EnvBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn with_client_token(mut self, key: impl AsRef<OsStr>) -> Self {
-        self.client_token = Some(var(key).expect("missing client token as an env"));
-        self
-    }
-
-    pub fn with_gemini_api_key(mut self, key: impl AsRef<OsStr>) -> Self {
-        self.gemini_api_key = var(key).ok();
-        self
-    }
-
-    pub fn build(self) -> Env {
-        Env {
-            client_token: self.client_token.unwrap_or_else(Env::get_client_token),
-            gemini_api_key: self.gemini_api_key.or_else(Env::get_gemini_api_key),
-            db_path: Env::get_db_path(),
-            log_level: Env::get_log_level(),
-        }
     }
 }

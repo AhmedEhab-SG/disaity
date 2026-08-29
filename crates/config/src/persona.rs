@@ -24,7 +24,8 @@ pub struct Interactions {
     pub colors: Colors,
     pub status: Vec<Status>,
 }
-
+// TODO add a impl fn to get a random string and pass it in the
+// cmd while join leave ready and dm
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Events {
     pub lifecycle: Lifecycle,

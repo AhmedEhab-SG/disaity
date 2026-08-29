@@ -7,7 +7,7 @@
 //! Needs `CLIENT_TOKEN` and `CLIENT_TOKEN_ALT` in your `.env`. Set `LOG_LEVEL`
 //! there too — `debug` or `trace` — to watch both personas on stderr.
 
-use disaity::{EnvBuilder, PrayerModule, StatusHandler, prelude::*};
+use disaity::{Env, PrayerModule, StatusHandler, prelude::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -22,9 +22,8 @@ async fn main() -> Result<(), Error> {
         .build()
         .await?;
 
-    let client = Client::new(&data.config.env.client_token)
+    let client = Client::new()
         .with_tracing()
-        .with_prefix(&data.config.info.prefix)
         .with_feature(Commands::music())
         .with_feature(Commands::other())
         .with_feature(Commands::chat())
@@ -35,11 +34,7 @@ async fn main() -> Result<(), Error> {
     let data_alt = DataBuilder::new()
         .with_config(
             ConfigBuilder::new()
-                .with_env(
-                    EnvBuilder::new()
-                        .with_client_token("CLIENT_TOKEN_ALT")
-                        .build(),
-                )
+                .with_env(Env::new().with_client_token("CLIENT_TOKEN_ALT"))
                 .with_info(Info::new().with_prefix("~"))
                 .with_persona(Persona::new(Preset::Rem))
                 .build(),
@@ -47,9 +42,8 @@ async fn main() -> Result<(), Error> {
         .build()
         .await?;
 
-    let client_alt = Client::new(&data_alt.config.env.client_token)
+    let client_alt = Client::new()
         .with_tracing()
-        .with_prefix(&data_alt.config.info.prefix)
         .with_feature(Commands::music())
         .with_feature(Commands::other())
         .with_feature(Commands::chat())

@@ -29,26 +29,28 @@ pub trait Handler: Send + Sync + 'static {
 }
 
 pub struct Client {
-    token: String,
     intents: GatewayIntents,
-    prefix: Option<String>,
     commands: Vec<Command<Data, Error>>,
     handlers: Vec<Arc<dyn Handler>>,
     features: Vec<Box<dyn Feature>>,
     data: Option<Data>,
 }
 
-impl Client {
-    pub fn new(token: impl Into<String>) -> Self {
+impl Default for Client {
+    fn default() -> Self {
         Self {
-            token: token.into(),
             intents: Self::default_intents(),
-            prefix: None,
-            features: Vec::new(),
-            commands: Vec::new(),
-            handlers: Vec::new(),
+            features: Vec::default(),
+            commands: Vec::default(),
+            handlers: Vec::default(),
             data: None,
         }
+    }
+}
+
+impl Client {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     fn default_intents() -> GatewayIntents {
@@ -64,11 +66,6 @@ impl Client {
 
     pub fn with_intents(mut self, intents: GatewayIntents) -> Self {
         self.intents = intents;
-        self
-    }
-
-    pub fn with_prefix(mut self, prefix: impl Into<String>) -> Self {
-        self.prefix = Some(prefix.into());
         self
     }
 
@@ -126,9 +123,7 @@ impl Client {
 
     pub async fn run(self) -> Result<(), Error> {
         let Client {
-            token,
             intents,
-            prefix,
             mut commands,
             mut handlers,
             features,
@@ -144,6 +139,15 @@ impl Client {
         let setup_span = span.clone();
 
         async move {
+            let token = data
+                .config
+                .env
+                .client_token
+                .to_owned()
+                .ok_or("missing client token as an env")?;
+
+            let prefix = Some(data.config.info.prefix.to_owned());
+
             if features.iter().any(|feature| feature.needs_ai()) {
                 let key = data
                     .config
@@ -163,7 +167,9 @@ impl Client {
                     .as_deref()
                     .ok_or("a subscription feature is registered but DB_PATH is not set")?;
 
-                data.db = Some(Database::connect(db_path, &data.config.persona.name).await?);
+                data.db = Some(
+                    Database::connect(db_path, &data.config.persona.name.to_lowercase()).await?,
+                );
             }
 
             for feature in &features {

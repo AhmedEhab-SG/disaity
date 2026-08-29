@@ -1,5 +1,5 @@
 [env]
-# force CMake to emulate v 3.5 behavior libs needed that
+# force CMake to emulate v 3.5 behavior songbird's on windows it
 CMAKE_POLICY_VERSION_MINIMUM = "3.5"
 
 # Point every crate in this workspace at the one `bin/` tree at the repo root,

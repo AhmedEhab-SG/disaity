@@ -19,16 +19,15 @@ async fn main() -> Result<(), Error> {
     let data = DataBuilder::new()
         .with_config(
             ConfigBuilder::new()
+                .with_info(Info::new().with_prefix("~"))
                 .with_persona(Persona::new(Preset::Emilia))
                 .build(),
         )
         .build()
         .await?;
 
-    Client::new(&data.config.env.client_token)
-        .with_prefix(&data.config.info.prefix)
+    Client::new()
         .with_feature(Commands::music())
-        .with_feature(Commands::chat())
         .with_feature(Commands::other())
         .with_data(data)
         .run()
