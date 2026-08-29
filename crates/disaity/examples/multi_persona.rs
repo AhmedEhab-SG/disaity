@@ -7,7 +7,7 @@
 //! Needs `CLIENT_TOKEN` and `CLIENT_TOKEN_ALT` in your `.env`. Set `LOG_LEVEL`
 //! there too — `debug` or `trace` — to watch both personas on stderr.
 
-use disaity::{Env, PrayerModule, StatusHandler, prelude::*};
+use disaity::{PrayerModule, StatusHandler, prelude::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

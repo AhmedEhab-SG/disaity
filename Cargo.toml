@@ -52,11 +52,11 @@ serenity = { version = "0.12.5", default-features = false, features = [
   "rustls_backend",
   "voice",
 ] }
-disaity-config = { path = "crates/config", version = "0.4.1" }
-disaity-core = { path = "crates/core", version = "0.4.1" }
-disaity-commands = { path = "crates/commands", version = "0.4.1" }
-disaity-handlers = { path = "crates/handlers", version = "0.4.1" }
-disaity-subscriptions = { path = "crates/subscriptions", version = "0.4.1" }
+disaity-config = { path = "crates/config", version = "0.4.2" }
+disaity-core = { path = "crates/core", version = "0.4.2" }
+disaity-commands = { path = "crates/commands", version = "0.4.2" }
+disaity-handlers = { path = "crates/handlers", version = "0.4.2" }
+disaity-subscriptions = { path = "crates/subscriptions", version = "0.4.2" }
 
 [profile.release]
 lto = "thin"
