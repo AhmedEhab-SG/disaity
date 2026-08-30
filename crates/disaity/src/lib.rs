@@ -46,8 +46,8 @@ pub use disaity_config::{
 };
 pub use disaity_core::{
     AsSubscription, Binaries, BinarySpec, Client, Context, ContextExt, Data, DataBuilder, Database,
-    Decorate, Error, ErrorHandler, FFMPEG, Feature, FeatureBuilder, Handler, HandlerCx,
-    ReactionUtils, ResolvedBinary, SongMetadata, SubscriptionModule, VoiceUtils, YTDLP, say,
+    Decorate, Error, ErrorExt, FFMPEG, Feature, FeatureBuilder, Handler, HandlerCx, ReactionUtils,
+    ResolvedBinary, SongMetadata, SubscriptionModule, VoiceUtils, YTDLP, say,
 };
 pub use disaity_handlers::StatusHandler;
 pub use disaity_subscriptions::PrayerModule;

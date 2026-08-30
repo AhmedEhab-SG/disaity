@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use disaity_config::Env;
 use poise::{Command, Framework, FrameworkOptions, PrefixFrameworkOptions, builtins};
 use serenity::{
     all::{ClientBuilder, Context as SerenityContext, prelude::GatewayIntents},
@@ -12,9 +11,10 @@ use tracing::Instrument;
 use tracing_subscriber::EnvFilter;
 
 use super::{
-    AsSubscription, Data, Database, Error, ErrorHandler, Feature, SubscriptionModule,
+    AsSubscription, Data, Database, Error, ErrorExt, Feature, SubscriptionModule,
     context::{AiAgent, DataBuilder},
 };
+use disaity_config::Env;
 
 pub struct HandlerCx<'a> {
     pub serenity: &'a SerenityContext,
@@ -191,7 +191,7 @@ impl Client {
                     commands,
                     on_error: |error| {
                         Box::pin(async move {
-                            ErrorHandler::on_error(error).await.ok();
+                            ErrorExt::on_error(error).await.ok();
                         })
                     },
                     ..Default::default()

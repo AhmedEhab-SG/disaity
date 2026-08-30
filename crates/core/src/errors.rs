@@ -11,9 +11,9 @@ use super::{
 
 pub type Error = Box<dyn ErrorStd + Send + Sync>;
 
-pub struct ErrorHandler;
+pub struct ErrorExt;
 
-impl ErrorHandler {
+impl ErrorExt {
     pub async fn on_error(error: FrameworkError<'_, Data, Error>) -> Result<(), Error> {
         match error {
             FrameworkError::CommandCheckFailed { ctx, error, .. } => {
