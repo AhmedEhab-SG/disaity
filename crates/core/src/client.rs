@@ -11,10 +11,9 @@ use songbird::SerenityInit;
 use tracing::Instrument;
 use tracing_subscriber::EnvFilter;
 
-use crate::{
-    AsSubscription, Data, Database, Error, Feature, SubscriptionModule,
+use super::{
+    AsSubscription, Data, Database, Error, ErrorHandler, Feature, SubscriptionModule,
     context::{AiAgent, DataBuilder},
-    on_error_handler,
 };
 
 pub struct HandlerCx<'a> {
@@ -192,7 +191,7 @@ impl Client {
                     commands,
                     on_error: |error| {
                         Box::pin(async move {
-                            on_error_handler(error).await.ok();
+                            ErrorHandler::on_error(error).await.ok();
                         })
                     },
                     ..Default::default()

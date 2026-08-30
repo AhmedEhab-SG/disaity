@@ -1,5 +1,5 @@
 //! Disaity — a batteries-included wrapper over [`serenity`], [`poise`] and
-//! [`songbird`] for building Discord music and chat bots.
+//! [`songbird`] for building Discord bots.
 //!
 //! ```no_run
 //! use disaity::prelude::*;
@@ -27,9 +27,6 @@
 //!
 //! # External binaries
 //!
-//! Playback shells out to `yt-dlp` and `ffmpeg`. [`Binaries::ensure`] locates
-//! them, in this order:
-//!
 //! Run your bot once with `--install bin` to fetch the current upstream build
 //! of each into, and `--update bin` to replace them later if music needed.
 
@@ -49,8 +46,8 @@ pub use disaity_config::{
 };
 pub use disaity_core::{
     AsSubscription, Binaries, BinarySpec, Client, Context, ContextExt, Data, DataBuilder, Database,
-    Decorate, Error, FFMPEG, Feature, FeatureBuilder, Handler, HandlerCx, ReactionUtils,
-    ResolvedBinary, SongMetadata, SubscriptionModule, VoiceUtils, YTDLP, on_error_handler, say,
+    Decorate, Error, ErrorHandler, FFMPEG, Feature, FeatureBuilder, Handler, HandlerCx,
+    ReactionUtils, ResolvedBinary, SongMetadata, SubscriptionModule, VoiceUtils, YTDLP, say,
 };
 pub use disaity_handlers::StatusHandler;
 pub use disaity_subscriptions::PrayerModule;
