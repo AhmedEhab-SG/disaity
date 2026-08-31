@@ -1,3 +1,5 @@
+use std::{collections::HashSet, sync::Arc};
+
 use scraper::{Html, Selector};
 use serde_json::{Map, Value};
 use serenity::{all::ReactionType, async_trait};
@@ -6,12 +8,11 @@ use songbird::{
     input::{Input, YoutubeDl},
     tracks::Track,
 };
-use std::{collections::HashSet, sync::Arc};
 use tokio::{process::Command, sync::Mutex};
 
 use disaity_config::Provider;
 
-use crate::{
+use super::{
     binaries::Binaries,
     context::Context,
     errors::Error,
@@ -20,17 +21,6 @@ use crate::{
 
 pub struct Utils<'a> {
     pub ctx: Context<'a>,
-}
-
-/// Tells a spawned yt-dlp which ffmpeg to use, so it does not have to find one
-/// on the `PATH`. Empty when ffmpeg resolved to a bare `PATH` lookup anyway.
-fn ffmpeg_args(binaries: &'static Binaries) -> Vec<String> {
-    binaries
-        .ffmpeg
-        .dir()
-        .filter(|dir| !dir.as_os_str().is_empty())
-        .map(|dir| vec!["--ffmpeg-location".to_string(), dir.display().to_string()])
-        .unwrap_or_default()
 }
 
 #[async_trait]
@@ -147,6 +137,7 @@ impl ReactionUtils for Utils<'_> {
     }
 }
 
+// TODO move out VoiceUitls to voice mod
 #[async_trait]
 impl VoiceUtils for Utils<'_> {
     async fn get_or_join_voice(&self) -> Result<Arc<Mutex<Call>>, Error> {
@@ -217,6 +208,7 @@ impl ExtractorUtils for Utils<'_> {
         Ok(title)
     }
 
+    // TODO Clean up extractor and scrapers
     async fn spotify_playlist_extractor(&self, url: &str) -> Result<Vec<String>, Error> {
         let clean_url = url.split('?').next().unwrap_or(url).trim_end_matches('/');
 
@@ -480,7 +472,7 @@ impl ExtractorUtils for Utils<'_> {
         let binaries = Binaries::get()?;
 
         let output = Command::new(binaries.ytdlp.path())
-            .args(ffmpeg_args(binaries))
+            .args(self.ffmpeg_args(binaries))
             .args([
                 "--flat-playlist",
                 "--yes-playlist",
@@ -541,7 +533,7 @@ impl ProviderUtils for Utils<'_> {
         } else {
             YoutubeDl::new_ytdl_like(ytdlp, http_client, query)
         }
-        .user_args(ffmpeg_args(binaries));
+        .user_args(self.ffmpeg_args(binaries));
 
         let mut src: Input = src_input.into();
 
@@ -635,5 +627,16 @@ impl Utils<'_> {
         self.delete_self_reactions(&['🔃']).await?;
         self.add_reactions(&['✅']).await?;
         Ok(())
+    }
+
+    /// Tells a spawned yt-dlp which ffmpeg to use, so it does not have to find one
+    /// on the `PATH`. Empty when ffmpeg resolved to a bare `PATH` lookup anyway.
+    fn ffmpeg_args(&self, binaries: &'static Binaries) -> Vec<String> {
+        binaries
+            .ffmpeg
+            .dir()
+            .filter(|dir| !dir.as_os_str().is_empty())
+            .map(|dir| vec!["--ffmpeg-location".to_string(), dir.display().to_string()])
+            .unwrap_or_default()
     }
 }

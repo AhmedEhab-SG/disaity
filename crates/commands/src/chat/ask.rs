@@ -6,6 +6,8 @@ use crate::checks::dm_with_auth;
 use disaity_config::{CommandId, Config};
 use disaity_core::{Context, Error};
 
+// TODO clean up get history to Uitls Struct
+
 fn get_history(
     messages: Vec<Message>,
     current_msg_id: Option<u64>,
