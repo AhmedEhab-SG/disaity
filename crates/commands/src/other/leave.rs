@@ -24,7 +24,18 @@ pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
 
     manager.leave(guild_id).await?;
 
-    ctx.say("Bye").await?;
+    ctx.say(
+        ctx.data()
+            .config
+            .persona
+            .interactions
+            .events
+            .guild
+            .on_leave_vc
+            .get_random_res()
+            .unwrap_or("Bye"),
+    )
+    .await?;
 
     Ok(())
 }

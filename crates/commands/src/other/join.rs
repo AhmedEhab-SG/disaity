@@ -30,7 +30,18 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
         call_lock.deafen(true).await?;
     }
 
-    ctx.say("Yes?").await?;
+    ctx.say(
+        ctx.data()
+            .config
+            .persona
+            .interactions
+            .events
+            .guild
+            .on_join_vc
+            .get_random_res()
+            .unwrap_or("Yes"),
+    )
+    .await?;
 
     Ok(())
 }

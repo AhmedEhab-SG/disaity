@@ -1,5 +1,6 @@
 use std::{fs, path::Path};
 
+use rand::seq::IndexedRandom;
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
@@ -24,8 +25,7 @@ pub struct Interactions {
     pub colors: Colors,
     pub status: Vec<Status>,
 }
-// TODO add a impl fn to get a random string and pass it in the
-// cmd while join leave ready and dm
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Events {
     pub lifecycle: Lifecycle,
@@ -33,7 +33,14 @@ pub struct Events {
     pub dm: Dm,
 }
 
-type EventValues = Vec<String>;
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct EventValues(Vec<String>);
+
+impl EventValues {
+    pub fn get_random_res(&self) -> Option<&str> {
+        self.0.choose(&mut rand::rng()).map(|c| c.as_str())
+    }
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Lifecycle {
@@ -42,15 +49,15 @@ pub struct Lifecycle {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Guild {
-    on_welcome: EventValues,
-    on_join_vc: EventValues,
-    on_leave_vc: EventValues,
-    on_error: EventValues,
+    pub on_welcome: EventValues,
+    pub on_join_vc: EventValues,
+    pub on_leave_vc: EventValues,
+    pub on_error: EventValues,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Dm {
-    on_error: EventValues,
+    pub on_error: EventValues,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -115,7 +122,7 @@ impl Persona {
         Ok(default.try_into()?)
     }
 
-    pub fn from_file_over(base: Preset, path: &Path) -> Result<Self, ConfigError> {
+    pub fn from_file_over(self, base: Preset, path: &Path) -> Result<Self, ConfigError> {
         let mut base_val: Value = toml::from_str(base.raw())?;
         let user_val: Value = toml::from_str(&fs::read_to_string(path)?)?;
         Self::safe_merge(&mut base_val, user_val);

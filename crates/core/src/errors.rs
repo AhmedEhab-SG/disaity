@@ -13,6 +13,7 @@ pub type Error = Box<dyn ErrorStd + Send + Sync>;
 
 pub struct ErrorExt;
 
+// TODO add presona response reflects Log level
 impl ErrorExt {
     pub async fn on_error(error: FrameworkError<'_, Data, Error>) -> Result<(), Error> {
         match error {
