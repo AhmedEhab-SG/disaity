@@ -1,2 +1,2 @@
 mod prayer;
-pub use prayer::PrayerModule;
+pub use prayer::PrayerSubscription;

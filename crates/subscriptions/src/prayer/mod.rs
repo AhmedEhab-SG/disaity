@@ -9,9 +9,9 @@ use poise::Command;
 
 use disaity_core::{Data, Error, Handler, SubscriptionModule};
 
-pub struct PrayerModule;
+pub struct PrayerSubscription;
 
-impl SubscriptionModule for PrayerModule {
+impl SubscriptionModule for PrayerSubscription {
     fn add(&self) -> Command<Data, Error> {
         add::prayer()
     }

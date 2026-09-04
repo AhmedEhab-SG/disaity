@@ -50,4 +50,4 @@ pub use disaity_core::{
     ResolvedBinary, SongMetadata, SubscriptionModule, VoiceUtils, YTDLP, say,
 };
 pub use disaity_handlers::StatusHandler;
-pub use disaity_subscriptions::PrayerModule;
+pub use disaity_subscriptions::PrayerSubscription;

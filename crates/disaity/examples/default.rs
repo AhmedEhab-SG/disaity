@@ -6,7 +6,7 @@
 //! cargo run --example default
 //! ```
 
-use disaity::{PrayerModule, StatusHandler, prelude::*};
+use disaity::{PrayerSubscription, StatusHandler, prelude::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -16,7 +16,7 @@ async fn main() -> Result<(), Error> {
         .with_tracing()
         .with_feature(Commands::all())
         .with_handler(StatusHandler)
-        .with_subscription(PrayerModule)
+        .with_subscription(PrayerSubscription)
         .run()
         .await
 }

@@ -6,7 +6,7 @@ use serenity::{
 
 use disaity_core::{Context, ContextExt, Error, say};
 
-use super::store::{PrayerSubscription, PrayerSubscriptionInfo};
+use super::store::{PrayerStore, PrayerStoreInfo};
 
 #[command(
     slash_command,
@@ -61,10 +61,10 @@ pub async fn prayer(
         .as_ref()
         .ok_or("Subscriptions are not configured on this bot.")?;
 
-    PrayerSubscription::new(db.pool.clone())
+    PrayerStore::new(db.pool.clone())
         .create(
             guild.id,
-            PrayerSubscriptionInfo {
+            PrayerStoreInfo {
                 channel_id,
                 role_id,
                 city: city.trim().to_string(),

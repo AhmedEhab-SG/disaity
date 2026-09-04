@@ -7,7 +7,7 @@
 //! Needs `CLIENT_TOKEN` and `CLIENT_TOKEN_ALT` in your `.env`. Set `LOG_LEVEL`
 //! there too — `debug` or `trace` — to watch both personas on stderr.
 
-use disaity::{PrayerModule, StatusHandler, prelude::*};
+use disaity::{PrayerSubscription, StatusHandler, prelude::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -28,7 +28,7 @@ async fn main() -> Result<(), Error> {
         .with_feature(Commands::other())
         .with_feature(Commands::chat())
         .with_handler(StatusHandler)
-        .with_subscription(PrayerModule)
+        .with_subscription(PrayerSubscription)
         .with_data(data);
 
     let data_alt = DataBuilder::new()

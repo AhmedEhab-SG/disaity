@@ -11,7 +11,7 @@ use serenity::{
 
 use disaity_core::{Error, Handler, HandlerCx};
 
-use crate::prayer::store::PrayerSubscription;
+use crate::prayer::store::PrayerStore;
 
 pub struct PrayerHandler;
 
@@ -22,7 +22,7 @@ impl Handler for PrayerHandler {
         let Some(db) = cx.data.db.as_ref() else {
             return Ok(());
         };
-        let prayer = PrayerSubscription::new(db.pool.clone());
+        let prayer = PrayerStore::new(db.pool.clone());
         prayer.init().await?;
         start_prayer_loop(cx.serenity.clone(), prayer, cx.data.http.clone());
         Ok(())
@@ -39,7 +39,7 @@ struct PrayerData {
     timings: HashMap<String, String>,
 }
 
-fn start_prayer_loop(ctx: SerenityContext, prayer: PrayerSubscription, http: Client) {
+fn start_prayer_loop(ctx: SerenityContext, prayer: PrayerStore, http: Client) {
     tokio::spawn(async move {
         let mut last_notified_minute = 99;
 

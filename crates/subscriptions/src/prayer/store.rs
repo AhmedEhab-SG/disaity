@@ -5,7 +5,7 @@ use sqlx::{Row, SqlitePool, sqlite::SqliteRow};
 use disaity_core::Error;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PrayerSubscriptionInfo {
+pub struct PrayerStoreInfo {
     pub channel_id: ChannelId,
     pub role_id: Option<RoleId>,
     pub city: String,
@@ -13,11 +13,11 @@ pub struct PrayerSubscriptionInfo {
 }
 
 #[derive(Clone, Debug)]
-pub struct PrayerSubscription {
+pub struct PrayerStore {
     pool: SqlitePool,
 }
 
-impl PrayerSubscription {
+impl PrayerStore {
     pub fn new(pool: SqlitePool) -> Self {
         Self { pool }
     }
@@ -40,8 +40,8 @@ impl PrayerSubscription {
         Ok(())
     }
 
-    fn from_row(row: &SqliteRow) -> PrayerSubscriptionInfo {
-        PrayerSubscriptionInfo {
+    fn from_row(row: &SqliteRow) -> PrayerStoreInfo {
+        PrayerStoreInfo {
             channel_id: ChannelId::new(
                 row.get::<String, _>("channel_id")
                     .parse::<u64>()
@@ -55,7 +55,7 @@ impl PrayerSubscription {
         }
     }
 
-    pub async fn get_all(&self) -> Result<Vec<PrayerSubscriptionInfo>, Error> {
+    pub async fn get_all(&self) -> Result<Vec<PrayerStoreInfo>, Error> {
         let rows =
             sqlx::query("SELECT channel_id, role_id, city, country FROM prayer_subscriptions")
                 .fetch_all(&self.pool)
@@ -64,7 +64,7 @@ impl PrayerSubscription {
         Ok(rows.iter().map(Self::from_row).collect())
     }
 
-    // pub async fn get(&self, guild_id: GuildId) -> Result<Option<PrayerSubscriptionInfo>, Error> {
+    // pub async fn get(&self, guild_id: GuildId) -> Result<Option<PrayerStoreInfo>, Error> {
     //     let row = sqlx::query(
     //         "SELECT channel_id, role_id, country, city FROM prayer_subscriptions WHERE guild_id = ?",
     //     )
@@ -75,11 +75,7 @@ impl PrayerSubscription {
     //     Ok(row.as_ref().map(Self::from_row))
     // }
 
-    pub async fn create(
-        &self,
-        guild_id: GuildId,
-        info: PrayerSubscriptionInfo,
-    ) -> Result<(), Error> {
+    pub async fn create(&self, guild_id: GuildId, info: PrayerStoreInfo) -> Result<(), Error> {
         sqlx::query(
             r#"
             INSERT INTO prayer_subscriptions (guild_id, channel_id, role_id, city, country)
