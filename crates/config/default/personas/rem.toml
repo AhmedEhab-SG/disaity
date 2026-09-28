@@ -73,7 +73,7 @@ warning = 7355367
 error = 16711680
 accent = 16761035
 
-[[interactions.status]]
+# [[interactions.status]]
 # name = "hide & seek with Ram"
 # activity_type = "playing"
 
