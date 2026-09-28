@@ -74,8 +74,8 @@ error = 16711680
 accent = 16761035
 
 [[interactions.status]]
-name = "hide & seek with Puck"
-activity_type = "playing"
+# name = "hide & seek with Ram"
+# activity_type = "playing"
 
 [[interactions.status]]
 name = "Nee-sama humming while she works"
