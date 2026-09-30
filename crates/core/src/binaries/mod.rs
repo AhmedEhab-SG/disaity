@@ -59,4 +59,14 @@ impl Binaries {
             "binaries are not ready: call `Binaries::ensure()` during startup".into()
         })
     }
+
+    /// Tells a spawned yt-dlp which ffmpeg to use, so it does not have to find one
+    /// on the `PATH`. Empty when ffmpeg resolved to a bare `PATH` lookup anyway.
+    pub fn ffmpeg_args(&self) -> Vec<String> {
+        self.ffmpeg
+            .dir()
+            .filter(|dir| !dir.as_os_str().is_empty())
+            .map(|dir| vec!["--ffmpeg-location".to_string(), dir.display().to_string()])
+            .unwrap_or_default()
+    }
 }

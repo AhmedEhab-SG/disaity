@@ -25,7 +25,7 @@ impl Provider {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Assets {
     pub provider: HashMap<Provider, String>,
 }

@@ -28,7 +28,12 @@ pub async fn play(
 
     ctx_utils.add_reactions(&['🔍']).await?;
 
-    let mut call_lock = call.lock().await;
+    {
+        let mut call_lock = call.lock().await;
+        if ctx.author().id != ctx.data().config.info.owner.id && call_lock.queue().is_empty() {
+            call_lock.deafen(true).await?;
+        }
+    }
 
     let timeout_duration = ctx
         .data()
@@ -37,32 +42,21 @@ pub async fn play(
         .get_command(&CommandId::Play)
         .timeout
         .unwrap_or(30);
-    let tracks_data = timeout(Duration::from_secs(timeout_duration), ctx_utils.play(song))
+    let queued = timeout(Duration::from_secs(timeout_duration), ctx_utils.play(song, call))
         .await
         .map_err(|_|format!( "The playlist or song took too long to load ({timeout_duration}s limit). Try a shorter query!"))??;
-
-    if ctx.author().id != ctx.data().config.info.owner.id && call_lock.queue().is_empty() {
-        call_lock.deafen(true).await?;
-    }
-
-    let is_playlist = tracks_data.len() > 1;
-
-    let first_title = tracks_data
-        .first()
-        .map(|(_, info)| info.title.clone())
-        .unwrap_or_else(|| "Unknown".to_string());
-
-    for (track, _) in tracks_data {
-        call_lock.enqueue(track).await;
-    }
 
     ctx_utils.delete_self_reactions(&['🔍']).await?;
     ctx_utils.add_reactions(&['✅']).await?;
 
-    let response = if is_playlist {
-        format!("**Fetched** {} and its playlist", first_title)
+    let response = if queued.total > 1 {
+        format!(
+            "**Fetched** {} and {} more from its playlist",
+            queued.first_title,
+            queued.total - 1
+        )
     } else {
-        format!("**Fetched** {}", first_title)
+        format!("**Fetched** {}", queued.first_title)
     };
 
     say!(ctx, response, application_only);
