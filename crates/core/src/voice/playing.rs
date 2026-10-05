@@ -10,7 +10,7 @@ use serenity::{
 use songbird::{Call, Event, EventContext, EventHandler, TrackEvent};
 use tokio::sync::Mutex;
 
-use super::{RegisterVoiceEvent, SongMetadata, VoiceEventCtx};
+use super::{super::TrackMetadata, RegisterVoiceEvent, VoiceEventCtx};
 
 pub(super) struct PlayingEvent;
 
@@ -100,7 +100,7 @@ impl EventHandler for TrackStartNotifier {
             // We only care about the first track starting in this event
             if let Some((_, handle)) = track_listen.first() {
                 // Clone everything we need to move into the background task
-                let data = handle.data::<SongMetadata>().clone();
+                let data = handle.data::<TrackMetadata>().clone();
                 let call = self.call.clone();
                 let http = self.http.clone();
                 let channel_id = self.channel_id;
@@ -117,7 +117,7 @@ impl EventHandler for TrackStartNotifier {
                         let len = current_queue.len();
                         let total: Duration = current_queue
                             .iter()
-                            .filter_map(|h| h.data::<SongMetadata>().duration)
+                            .filter_map(|h| h.data::<TrackMetadata>().duration)
                             .sum();
 
                         (len, total)

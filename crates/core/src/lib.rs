@@ -18,5 +18,4 @@ pub use context::{Context, ContextExt, Data, DataBuilder};
 pub use db::Database;
 pub use errors::{Error, ErrorExt};
 pub use feature::{AsSubscription, Decorate, Feature, FeatureBuilder, SubscriptionModule};
-pub use utils::{Queued, ReactionUtils, VoiceUtils};
-pub use voice::SongMetadata;
+pub use utils::{Queued, ReactionUtils, TrackMetadata, VoiceUtils};

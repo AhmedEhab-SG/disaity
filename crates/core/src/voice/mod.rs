@@ -1,9 +1,10 @@
 mod idle;
 mod playing;
 
+use std::sync::Arc;
+
 use serenity::all::{Cache, ChannelId, GuildId, Http};
 use songbird::{Call, Songbird};
-use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
 use idle::IdleEvent;
@@ -21,18 +22,6 @@ pub struct VoiceEventCtx {
 
 pub trait RegisterVoiceEvent {
     async fn register(call_lock: &mut Call, cx: &VoiceEventCtx);
-}
-
-#[derive(Debug, Clone)]
-pub struct SongMetadata {
-    pub title: String,
-    pub url: String,
-    pub thumbnail: String,
-    pub duration: Option<Duration>,
-    pub request_by: String,
-    pub request_by_avatar: String,
-    pub author: String,
-    pub provider_logo_url: String,
 }
 
 impl VoiceEventCtx {

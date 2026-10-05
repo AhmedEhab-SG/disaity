@@ -4,7 +4,7 @@ mod voice;
 
 use super::context::Context;
 
-pub use music::Queued;
+pub use music::{Queued, TrackMetadata};
 pub use reaction::ReactionUtils;
 pub use voice::VoiceUtils;
 

@@ -7,7 +7,7 @@ use std::{sync::Arc, time::Duration};
 use songbird::{Call, tracks::Track};
 use tokio::sync::Mutex;
 
-use crate::{errors::Error, voice::SongMetadata};
+use crate::errors::Error;
 
 use super::Utils;
 
@@ -18,6 +18,18 @@ use resolver::{ResolvedTrack, TrackResolver};
 pub struct Queued {
     pub first_title: String,
     pub total: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct TrackMetadata {
+    pub title: String,
+    pub url: String,
+    pub thumbnail: String,
+    pub duration: Option<Duration>,
+    pub request_by: String,
+    pub request_by_avatar: String,
+    pub author: String,
+    pub provider_logo_url: String,
 }
 
 /// Songs of one request: `ready` can be queued now, `pending` still needs its
@@ -50,12 +62,11 @@ impl Utils<'_> {
             total: batch.ready.len() + batch.pending.len(),
         };
 
-        {
-            let mut call_lock = call.lock().await;
-            for (track, info) in batch.ready {
-                enqueue(&mut call_lock, track, &info);
-            }
+        let mut call_lock = call.lock().await;
+        for (track, info) in batch.ready {
+            enqueue(&mut call_lock, track, &info);
         }
+        drop(call_lock);
 
         if !batch.pending.is_empty() {
             tokio::spawn(enqueue_in_background(resolver, batch.pending, call));
@@ -68,7 +79,7 @@ impl Utils<'_> {
 /// Queues a track, preloading the next one 5s before this one ends.
 /// `Call::enqueue` would run yt-dlp again just to read the duration we already
 /// have, while holding the call lock.
-fn enqueue(call_lock: &mut Call, track: Track, info: &SongMetadata) {
+fn enqueue(call_lock: &mut Call, track: Track, info: &TrackMetadata) {
     let preload = info
         .duration
         .map(|d| d.saturating_sub(Duration::from_secs(5)));

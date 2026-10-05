@@ -8,11 +8,15 @@ use songbird::{
 
 use disaity_config::{Assets, Provider};
 
-use crate::{binaries::Binaries, context::Context, errors::Error, voice::SongMetadata};
+use crate::{binaries::Binaries, context::Context, errors::Error};
 
-use super::{playlist::ListedMeta, spotify};
+use super::{
+    TrackMetadata,
+    playlist::ListedMeta,
+    spotify::{self, Spotify},
+};
 
-pub(super) type ResolvedTrack = (Track, SongMetadata);
+pub(super) type ResolvedTrack = (Track, TrackMetadata);
 
 /// Turns a song query into a playable track. Unlike `Utils`, it owns
 /// everything it needs, so it can keep resolving songs in a background task
@@ -49,7 +53,7 @@ impl TrackResolver {
 
         if song.contains("spotify.com/") {
             // Spotify can't be streamed: read the title from its page and search it.
-            let title = spotify::song_title(&self.http, &song).await?;
+            let title = Spotify::song_title(&self.http, &song).await?;
             return self.fetch(title, true, Provider::Spotify, Some(song)).await;
         }
 
@@ -61,23 +65,6 @@ impl TrackResolver {
         };
 
         self.fetch(song, search, provider, None).await
-    }
-
-    /// A track for a song whose metadata came with the playlist listing.
-    /// Nothing runs yet: yt-dlp only starts when the song is about to play.
-    pub(super) fn listed(&self, url: String, meta: ListedMeta) -> Result<ResolvedTrack, Error> {
-        let info = self.song_metadata(
-            meta.title,
-            url.clone(),
-            meta.thumbnail.unwrap_or_default(),
-            meta.duration,
-            meta.author.unwrap_or_else(|| "Unknown Author".to_string()),
-            Provider::from_url(&url),
-        );
-
-        let src: Input = self.source(url, false)?.into();
-
-        Ok((Track::new_with_data(src, Arc::new(info.clone())), info))
     }
 
     /// `link` overrides the URL shown in the embed, for a Spotify link that was
@@ -101,7 +88,7 @@ impl TrackResolver {
             provider => provider,
         };
 
-        let info = self.song_metadata(
+        let info = self.track_metadata(
             meta.title.take().unwrap_or_else(|| "Unknown".to_string()),
             url,
             meta.thumbnail.take().unwrap_or_default(),
@@ -111,6 +98,23 @@ impl TrackResolver {
                 .unwrap_or_else(|| "Unknown Author".to_string()),
             provider,
         );
+
+        Ok((Track::new_with_data(src, Arc::new(info.clone())), info))
+    }
+
+    /// A track for a song whose metadata came with the playlist listing.
+    /// Nothing runs yet: yt-dlp only starts when the song is about to play.
+    pub(super) fn listed(&self, url: String, meta: ListedMeta) -> Result<ResolvedTrack, Error> {
+        let info = self.track_metadata(
+            meta.title,
+            url.clone(),
+            meta.thumbnail.unwrap_or_default(),
+            meta.duration,
+            meta.author.unwrap_or_else(|| "Unknown Author".to_string()),
+            Provider::from_url(&url),
+        );
+
+        let src: Input = self.source(url, false)?.into();
 
         Ok((Track::new_with_data(src, Arc::new(info.clone())), info))
     }
@@ -128,7 +132,7 @@ impl TrackResolver {
         Ok(src.user_args(binaries.ffmpeg_args()))
     }
 
-    fn song_metadata(
+    fn track_metadata(
         &self,
         title: String,
         url: String,
@@ -136,8 +140,8 @@ impl TrackResolver {
         duration: Option<Duration>,
         author: String,
         provider: Provider,
-    ) -> SongMetadata {
-        SongMetadata {
+    ) -> TrackMetadata {
+        TrackMetadata {
             title,
             url,
             thumbnail,

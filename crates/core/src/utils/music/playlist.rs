@@ -6,7 +6,7 @@ use tokio::process::Command;
 
 use crate::{binaries::Binaries, errors::Error};
 
-use super::{Batch, resolver::TrackResolver, spotify};
+use super::{Batch, resolver::TrackResolver, spotify::Spotify};
 
 /// One song of a playlist. `meta` is set when the playlist listing already
 /// carried it, so the song can be queued without its own yt-dlp lookup.
@@ -63,8 +63,8 @@ pub(super) async fn load(resolver: &TrackResolver, url: &str) -> Result<Batch, E
 }
 
 async fn entries(http: &Client, url: &str) -> Result<Vec<PlaylistEntry>, Error> {
-    if spotify::is_playlist(url) {
-        let queries = spotify::playlist_queries(http, url).await?;
+    if Spotify::is_playlist(url) {
+        let queries = Spotify::playlist_queries(http, url).await?;
         return Ok(queries
             .into_iter()
             .map(|query| PlaylistEntry { query, meta: None })

@@ -5,7 +5,7 @@ use serenity::all::{
     CreateInteractionResponse, CreateInteractionResponseMessage,
 };
 
-use disaity_core::{Context, ContextExt, Error, SongMetadata};
+use disaity_core::{Context, ContextExt, Error, TrackMetadata};
 
 use crate::checks::{not_empty_queue, same_vc};
 
@@ -44,7 +44,7 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
 
     for (i, track_handle) in queue_snapshot.iter().enumerate() {
         // Downcast to your stored metadata type (Arc<SongMetadata>)
-        let track_info = track_handle.data::<SongMetadata>();
+        let track_info = track_handle.data::<TrackMetadata>();
 
         let duration = track_info
             .duration
@@ -93,7 +93,7 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
 
         // Use the first track's thumbnail if available
         if let Some(first_handle) = queue_snapshot.first() {
-            let info = first_handle.data::<SongMetadata>();
+            let info = first_handle.data::<TrackMetadata>();
             embed = embed.thumbnail(&info.thumbnail);
         }
 
