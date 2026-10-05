@@ -11,6 +11,7 @@ use crate::errors::Error;
 
 use super::Utils;
 
+use playlist::Playlist;
 use resolver::{ResolvedTrack, TrackResolver};
 
 /// What `Utils::play` put in the queue. The rest of a playlist may still be
@@ -46,8 +47,8 @@ impl Utils<'_> {
     pub async fn play(&self, song: String, call: Arc<Mutex<Call>>) -> Result<Queued, Error> {
         let resolver = TrackResolver::new(self.ctx);
 
-        let mut batch = if playlist::is_playlist(&song) {
-            playlist::load(&resolver, &song).await?
+        let mut batch = if Playlist::is_list(&song) {
+            Playlist::load(&resolver, &song).await?
         } else {
             Batch::default()
         };

@@ -10,11 +10,7 @@ use disaity_config::{Assets, Provider};
 
 use crate::{binaries::Binaries, context::Context, errors::Error};
 
-use super::{
-    TrackMetadata,
-    playlist::ListedMeta,
-    spotify::{self, Spotify},
-};
+use super::{TrackMetadata, playlist::ListedMeta, spotify::Spotify};
 
 pub(super) type ResolvedTrack = (Track, TrackMetadata);
 
@@ -45,7 +41,7 @@ impl TrackResolver {
     /// Resolves a URL, a search, a Spotify link, or a query from the Spotify
     /// playlist scraper. Runs yt-dlp once to read the song's metadata.
     pub(super) async fn resolve(&self, song: String) -> Result<ResolvedTrack, Error> {
-        if let Some(query) = song.strip_prefix(spotify::SEARCH_PREFIX) {
+        if let Some(query) = song.strip_prefix(Spotify::SEARCH_PREFIX) {
             return self
                 .fetch(query.to_string(), true, Provider::Spotify, None)
                 .await;

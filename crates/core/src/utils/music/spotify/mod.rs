@@ -6,17 +6,19 @@ use serde_json::Value;
 
 use crate::errors::Error;
 
-/// Marks a playlist song that has to be searched by title and artist, since
-/// Spotify itself can't be streamed.
-pub(super) const SEARCH_PREFIX: &str = "spotifysearch:";
-
-const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-
 pub(super) struct Spotify;
 
 impl Spotify {
-    pub(super) fn is_playlist(url: &str) -> bool {
-        url.contains("open.spotify.com/playlist/") || url.contains("open.spotify.com/album/")
+    /// Marks a playlist song that has to be searched by title and artist, since
+    /// Spotify itself can't be streamed.
+    pub(super) const SEARCH_PREFIX: &str = "spotifysearch:";
+    const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+    const LIST_INDICATORS: [&str; 2] = ["open.spotify.com/playlist/", "open.spotify.com/album/"];
+
+    pub(super) fn is_list(url: &str) -> bool {
+        Self::LIST_INDICATORS
+            .iter()
+            .any(|indicator| url.contains(indicator))
     }
 
     /// The "title artist" text of a single Spotify song, read from its page title.
@@ -81,7 +83,7 @@ impl Spotify {
         for candidate in [embed_url.as_str(), clean_url] {
             if let Ok(resp) = http
                 .get(candidate)
-                .header("User-Agent", USER_AGENT)
+                .header("User-Agent", Self::USER_AGENT)
                 .header("Accept-Language", "en-US,en;q=0.9")
                 .send()
                 .await

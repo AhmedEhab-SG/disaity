@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use serde_json::{Map, Value};
 
-use super::SEARCH_PREFIX;
+use super::Spotify;
 
 const TITLE_KEYS: &[&str] = &["name", "title", "trackName", "displayName"];
 const ARTIST_KEYS: &[&str] = &["artistName", "artist", "byline", "subtitle", "ownerName"];
@@ -95,7 +95,8 @@ impl Walker {
             return;
         }
 
-        let query = format!("{SEARCH_PREFIX}{title} {artist}");
+        let prefix = Spotify::SEARCH_PREFIX;
+        let query = format!("{prefix}{title} {artist}");
         if self.seen.insert(query.clone()) {
             self.queries.push(query);
         }
