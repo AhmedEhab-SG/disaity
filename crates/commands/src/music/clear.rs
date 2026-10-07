@@ -30,13 +30,28 @@ pub async fn clear(ctx: Context<'_>) -> Result<(), Error> {
 
     let queue = call_lock.queue();
 
-    queue.modify_queue(|q| {
-        q.clear();
+    let removed = queue.modify_queue(|q| {
+        if q.len() <= 1 {
+            return None;
+        }
+        Some(q.drain(1..).collect::<Vec<_>>())
     });
+
+    let Some(removed) = removed else {
+        return Err("only the current track is queued".into());
+    };
+
+    for track in &removed {
+        track.stop().ok();
+    }
 
     ctx_utils.end_loading_react().await?;
 
-    say!(ctx, "🗑️ Queue cleared!", application_only);
+    say!(
+        ctx,
+        format!("🗑️ Queue cleared! total: {}", removed.len()),
+        application_only
+    );
 
     Ok(())
 }

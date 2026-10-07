@@ -22,7 +22,7 @@ pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
         .await
         .ok_or("failed to mount songbird")?;
 
-    manager.leave(guild_id).await?;
+    manager.remove(guild_id).await?;
 
     ctx.say(
         ctx.data()

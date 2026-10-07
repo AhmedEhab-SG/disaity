@@ -26,9 +26,9 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
         queue.stop();
     }
 
-    if ctx.author().id != ctx.data().config.info.owner.id {
-        call_lock.deafen(true).await?;
-    }
+    call_lock
+        .deafen(ctx.author().id != ctx.data().config.info.owner.id)
+        .await?;
 
     ctx.say(
         ctx.data()
