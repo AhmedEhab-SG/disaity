@@ -1,8 +1,9 @@
 use poise::command;
 use songbird::tracks::PlayMode;
 
-use crate::checks::{not_empty_queue, same_vc};
 use disaity_core::{Context, ContextExt, Error, say};
+
+use super::super::checks::{not_empty_queue, same_vc};
 
 #[command(
     slash_command,

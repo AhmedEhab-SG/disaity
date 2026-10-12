@@ -1,7 +1,8 @@
 use poise::command;
 
-use crate::checks::{diff_vc, not_mute, user_not_deafen};
 use disaity_core::{Context, ContextExt, Error, VoiceUtils};
+
+use super::super::checks::{diff_vc, not_mute, user_not_deafen};
 
 #[command(
     slash_command,

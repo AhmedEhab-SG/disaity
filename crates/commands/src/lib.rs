@@ -48,7 +48,7 @@ impl Commands {
             CommandId::Stop => stop,
             CommandId::Volume => volume,
 
-            CommandId::Prayer | CommandId::ClearPrayer => return None,
+            CommandId::FreeGames | CommandId::ClearFreeGames => return None,
         })
     }
 

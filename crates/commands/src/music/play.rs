@@ -1,9 +1,10 @@
 use poise::command;
 use tokio::time::{Duration, timeout};
 
-use crate::checks::{not_mute, user_not_deafen};
 use disaity_config::CommandId;
 use disaity_core::{Context, ContextExt, Error, ReactionUtils, VoiceUtils, say};
+
+use super::super::checks::{not_mute, user_not_deafen};
 
 #[command(
     slash_command,

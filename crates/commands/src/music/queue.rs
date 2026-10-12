@@ -7,7 +7,7 @@ use serenity::all::{
 
 use disaity_core::{Context, ContextExt, Error, TrackMetadata};
 
-use crate::checks::{not_empty_queue, same_vc};
+use super::super::checks::{not_empty_queue, same_vc};
 
 #[command(
     slash_command,

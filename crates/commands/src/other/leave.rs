@@ -1,7 +1,8 @@
 use poise::command;
 
-use crate::checks::same_vc;
 use disaity_core::{Context, Error};
+
+use super::super::checks::same_vc;
 
 #[command(
     slash_command,

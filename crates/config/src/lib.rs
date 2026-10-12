@@ -5,7 +5,7 @@ mod info;
 mod persona;
 mod utils;
 
-pub use assets::{Assets, Provider};
+pub use assets::{Assets, Platform, Provider};
 pub use commands::{Category, CommandId, CommandRegistry};
 pub use env::{Env, LogLevel};
 pub use info::Info;

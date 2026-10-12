@@ -25,8 +25,8 @@ pub enum CommandId {
     Skip,
     Stop,
     Volume,
-    Prayer,
-    ClearPrayer,
+    FreeGames,
+    ClearFreeGames,
 }
 
 #[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString, VariantArray)]

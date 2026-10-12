@@ -25,9 +25,44 @@ impl Provider {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Platform {
+    Steam,
+    Epic,
+    Gog,
+    Ubisoft,
+    Ea,
+    BattleNet,
+    Unknown,
+}
+
+impl Platform {
+    pub fn from_platforms(platforms: &str) -> Self {
+        let platforms = platforms.to_lowercase();
+
+        if platforms.contains("steam") {
+            Self::Steam
+        } else if platforms.contains("epic") {
+            Self::Epic
+        } else if platforms.contains("gog") {
+            Self::Gog
+        } else if platforms.contains("ubisoft") {
+            Self::Ubisoft
+        } else if platforms.contains("origin") || platforms.contains("ea app") {
+            Self::Ea
+        } else if platforms.contains("battle.net") {
+            Self::BattleNet
+        } else {
+            Self::Unknown
+        }
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Assets {
     pub provider: HashMap<Provider, String>,
+    pub platform: HashMap<Platform, String>,
 }
 
 impl Default for Assets {
@@ -44,5 +79,9 @@ impl Assets {
 
     pub fn get_logo(&self, p: Provider) -> String {
         self.provider.get(&p).cloned().unwrap_or_default()
+    }
+
+    pub fn get_platform_logo(&self, p: Platform) -> String {
+        self.platform.get(&p).cloned().unwrap_or_default()
     }
 }

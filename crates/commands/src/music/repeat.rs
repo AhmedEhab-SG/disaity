@@ -4,7 +4,7 @@ use songbird::tracks::LoopState;
 
 use disaity_core::{Context, ContextExt, Error, ReactionUtils, say};
 
-use crate::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen};
+use super::super::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen};
 
 #[derive(Debug, ChoiceParameter)]
 enum RepeatMode {

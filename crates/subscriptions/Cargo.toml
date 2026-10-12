@@ -8,6 +8,7 @@ description = "Built-in background subscription modules for the disaity Discord 
 
 [dependencies]
 disaity-core.workspace = true
+disaity-config.workspace = true
 sqlx.workspace = true
 poise.workspace = true
 serenity.workspace = true

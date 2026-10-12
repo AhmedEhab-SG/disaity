@@ -177,25 +177,13 @@
     "action": "help_menu"
   },
 
-  "prayer": {
-    "name": "prayer",
-    "keys": ["prayer", "py"],
+  "free_games": {
+    "name": "free_games",
+    "keys": ["free_games", "fg"],
     "category": "subscription",
-    "description": "Subscribe to pray time in target a chennel and ping a role.",
+    "description": "Subscribe to free games in all (platforms) in target a chennel and ping a role.",
     "timeout": 40,
     "options": [
-      {
-        "name": "city",
-        "description": "The city name (e.g., Cairo, Riyadh, New York).",
-        "type": 3,
-        "required": true
-      },
-      {
-        "name": "country",
-        "description": "The country name (e.g., Egypt, Saudi Arabia, USA).",
-        "type": 3,
-        "required": true
-      },
       {
         "name": "channel",
         "description": "Enter the channel id you want to send the notification on.",
@@ -211,11 +199,11 @@
     ]
   },
 
-  "clear_prayer": {
-    "name": "clear_prayer",
-    "keys": ["clear_prayer", "cpy"],
+  "clear_free_games": {
+    "name": "clear_free_games",
+    "keys": ["clear_free_games", "cfg"],
     "category": "subscription",
-    "description": "Unsubscribe to pray time in the server",
+    "description": "Unsubscribe to free games in the server",
     "timeout": 40
   }
 }
