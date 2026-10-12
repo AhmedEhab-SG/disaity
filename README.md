@@ -26,6 +26,10 @@
 Disaity builds Discord bots that play music in voice channels, pre build features,
 subscrible to events and send you back in character.
 
+> [!NOTE]
+> Disaity status is currently experimental, It can uses many commands and features
+> but some methods may changes in the future.
+
 ## Getting started
 
 ```bash
