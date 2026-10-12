@@ -37,7 +37,7 @@ pub use disaity_core as core;
 pub use disaity_handlers as handlers;
 pub use disaity_subscriptions as subscriptions;
 
-pub use disaity_core::{poise, serenity, songbird};
+pub use disaity_core::{poise, reqwest, serde, serenity, songbird, sqlx, tokio};
 
 pub use disaity_commands::Commands;
 pub use disaity_config::{

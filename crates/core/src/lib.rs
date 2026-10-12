@@ -9,8 +9,12 @@ mod utils;
 mod voice;
 
 pub use poise;
+pub use reqwest;
+pub use serde;
 pub use serenity;
 pub use songbird;
+pub use sqlx;
+pub use tokio;
 
 pub use binaries::{Binaries, BinarySpec, FFMPEG, ResolvedBinary, YTDLP};
 pub use client::{Client, Handler, HandlerCx};
