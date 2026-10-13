@@ -43,7 +43,6 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     let mut tracks = Vec::new();
 
     for (i, track_handle) in queue_snapshot.iter().enumerate() {
-        // Downcast to your stored metadata type (Arc<SongMetadata>)
         let track_info = track_handle.data::<TrackMetadata>();
 
         let duration = track_info
@@ -63,19 +62,16 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
         tracks.push(track_str);
     }
 
-    // 6) pagination settings
     let tracks_per_page = 5_usize;
     let total_pages = (tracks.len() as f32 / tracks_per_page as f32).ceil() as usize;
     let mut current_page = 0_usize;
 
-    // 7) unique button ids (use the command ctx id to namespace them)
     let ctx_id = ctx.id();
     let ctx_id_str = ctx_id.to_string();
     let prev_buf = format!("{}_prev", ctx_id_str);
     let next_buf = format!("{}_next", ctx_id_str);
 
-    // 8) helper closure to build the embed for a page
-    // capture `queue_snapshot`, `tracks_per_page`, `total_pages` by move so closure can be used later
+    // helper pagination
     let create_queue_embed = move |page: usize, list: &Vec<String>| {
         let start = page * tracks_per_page;
         let end = (start + tracks_per_page).min(list.len());
@@ -91,7 +87,6 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
                 list.len()
             )));
 
-        // Use the first track's thumbnail if available
         if let Some(first_handle) = queue_snapshot.first() {
             let info = first_handle.data::<TrackMetadata>();
             embed = embed.thumbnail(&info.thumbnail);
@@ -100,7 +95,6 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
         embed
     };
 
-    // 9) build components (buttons)
     let components = vec![CreateActionRow::Buttons(vec![
         CreateButton::new(&prev_buf)
             .label("◀️ Back")
@@ -110,7 +104,6 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
             .style(serenity::all::ButtonStyle::Secondary),
     ])];
 
-    // 10) send initial reply
     let builder = poise::CreateReply::default()
         .embed(create_queue_embed(0, &tracks))
         .components(components);
@@ -119,13 +112,12 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx.send(builder).await?;
 
-    // 11) create an interaction collector that filters only our buttons
+    // create an interaction collector that filters only our buttons
     let mut interaction_stream = ComponentInteractionCollector::new(serenity_context)
         .filter(move |mci| mci.data.custom_id.starts_with(&ctx_id_str))
         .timeout(std::time::Duration::from_secs(120)) // 2 minutes
         .stream();
 
-    // 12) interaction loop — we are *not* holding the songbird lock here
     while let Some(mci) = interaction_stream.next().await {
         if mci.data.custom_id == prev_buf {
             current_page = if current_page == 0 {

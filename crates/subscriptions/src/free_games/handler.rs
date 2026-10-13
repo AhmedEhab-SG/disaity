@@ -30,15 +30,82 @@ impl Handler for FreeGamesHandler {
         let color = cx.data.config.persona.interactions.colors.accent;
         let assets = cx.data.config.assets.clone();
 
-        Self::start_free_games_loop(
-            cx.serenity.clone(),
+        FreeGamesWorker {
+            ctx: cx.serenity.clone(),
             store,
-            cx.data.http.clone(),
+            http: cx.data.http.clone(),
             color,
             assets,
-        );
+        }
+        .spawn();
 
         Ok(())
+    }
+}
+
+struct FreeGamesWorker {
+    ctx: SerenityContext,
+    store: FreeGamesStore,
+    http: Client,
+    color: u32,
+    assets: Assets,
+}
+
+impl FreeGamesWorker {
+    const POLL_INTERVAL: Duration = Duration::from_secs(10 * 60);
+
+    fn spawn(self) {
+        tokio::spawn(async move {
+            loop {
+                self.tick().await;
+                tokio::time::sleep(Self::POLL_INTERVAL).await;
+            }
+        });
+    }
+
+    async fn tick(&self) {
+        let Some(giveaways) = Giveaway::fetch(&self.http).await else {
+            return;
+        };
+
+        let active: Vec<i64> = giveaways.iter().map(|g| g.id).collect();
+
+        self.store.prune_sent(&active).await.ok();
+
+        let subscription = self.store.get_all().await.unwrap_or_default();
+
+        for sub in subscription {
+            self.notify_guild(&sub, &giveaways).await;
+        }
+    }
+
+    async fn notify_guild(&self, sub: &FreeGamesStoreInfo, giveaways: &[Giveaway]) {
+        // Skip on a DB error — an empty set here would re-post every game.
+        let Ok(sent) = self.store.get_sent(sub.guild_id).await else {
+            return;
+        };
+
+        let mut role_id = sub.role_id;
+
+        // API lists newest first; reverse so older games post first.
+        for giveaway in giveaways.iter().rev() {
+            if sent.contains(&giveaway.id) {
+                continue;
+            }
+
+            let message = giveaway.message(role_id, self.color, self.assets.to_owned());
+
+            let result = sub.channel_id.send_message(&self.ctx.http, message).await;
+
+            if let Ok(msg) = result {
+                // Announcement channels: push the post to every server that follows it.
+                msg.crosspost(&self.ctx.http).await.ok();
+
+                // Ping the role once per batch
+                role_id = None;
+                self.store.mark_sent(sub.guild_id, giveaway.id).await.ok();
+            }
+        }
     }
 }
 
@@ -61,91 +128,12 @@ impl Giveaway {
         let res = http.get(Self::GIVEAWAYS_URL).send().await.ok()?;
         res.json::<Vec<Self>>().await.ok()
     }
-}
 
-impl FreeGamesHandler {
-    const POLL_INTERVAL: Duration = Duration::from_secs(10 * 60);
-
-    pub fn start_free_games_loop(
-        ctx: SerenityContext,
-        store: FreeGamesStore,
-        http: Client,
-        color: u32,
-        assets: Assets,
-    ) {
-        tokio::spawn(async move {
-            loop {
-                if let Some(giveaways) = Giveaway::fetch(&http).await {
-                    let active: Vec<i64> = giveaways.iter().map(|g| g.id).collect();
-
-                    store.prune_sent(&active).await.ok();
-
-                    let subscription = store.get_all().await.unwrap_or_default();
-
-                    for sub in subscription {
-                        Self::notify_guild(
-                            &ctx,
-                            &store,
-                            &sub,
-                            &giveaways,
-                            color,
-                            assets.to_owned(),
-                        )
-                        .await;
-                    }
-                }
-
-                tokio::time::sleep(Self::POLL_INTERVAL).await;
-            }
-        });
-    }
-
-    async fn notify_guild(
-        ctx: &SerenityContext,
-        store: &FreeGamesStore,
-        sub: &FreeGamesStoreInfo,
-        giveaways: &[Giveaway],
-        color: u32,
-        assets: Assets,
-    ) {
-        // Skip on a DB error — an empty set here would re-post every game.
-        let Ok(sent) = store.get_sent(sub.guild_id).await else {
-            return;
-        };
-
-        let mut role_id = sub.role_id;
-
-        // API lists newest first; reverse so older games post first.
-        for giveaway in giveaways.iter().rev() {
-            if sent.contains(&giveaway.id) {
-                continue;
-            }
-
-            let message = Self::giveaway_message(giveaway, role_id, color, assets.to_owned());
-
-            let result = sub.channel_id.send_message(&ctx.http, message).await;
-
-            if let Ok(msg) = result {
-                // Announcement channels: push the post to every server that follows it.
-                msg.crosspost(&ctx.http).await.ok();
-
-                // Ping the role once per batch
-                role_id = None;
-                store.mark_sent(sub.guild_id, giveaway.id).await.ok();
-            }
-        }
-    }
-
-    fn giveaway_message(
-        giveaway: &Giveaway,
-        role_id: Option<RoleId>,
-        color: u32,
-        assets: Assets,
-    ) -> CreateMessage {
-        let claim = CreateButton::new_link(&giveaway.open_giveaway_url).label("Claim");
+    fn message(&self, role_id: Option<RoleId>, color: u32, assets: Assets) -> CreateMessage {
+        let claim = CreateButton::new_link(&self.open_giveaway_url).label("Claim");
 
         let mut message = CreateMessage::new()
-            .embed(Self::giveaway_embed(giveaway, color, assets))
+            .embed(self.embed(color, assets))
             .components(vec![CreateActionRow::Buttons(vec![claim])]);
 
         if let Some(role_id) = role_id {
@@ -157,27 +145,27 @@ impl FreeGamesHandler {
         message
     }
 
-    fn giveaway_embed(giveaway: &Giveaway, color: u32, assets: Assets) -> CreateEmbed {
+    fn embed(&self, color: u32, assets: Assets) -> CreateEmbed {
         // "Fireside Feelings (Steam) Giveaway" → "Fireside Feelings"
-        let title = giveaway
+        let title = self
             .title
             .rsplit_once(" (")
             .map(|(name, _)| name)
-            .or_else(|| giveaway.title.strip_suffix(" Giveaway"))
-            .unwrap_or(&giveaway.title);
+            .or_else(|| self.title.strip_suffix(" Giveaway"))
+            .unwrap_or(&self.title);
 
-        let logo = assets.get_platform_logo(Platform::from_platforms(&giveaway.platforms));
+        let logo = assets.get_platform_logo(Platform::from_platforms(&self.platforms));
 
-        let price = match giveaway.worth.as_str() {
+        let price = match self.worth.as_str() {
             "N/A" => "**Free**".to_string(),
             worth => format!("~~{worth}~~ **Free**"),
         };
 
-        let until = NaiveDateTime::parse_from_str(&giveaway.end_date, "%Y-%m-%d %H:%M:%S")
+        let until = NaiveDateTime::parse_from_str(&self.end_date, "%Y-%m-%d %H:%M:%S")
             .map(|date| date.format("%b %-d, %Y").to_string())
             .unwrap_or_else(|_| "No end date".to_string());
 
-        let description = giveaway
+        let description = self
             .description
             .lines()
             .map(|line| format!("> {line}"))
@@ -186,14 +174,14 @@ impl FreeGamesHandler {
 
         CreateEmbed::new()
             .title(title)
-            .url(&giveaway.open_giveaway_url)
+            .url(&self.open_giveaway_url)
             .description(description)
             .color(color)
             .field("Price", price, true)
             .field("Until", until, true)
-            .field("Platforms", &giveaway.platforms, true)
+            .field("Platforms", &self.platforms, true)
             .thumbnail(logo)
-            .image(&giveaway.image)
+            .image(&self.image)
             .footer(CreateEmbedFooter::new("via GamerPower"))
     }
 }

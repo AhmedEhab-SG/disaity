@@ -5,14 +5,12 @@ use std::sync::Arc;
 
 use serenity::all::{Cache, ChannelId, GuildId, Http};
 use songbird::{Call, Songbird};
-use tokio::sync::Mutex;
 
 use idle::IdleEvent;
 use playing::PlayingEvent;
 
 #[derive(Clone)]
 pub struct VoiceEventCtx {
-    pub call: Arc<Mutex<Call>>,
     pub guild_id: GuildId,
     pub text_channel_id: ChannelId,
     pub http: Arc<Http>,

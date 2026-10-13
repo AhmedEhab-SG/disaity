@@ -1,4 +1,7 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use serenity::{
     all::{
@@ -7,47 +10,133 @@ use serenity::{
     },
     async_trait,
 };
-use songbird::{Call, Event, EventContext, EventHandler, TrackEvent};
-use tokio::sync::Mutex;
+use songbird::{
+    Call, Event, EventContext, EventHandler, TrackEvent,
+    tracks::{TrackHandle, TrackQueue},
+};
 
 use super::{super::TrackMetadata, RegisterVoiceEvent, VoiceEventCtx};
 
-pub(super) struct PlayingEvent;
+/// event to describes the current playing track
 
-impl RegisterVoiceEvent for PlayingEvent {
-    async fn register(call_lock: &mut Call, cx: &VoiceEventCtx) {
-        let VoiceEventCtx {
-            call,
-            http,
-            text_channel_id,
-            ..
-        } = cx;
+struct OnPlay(NowPlaying);
+struct OnEnd(NowPlaying);
 
-        let message_id = Arc::new(Mutex::new(None));
+#[async_trait]
+impl EventHandler for OnPlay {
+    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
+        let EventContext::Track(tracks) = ctx else {
+            return None;
+        };
 
-        call_lock.add_global_event(
-            Event::Track(TrackEvent::Play),
-            TrackStartNotifier {
-                call: call.clone(),
-                http: http.clone(),
-                channel_id: *text_channel_id,
-                message_id: message_id.clone(),
-            },
-        );
+        if let Some((_, track)) = tracks.first() {
+            self.0.show(track).await;
+        }
 
-        call_lock.add_global_event(
-            Event::Track(TrackEvent::End),
-            TrackEndNotifier {
-                http: http.clone(),
-                message_id,
-                channel_id: *text_channel_id,
-            },
-        );
+        None
     }
 }
 
-impl PlayingEvent {
-    fn format_duration(d: Option<std::time::Duration>) -> String {
+#[async_trait]
+impl EventHandler for OnEnd {
+    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
+        let EventContext::Track(tracks) = ctx else {
+            return None;
+        };
+
+        if let Some((_, track)) = tracks.first() {
+            self.0.clear(track).await;
+        }
+
+        None
+    }
+}
+
+#[derive(Clone)]
+struct NowPlaying {
+    http: Arc<Http>,
+    channel_id: ChannelId,
+    queue: TrackQueue,
+    current: Arc<Mutex<Option<(TrackHandle, MessageId)>>>,
+}
+
+impl NowPlaying {
+    async fn show(&self, track: &TrackHandle) {
+        let previous = {
+            let mut current = self.current.lock().unwrap();
+
+            // Same track = resumed after pause, keep the existing message
+            if current
+                .as_ref()
+                .is_some_and(|(t, _)| t.uuid() == track.uuid())
+            {
+                return;
+            }
+
+            current.take()
+        };
+
+        if let Some((_, old)) = previous {
+            self.channel_id.delete_message(&self.http, old).await.ok();
+        }
+
+        let message = CreateMessage::new().embed(self.embed(track));
+
+        if let Ok(msg) = self.channel_id.send_message(&self.http, message).await {
+            *self.current.lock().unwrap() = Some((track.clone(), msg.id));
+        }
+    }
+
+    async fn clear(&self, track: &TrackHandle) {
+        // Only delete if the message belongs to the track that ended
+        let previous = self
+            .current
+            .lock()
+            .unwrap()
+            .take_if(|(t, _)| t.uuid() == track.uuid());
+
+        if let Some((_, old)) = previous {
+            self.channel_id.delete_message(&self.http, old).await.ok();
+        }
+    }
+
+    fn embed(&self, track: &TrackHandle) -> CreateEmbed {
+        let data = track.data::<TrackMetadata>();
+        let queue = self.queue.current_queue();
+
+        let total: Duration = queue
+            .iter()
+            .filter_map(|h| h.data::<TrackMetadata>().duration)
+            .sum();
+
+        CreateEmbed::new()
+            .title(&data.title)
+            .url(&data.url)
+            .color(0x0099ff)
+            .field(
+                "Duration",
+                format!("`{}`", self.format_duration(data.duration)),
+                true,
+            )
+            .thumbnail(&data.thumbnail)
+            .field(
+                "Tracks",
+                format!(
+                    "`{} for {}`",
+                    queue.len(),
+                    self.format_duration(Some(total))
+                ),
+                true,
+            )
+            .author(CreateEmbedAuthor::new(&data.author).icon_url(&data.provider_logo_url))
+            .footer(
+                CreateEmbedFooter::new(format!("Requested by {}", data.request_by))
+                    .icon_url(&data.request_by_avatar),
+            )
+            .timestamp(Timestamp::now())
+    }
+
+    fn format_duration(&self, d: Option<std::time::Duration>) -> String {
         match d {
             Some(d) => {
                 let seconds = d.as_secs();
@@ -60,112 +149,18 @@ impl PlayingEvent {
     }
 }
 
-struct TrackStartNotifier {
-    call: Arc<Mutex<Call>>,
-    channel_id: ChannelId,
-    http: Arc<Http>,
-    message_id: Arc<Mutex<Option<MessageId>>>,
-}
+pub(super) struct PlayingEvent;
 
-struct TrackEndNotifier {
-    message_id: Arc<Mutex<Option<MessageId>>>,
-    channel_id: ChannelId,
-    http: Arc<Http>,
-}
+impl RegisterVoiceEvent for PlayingEvent {
+    async fn register(call: &mut Call, cx: &VoiceEventCtx) {
+        let now_playing = NowPlaying {
+            http: cx.http.clone(),
+            channel_id: cx.text_channel_id,
+            queue: call.queue().clone(),
+            current: Arc::default(),
+        };
 
-#[async_trait]
-impl EventHandler for TrackEndNotifier {
-    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
-        if let EventContext::Track(_) = ctx {
-            let message_id = self.message_id.clone();
-            let http = self.http.clone();
-            let channel_id = self.channel_id;
-
-            tokio::spawn(async move {
-                let mut message_id_lock = message_id.lock().await;
-
-                if let Some(old_id) = message_id_lock.take() {
-                    channel_id.delete_message(&http, old_id).await.ok();
-                }
-            });
-        }
-        None
-    }
-}
-
-#[async_trait]
-impl EventHandler for TrackStartNotifier {
-    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
-        if let EventContext::Track(track_listen) = ctx {
-            // We only care about the first track starting in this event
-            if let Some((_, handle)) = track_listen.first() {
-                // Clone everything we need to move into the background task
-                let data = handle.data::<TrackMetadata>().clone();
-                let call = self.call.clone();
-                let http = self.http.clone();
-                let channel_id = self.channel_id;
-                let message_id = self.message_id.clone();
-
-                // Spawning a task prevents the deadlock!
-                tokio::spawn(async move {
-                    // 1. Lock the call once to get all queue info
-                    let (queue_len, total_duration) = {
-                        let call_lock = call.lock().await;
-                        let queue = call_lock.queue();
-                        let current_queue = queue.current_queue();
-
-                        let len = current_queue.len();
-                        let total: Duration = current_queue
-                            .iter()
-                            .filter_map(|h| h.data::<TrackMetadata>().duration)
-                            .sum();
-
-                        (len, total)
-                    };
-
-                    // 2. Build the embed
-                    let embed = CreateEmbed::new()
-                        .title(&data.title)
-                        .url(&data.url)
-                        .color(0x0099ff)
-                        .field(
-                            "Duration",
-                            format!("`{}`", PlayingEvent::format_duration(data.duration)),
-                            true,
-                        )
-                        .thumbnail(&data.thumbnail)
-                        .field(
-                            "Tracks",
-                            format!(
-                                "`{} for {}`",
-                                queue_len,
-                                PlayingEvent::format_duration(Some(total_duration))
-                            ),
-                            true,
-                        )
-                        .author(
-                            CreateEmbedAuthor::new(&data.author).icon_url(&data.provider_logo_url),
-                        )
-                        .footer(
-                            CreateEmbedFooter::new(format!("Requested by {}", data.request_by))
-                                .icon_url(&data.request_by_avatar),
-                        )
-                        .timestamp(Timestamp::now());
-
-                    let mut message_id_lock = message_id.lock().await;
-
-                    channel_id
-                        .send_message(&http, CreateMessage::new().embed(embed))
-                        .await
-                        .map(|msg| *message_id_lock = Some(msg.id))
-                        .inspect_err(|_e| {
-                            *message_id_lock = None;
-                        })
-                        .ok();
-                });
-            }
-        }
-
-        None
+        call.add_global_event(Event::Track(TrackEvent::Play), OnPlay(now_playing.clone()));
+        call.add_global_event(Event::Track(TrackEvent::End), OnEnd(now_playing));
     }
 }

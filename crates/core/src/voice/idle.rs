@@ -1,172 +1,117 @@
+use std::{sync::Arc, sync::Mutex, time::Duration};
+
 use serenity::{
     all::{Cache, ChannelId, GuildId},
     async_trait,
+    model::guild::Guild,
 };
-use songbird::{Call, CoreEvent, Event, EventContext, EventHandler, Songbird, TrackEvent};
-use std::{sync::Arc, time::Duration};
-use tokio::{sync::Mutex, task::JoinHandle, time::sleep};
+use songbird::{
+    Call, CoreEvent, Event, EventContext, EventHandler, Songbird, TrackEvent, tracks::TrackQueue,
+};
+use tokio::{task::JoinHandle, time::sleep};
 
 use super::{RegisterVoiceEvent, VoiceEventCtx};
 
-type TimeoutHandle = Arc<Mutex<Option<JoinHandle<()>>>>;
-
-struct PlayHandler {
-    timeout: TimeoutHandle,
-}
-
-struct EndHandler {
-    timeout: TimeoutHandle,
-    manager: Arc<Songbird>,
-    guild_id: GuildId,
-}
-
-struct AloneHandler {
-    timeout: TimeoutHandle,
+/// create an idle event to disconnect the bot automatic when not needed
+#[derive(Clone)]
+struct IdleCheck {
+    timer: IdleTimer,
     manager: Arc<Songbird>,
     guild_id: GuildId,
     cache: Arc<Cache>,
+    queue: TrackQueue,
+}
+
+#[async_trait]
+impl EventHandler for IdleCheck {
+    async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
+        self.run();
+        None
+    }
+}
+
+impl IdleCheck {
+    fn run(&self) {
+        if !self.is_idle() {
+            self.timer.disarm();
+            return;
+        }
+
+        self.timer.arm(self.manager.clone(), self.guild_id);
+    }
+
+    /// Idle = nothing queued, or no user left in the channel.
+    fn is_idle(&self) -> bool {
+        let bot_id = self.cache.current_user().id;
+
+        let Some(guild) = self.cache.guild(self.guild_id) else {
+            return false;
+        };
+
+        let Some(channel_id) = guild.voice_states.get(&bot_id).and_then(|vs| vs.channel_id) else {
+            return false;
+        };
+
+        // using the same guild to
+        // avoid looking up for the guild again from CacheRef
+        self.queue.is_empty() || !Self::is_user_in(&guild, channel_id)
+    }
+
+    fn is_user_in(guild: &Guild, channel_id: ChannelId) -> bool {
+        guild.voice_states.values().any(|vs| {
+            let is_bot = matches!(&vs.member, Some(m) if m.user.bot);
+            vs.channel_id == Some(channel_id) && !is_bot
+        })
+    }
 }
 
 pub(super) struct IdleEvent;
 
 impl RegisterVoiceEvent for IdleEvent {
-    async fn register(call_lock: &mut Call, cx: &VoiceEventCtx) {
-        let VoiceEventCtx {
-            guild_id,
-            manager,
-            cache,
-            ..
-        } = cx;
+    async fn register(call: &mut Call, cx: &VoiceEventCtx) {
+        let check = IdleCheck {
+            timer: IdleTimer::default(),
+            manager: cx.manager.clone(),
+            guild_id: cx.guild_id,
+            cache: cx.cache.clone(),
+            queue: call.queue().clone(),
+        };
 
-        let timeout: TimeoutHandle = Arc::new(Mutex::new(None));
+        // init counting
+        check.timer.arm(check.manager.clone(), check.guild_id);
 
-        // Start a timer immediately in case the bot joins but nothing is ever queued
-        Self::reset_timer(&timeout, manager.clone(), *guild_id).await;
-
-        // Hook up the cancellation on play
-        call_lock.add_global_event(
-            Event::Track(TrackEvent::Play),
-            PlayHandler {
-                timeout: timeout.clone(),
-            },
-        );
-
-        // Hook up the restart on end
-        call_lock.add_global_event(
-            Event::Track(TrackEvent::End),
-            EndHandler {
-                timeout: timeout.clone(),
-                manager: manager.clone(),
-                guild_id: *guild_id,
-            },
-        );
-
-        call_lock.add_global_event(
-            Event::Core(CoreEvent::SpeakingStateUpdate),
-            AloneHandler {
-                timeout,
-                manager: manager.clone(),
-                guild_id: *guild_id,
-                cache: cache.clone(),
-            },
-        );
+        call.add_global_event(Event::Track(TrackEvent::Play), check.clone());
+        call.add_global_event(Event::Track(TrackEvent::End), check.clone());
+        // TODO it needs to get handled on serenity event voice status update
+        // if a user disconnects and reconnect it the timer will still arm
+        call.add_global_event(Event::Core(CoreEvent::ClientDisconnect), check);
     }
 }
 
-impl IdleEvent {
-    async fn cancel_timer(timeout: &TimeoutHandle) {
-        let mut lock = timeout.lock().await;
-        if let Some(task) = lock.take() {
-            task.abort();
-        };
-    }
+#[derive(Clone, Default)]
+struct IdleTimer(Arc<Mutex<Option<JoinHandle<()>>>>);
 
-    async fn reset_timer(timeout: &TimeoutHandle, manager: Arc<Songbird>, guild_id: GuildId) {
-        Self::cancel_timer(timeout).await;
-        let handle_clone = timeout.clone();
+impl IdleTimer {
+    const IDLE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 
-        let task = tokio::spawn(async move {
-            sleep(Duration::from_secs(5 * 60)).await;
+    /// Start the countdown, unless one is already running.
+    fn arm(&self, manager: Arc<Songbird>, guild_id: GuildId) {
+        let mut slot = self.0.lock().unwrap();
+
+        if slot.as_ref().is_some_and(|task| !task.is_finished()) {
+            return;
+        }
+
+        *slot = Some(tokio::spawn(async move {
+            sleep(Self::IDLE_TIMEOUT).await;
 
             manager.remove(guild_id).await.ok();
-
-            let mut lock = handle_clone.lock().await;
-
-            *lock = None;
-        });
-
-        let mut lock = timeout.lock().await;
-        *lock = Some(task);
+        }));
     }
-}
 
-#[async_trait]
-impl EventHandler for PlayHandler {
-    async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
-        IdleEvent::cancel_timer(&self.timeout).await;
-        None
-    }
-}
-
-#[async_trait]
-impl EventHandler for EndHandler {
-    async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
-        let is_empty = if let Some(call) = self.manager.get(self.guild_id) {
-            let call = call.lock().await;
-            call.queue().is_empty()
-        } else {
-            false
-        };
-
-        if is_empty {
-            IdleEvent::reset_timer(&self.timeout, self.manager.clone(), self.guild_id).await;
+    fn disarm(&self) {
+        if let Some(task) = self.0.lock().unwrap().take() {
+            task.abort();
         }
-
-        None
-    }
-}
-
-#[async_trait]
-impl EventHandler for AloneHandler {
-    async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
-        let is_alone = if let Some(call_lock) = self.manager.get(self.guild_id) {
-            let call = call_lock.lock().await;
-
-            if let Some(channel_id) = call.current_channel() {
-                let channel_id = ChannelId::new(channel_id.0.get());
-
-                // Count human users in the bot's current channel
-                let count = self
-                    .cache
-                    .guild(self.guild_id)
-                    .map(|g| {
-                        g.voice_states
-                            .values()
-                            .filter(|vs| {
-                                // Make sure we aren't counting bots
-                                vs.channel_id == Some(channel_id)
-                                    && !vs.member.as_ref().map(|m| m.user.bot).unwrap_or(false)
-                            })
-                            .count()
-                    })
-                    .unwrap_or(0);
-
-                count == 0
-            } else {
-                false
-            }
-        } else {
-            false
-        };
-
-        if is_alone {
-            // No humans left! Start the 60s countdown.
-            IdleEvent::reset_timer(&self.timeout, self.manager.clone(), self.guild_id).await;
-        } else {
-            // Someone is in the channel (or joined). Cancel the disconnect.
-            IdleEvent::cancel_timer(&self.timeout).await;
-        }
-
-        None
     }
 }

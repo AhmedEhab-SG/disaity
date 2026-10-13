@@ -53,19 +53,18 @@ pub async fn repeat(
 
     match mode {
         Some(RepeatMode::Song) => {
-            // Force loop ON
             current_track.enable_loop().ok();
             say!(ctx, "🔁 **Loop enabled** for the current track.");
             ctx_utils.end_loading_react().await?;
         }
+
         Some(RepeatMode::Disable) => {
-            // Force loop OFF
             current_track.disable_loop().ok();
             say!(ctx, "➡️ **Loop disabled**");
             ctx_utils.end_loading_react().await?;
         }
+
         Some(RepeatMode::Toggle) => {
-            // Get current state to decide whether to turn it on or off
             let track_info = current_track.get_info().await?;
 
             match track_info.loops {
