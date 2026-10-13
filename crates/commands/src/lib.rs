@@ -1,5 +1,5 @@
 mod chat;
-mod checks;
+pub mod checks;
 mod music;
 mod other;
 mod utils;

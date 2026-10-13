@@ -18,7 +18,6 @@ use songbird::{
 use super::{super::TrackMetadata, RegisterVoiceEvent, VoiceEventCtx};
 
 /// event to describes the current playing track
-
 struct OnPlay(NowPlaying);
 struct OnEnd(NowPlaying);
 
