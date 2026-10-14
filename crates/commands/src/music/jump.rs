@@ -16,7 +16,7 @@ use super::super::checks::{not_empty_queue, same_vc, user_not_deafen};
 )]
 pub async fn jump(
     ctx: Context<'_>,
-    #[description = "Enter song number."] order: usize,
+    #[description = "Enter song number."] order: u32,
 ) -> Result<(), Error> {
     let ctx_utils = ctx.utils();
     // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
@@ -39,7 +39,7 @@ pub async fn jump(
         return Err("Track numbers start from 1.".into());
     }
 
-    let index = order - 1;
+    let index = order as usize - 1;
 
     if index >= queue.len() {
         return Err("That track number does not exist in the queue.".into());

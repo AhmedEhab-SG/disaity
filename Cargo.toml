@@ -18,12 +18,12 @@ license = "MIT"
 [workspace.dependencies]
 # leaf / data
 serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.151"
-toml = "1.1.4"
+serde_json = "1.0.154"
+toml = "1.1.8"
 strum = { version = "0.28.0", features = ["derive"] }
 dotenv = "0.15.0"
 chrono = "0.4.45"
-rand = "0.10.2"
+rand = "0.10.3"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 sqlx = { version = "0.9.0", default-features = false, features = [
@@ -31,14 +31,14 @@ sqlx = { version = "0.9.0", default-features = false, features = [
   "sqlite",
 ] }
 # async / net
-tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread"] }
 reqwest = { version = "0.12.28", features = ["json", "rustls-tls"] }
 scraper = "0.27.0"
-gemini-rust = "2.0.0"
+gemini-rust = "2.1.0"
 # discord
-poise = "0.6.2"
+poise = "0.7.1"
 symphonia = { version = "0.5.5", features = ["all"] }
-songbird = { version = "0.6.0", features = ["builtin-queue"] }
+songbird = { version = "0.6.1", features = ["builtin-queue"] }
 serenity = { version = "0.12.5", default-features = false, features = [
   "builder",
   "chrono",

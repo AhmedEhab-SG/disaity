@@ -29,16 +29,16 @@ pub trait Decorate {
 
 impl Decorate for Command<Data, Error> {
     fn decorate(mut self, registry: &CommandRegistry) -> Self {
-        let Ok(id) = CommandId::from_str(self.name.as_str()) else {
+        let Ok(id) = CommandId::from_str(&self.name) else {
             return self;
         };
 
         let entry = registry.get_command(&id);
 
-        self.name = entry.name.clone();
-        self.description = Some(entry.description.clone());
-        self.aliases = entry.keys.clone();
-        self.category = Some(entry.category.clone());
+        self.name = entry.name.clone().into();
+        self.description = Some(entry.description.clone().into());
+        self.aliases = entry.keys.clone().into_iter().map(Into::into).collect();
+        self.category = Some(entry.category.clone().into());
         self
     }
 }

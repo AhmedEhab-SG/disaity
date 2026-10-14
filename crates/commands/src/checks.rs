@@ -23,7 +23,7 @@ pub async fn same_vc(ctx: Context<'_>) -> Result<bool, Error> {
 
         let c = guild
             .voice_states
-            .get(&ctx.framework().bot_id)
+            .get(&ctx.framework().bot_id())
             .and_then(|vs| vs.channel_id);
 
         let u = guild
@@ -48,7 +48,7 @@ pub async fn diff_vc(ctx: Context<'_>) -> Result<bool, Error> {
 
         let c = guild
             .voice_states
-            .get(&ctx.framework().bot_id)
+            .get(&ctx.framework().bot_id())
             .and_then(|vs| vs.channel_id);
 
         let u = guild

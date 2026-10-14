@@ -185,7 +185,7 @@ impl Client {
             let framework = Framework::builder()
                 .options(FrameworkOptions {
                     prefix_options: PrefixFrameworkOptions {
-                        prefix,
+                        prefix: prefix.map(Into::into),
                         ..Default::default()
                     },
                     commands,
