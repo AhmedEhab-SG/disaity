@@ -15,6 +15,7 @@
 <div align="center">
 
 [![CI](https://github.com/AhmedEhab-SG/disaity/actions/workflows/ci.yml/badge.svg)](https://github.com/AhmedEhab-SG/disaity/actions/workflows/ci.yml)
+[![Status](https://img.shields.io/badge/status-experimental-7c1f1f?logo=labex&logoColor=white)](<>)
 [![crates.io](https://img.shields.io/crates/v/disaity?style=flat-square&color=D4AF37&logo=rust)](https://crates.io/crates/disaity)
 [![docs.rs](https://img.shields.io/docsrs/disaity?style=flat-square&logo=docsdotrs)](https://docs.rs/disaity)
 [![Rust Version](https://img.shields.io/badge/rust-latest-orange?logo=rust&logoColor=orange)](https://www.rust-lang.org)

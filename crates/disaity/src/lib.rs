@@ -1,5 +1,5 @@
-//! Disaity — a batteries-included wrapper over [`serenity`], [`poise`] and
-//! [`songbird`] for building Discord bots.
+//! Disaity — a batteries-included Discord bot framework for music and AI chat,
+//! built on [`serenity`], [`poise`] and [`songbird`].
 //!
 //! ```no_run
 //! use disaity::prelude::*;

@@ -1,6 +1,6 @@
 [package]
 name = "disaity"
-description = "A batteries-included wrapper over serenity, poise and songbird for building Discord music and chat bots."
+description = "A batteries-included Discord bot framework for music and AI chat, built on serenity, poise and songbird."
 edition.workspace = true
 version.workspace = true
 repository.workspace = true
