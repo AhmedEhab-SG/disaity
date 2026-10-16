@@ -7,9 +7,9 @@
 //! Needs `CLIENT_TOKEN` and `CLIENT_TOKEN_ALT` in your `.env`. Set `LOG_LEVEL`
 //! there too — `debug` or `trace` — to watch both personas on stderr.
 
-use disaity::{FreeGamesSubscription, StatusHandler, prelude::*};
+use disaity::{FreeGamesSubscription, StatusHandler, prelude::*, tokio};
 
-#[tokio::main]
+#[tokio::main(crate = "disaity::tokio")]
 async fn main() -> Result<(), Error> {
     Binaries::ensure().await?;
 

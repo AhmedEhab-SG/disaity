@@ -9,6 +9,7 @@ use disaity_core::{Context, ContextExt, Error, TrackMetadata};
 
 use super::super::checks::{not_empty_queue, same_vc};
 
+/// generate paginated queue
 #[command(
     slash_command,
     prefix_command,
@@ -34,11 +35,14 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx_utils.start_loading_react().await?;
 
-    let queue_snapshot = {
-        let _typing = ctx.defer_or_broadcast().await.ok().flatten();
-        let call_lock = call.lock().await;
-        call_lock.queue().current_queue()
-    };
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
+
+    let call_lock = call.lock().await;
+
+    let queue_snapshot = call_lock.queue().current_queue();
+
+    // release the call lock beacuse the response will still hold the call
+    drop(call_lock);
 
     let mut tracks = Vec::new();
 
@@ -109,6 +113,9 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
         .components(components);
 
     ctx_utils.end_loading_react().await?;
+
+    // relaase typing interaction before the stream
+    drop(typing);
 
     ctx.send(builder).await?;
 

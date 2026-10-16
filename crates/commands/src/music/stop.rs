@@ -4,6 +4,7 @@ use disaity_core::{Context, ContextExt, Error, say};
 
 use super::super::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen};
 
+/// removes all track in the queue
 #[command(
     slash_command,
     prefix_command,

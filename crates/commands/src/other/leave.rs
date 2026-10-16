@@ -4,6 +4,7 @@ use disaity_core::{Context, Error};
 
 use super::super::checks::same_vc;
 
+/// leave voice channel and distroy call hooks
 #[command(
     slash_command,
     prefix_command,

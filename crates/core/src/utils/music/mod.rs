@@ -7,9 +7,7 @@ use std::{sync::Arc, time::Duration};
 use songbird::{Call, tracks::Track};
 use tokio::sync::Mutex;
 
-use crate::errors::Error;
-
-use super::Utils;
+use super::{super::errors::Error, Utils};
 
 use playlist::Playlist;
 use resolver::{ResolvedTrack, TrackResolver};

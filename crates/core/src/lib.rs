@@ -22,4 +22,4 @@ pub use context::{Context, ContextExt, Data, DataBuilder};
 pub use db::Database;
 pub use errors::{Error, ErrorExt};
 pub use feature::{AsSubscription, Decorate, Feature, FeatureBuilder, SubscriptionModule};
-pub use utils::{Queued, ReactionUtils, TrackMetadata, VoiceUtils};
+pub use utils::{CommandUtils, Queued, ReactionUtils, TrackMetadata, VoiceUtils};

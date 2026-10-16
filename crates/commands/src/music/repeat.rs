@@ -16,6 +16,7 @@ enum RepeatMode {
     Disable,
 }
 
+/// repeat the current queue with 3 options
 #[command(
     slash_command,
     prefix_command,
@@ -85,6 +86,7 @@ pub async fn repeat(
                 ctx,
                 "Invalid option! Use `song`, `disable`, `toggle`, or leave empty to toggle."
             );
+
             ctx_utils.end_loading_react().await?;
             ctx_utils
                 .on_error_react(Some(&[ReactionType::Unicode("⁉️".into())]))

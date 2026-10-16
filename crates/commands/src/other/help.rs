@@ -15,8 +15,18 @@ use serenity::{
 };
 
 use disaity_config::{Category, CommandId};
-use disaity_core::{Context, Error};
+use disaity_core::{CommandUtils, Context, ContextExt, Error};
 
+fn capitalize(s: &str) -> String {
+    let mut chars = s.chars();
+
+    chars
+        .next()
+        .map(|first_char| first_char.to_uppercase().chain(chars).collect())
+        .unwrap_or_default()
+}
+
+/// present all the commands
 #[command(
     slash_command,
     prefix_command,
@@ -33,6 +43,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let info = &ctx_data.config.info;
 
     let commands_registry = &ctx_data.config.commands_registry;
+    let by_category = ctx.utils().commands_by_category();
 
     let (avatar_url, author_name) = {
         let user = serenity_context.cache.current_user();
@@ -44,6 +55,12 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
         )
     };
 
+    let cat_emoji = |cat: &str| {
+        Category::from_str(cat)
+            .map(|c| commands_registry.get_cat_emoji(&c))
+            .unwrap_or("📁")
+    };
+
     let select_menu = CreateSelectMenu::new(
         commands_registry
             .get_command(&CommandId::Help)
@@ -51,19 +68,12 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
             .clone()
             .unwrap_or("help_menu".to_string()),
         CreateSelectMenuKind::String {
-            options: commands_registry
-                .categories
+            options: by_category
                 .keys()
                 .map(|cat| {
-                    let cat_name = cat.to_string();
                     CreateSelectMenuOption::new(
-                        format!(
-                            "{} {}{}",
-                            commands_registry.get_cat_emoji(cat),
-                            cat_name[..1].to_uppercase(),
-                            &cat_name[1..]
-                        ),
-                        cat_name,
+                        format!("{} {}", cat_emoji(cat), capitalize(cat)),
+                        *cat,
                     )
                 })
                 .collect(),
@@ -113,10 +123,13 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
         }
         .ok_or("invalid categoery")?;
 
-        let category = Category::from_str(selected_cat)?;
-        let cat_commands = commands_registry.get_cmds_from_cat(&category);
+        let cat_commands = by_category
+            .get(selected_cat.as_str())
+            .ok_or("unknown category")?;
+
         let prefix = &ctx_data.config.info.prefix;
 
+        //TODO could use a clean up
         interaction
             .create_response(
                 serenity_context,
@@ -125,31 +138,33 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                         .embed(
                             CreateEmbed::new()
                                 .title(format!(
-                                    "{} - {} {}{} Command ⌘\n\n*Command List*:\n-----------------",
+                                    "{} - {} {} Command ⌘\n\n*Command List*:\n-----------------",
                                     cat_commands.len(),
-                                    commands_registry.get_cat_emoji(&category),
-                                    selected_cat[..1].to_uppercase(),
-                                    &selected_cat[1..]
+                                    cat_emoji(selected_cat),
+                                    capitalize(selected_cat)
                                 ))
                                 .description(
                                     cat_commands
                                         .iter()
                                         .map(|cmd| {
-                                            let name = cmd.name.as_str();
-                                            let cmd_name = format!(
-                                                "{}{}",
-                                                name[..1].to_uppercase(),
-                                                &name[1..]
-                                            );
+                                            let name: &str = &cmd.name;
+                                            let usage = std::iter::once(name)
+                                                .chain(
+                                                    cmd.aliases
+                                                        .iter()
+                                                        .map(|alias| alias.as_ref())
+                                                        .filter(|alias| *alias != name),
+                                                )
+                                                .map(|key| format!("{prefix}{key}"))
+                                                .collect::<Vec<_>>()
+                                                .join(", ");
 
                                             format!(
-                                                "**{cmd_name}**: *{}*\nusage: `{} or /{name}`\n",
-                                                cmd.description,
-                                                cmd.keys
-                                                    .iter()
-                                                    .map(|k| format!("{prefix}{k}"))
-                                                    .collect::<Vec<_>>()
-                                                    .join(", ")
+                                                "**{}**: *{}*\nusage: `{usage} or /{name}`\n",
+                                                capitalize(name),
+                                                cmd.description
+                                                    .as_deref()
+                                                    .unwrap_or("No description")
                                             )
                                         })
                                         .collect::<Vec<_>>()

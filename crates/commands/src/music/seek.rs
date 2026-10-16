@@ -8,6 +8,8 @@ use super::super::{
     utils::{format_duration_human, parse_timestamp},
 };
 
+/// specific time on the current playing track if its passes it
+/// it skips the current track HH:MM:SS
 #[command(
     slash_command,
     prefix_command,

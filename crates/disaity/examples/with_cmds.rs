@@ -6,53 +6,53 @@
 //! ```
 
 use disaity::{
-    // Context
-    Error,
-    // commands::checks::{diff_vc, not_mute, user_not_deafen},
-    // poise::command,
+    Context, Error,
+    commands::checks::{diff_vc, not_mute, user_not_deafen},
+    poise::command,
     prelude::*,
+    tokio,
 };
 
-// TODO need to make a custom macro or a wrapper to export poise::command throw the lib
-// installing poise crate you use the raw_commands method
-// #[command(
-//     slash_command,
-//     prefix_command,
-//     rename = "hello_world",
-//     aliases("hello"),
-//     category = "fun",
-//     guild_only,
-//     broadcast_typing,
-//     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
-//     check = "diff_vc",
-//     check = "not_mute",
-//     check = "user_not_deafen"
-// )]
-// pub async fn hello_world(ctx: Context<'_>) -> Result<(), Error> {
-//     // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
-//
-//     // use can use call to take any actions
-//     // let call = ctx.utils().get_or_join_voice().await?;
-//
-//     // let mut call_lock = call.lock().await;
-//
-//     ctx.say(
-//         ctx.data()
-//             .config
-//             .persona
-//             .interactions
-//             .events
-//             .guild
-//             .on_welcome
-//             .get_random_res()
-//             .unwrap_or("Hello Word"),
-//     )
-//     .await?;
-//
-//     Ok(())
-// }
+/// installing poise crate you use the raw_commands method
+#[command(
+    crate = "disaity::poise",
+    slash_command,
+    prefix_command,
+    rename = "hello_world",
+    aliases("hello"),
+    category = "fun",
+    guild_only,
+    broadcast_typing,
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
+    check = "diff_vc",
+    check = "not_mute",
+    check = "user_not_deafen"
+)]
+pub async fn hello_world(ctx: Context<'_>) -> Result<(), Error> {
+    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-#[tokio::main]
+    // use can use call to take any actions
+    // let call = ctx.utils().get_or_join_voice().await?;
+
+    // let mut call_lock = call.lock().await;
+
+    ctx.say(
+        ctx.data()
+            .config
+            .persona
+            .interactions
+            .events
+            .guild
+            .on_welcome
+            .get_random_res()
+            .unwrap_or("Hello Word"),
+    )
+    .await?;
+
+    Ok(())
+}
+
+#[tokio::main(crate = "disaity::tokio")]
 async fn main() -> Result<(), Error> {
     Binaries::ensure().await?;
 

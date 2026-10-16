@@ -4,6 +4,7 @@ use disaity_core::{Context, ContextExt, Error, say};
 
 use super::super::checks::{not_empty_queue, same_vc};
 
+/// clears the current music queue
 #[command(
     slash_command,
     prefix_command,
@@ -31,6 +32,7 @@ pub async fn clear(ctx: Context<'_>) -> Result<(), Error> {
 
     let queue = call_lock.queue();
 
+    // modfiy the queue but leaves the 1st current song
     let removed = queue.modify_queue(|q| {
         if q.len() <= 1 {
             return None;
@@ -42,6 +44,7 @@ pub async fn clear(ctx: Context<'_>) -> Result<(), Error> {
         return Err("only the current track is queued".into());
     };
 
+    // stops the cleared tracks and avoid leaking
     for track in &removed {
         track.stop().ok();
     }

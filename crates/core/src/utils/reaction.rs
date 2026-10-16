@@ -1,8 +1,9 @@
 use serenity::{all::ReactionType, async_trait};
 
-use crate::{context::Context, errors::Error};
-
-use super::Utils;
+use super::{
+    super::{context::Context, errors::Error},
+    Utils,
+};
 
 #[async_trait]
 pub trait ReactionUtils {

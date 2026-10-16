@@ -1,9 +1,11 @@
+mod commands;
 mod music;
 mod reaction;
 mod voice;
 
 use super::context::Context;
 
+pub use commands::CommandUtils;
 pub use music::{Queued, TrackMetadata};
 pub use reaction::ReactionUtils;
 pub use voice::VoiceUtils;

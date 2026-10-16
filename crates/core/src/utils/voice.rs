@@ -4,9 +4,10 @@ use serenity::async_trait;
 use songbird::Call;
 use tokio::sync::Mutex;
 
-use crate::{errors::Error, voice::VoiceEventCtx};
-
-use super::Utils;
+use super::{
+    super::{errors::Error, voice::VoiceEventCtx},
+    Utils,
+};
 
 #[async_trait]
 pub trait VoiceUtils {

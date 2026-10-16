@@ -7,7 +7,8 @@ use disaity_core::{Context, Error};
 
 use super::super::checks::dm_with_auth;
 
-// TODO clean up get history to Uitls Struct
+/// get chat history and filter a conversations between user and bot with prefix
+// TODO clean up get history to Uitls Struct and use better data structure
 fn get_history(
     messages: Vec<Message>,
     current_msg_id: Option<u64>,
@@ -92,6 +93,7 @@ fn get_history(
     history
 }
 
+/// using ai to chat with presona
 #[command(
     slash_command,
     prefix_command,
@@ -127,6 +129,7 @@ pub async fn ask(
     let history = get_history(messages, current_msg_id, ctx.author().id, &data.config);
     let persona = &data.config.persona;
 
+    // build up a conversation with the user and gemeni with target agent
     // could use a clean up
     let build = |agent: &Gemini, history: &Vec<(bool, String)>| {
         let mut steps: Vec<Step> = history
@@ -157,6 +160,7 @@ pub async fn ask(
             .with_step_input(steps)
     };
 
+    // handles response and fallback to flash
     let res_text = match build(&ai.agent, &history).execute().await {
         Ok(res) => res.output_text(),
         Err(e) if e.to_string().contains("503") || e.to_string().contains("UNAVAILABLE") => {
@@ -173,20 +177,23 @@ pub async fn ask(
         Err(e_rest) => return Err(e_rest.into()),
     };
 
+    // discord can only handle limited text in msg makes chunks
     let char_vec: Vec<char> = res_text.chars().collect();
     let chunks = char_vec.chunks(1900);
 
     for (i, chunk) in chunks.enumerate() {
         let mut content: String = chunk.iter().collect();
 
+        //  reply on only the 1st message
         if i == 0 {
             if let MessageContext::Application(_) = ctx {
                 content = format!("> {}\n\n{}", chat.trim(), content);
             }
             ctx.reply(content).await?;
-        } else {
-            ctx.say(content).await?;
+            continue;
         }
+
+        ctx.say(content).await?;
     }
 
     Ok(())

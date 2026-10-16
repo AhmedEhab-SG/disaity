@@ -10,9 +10,10 @@
 //! puts them in a `bin/` directory next to this crate's `Cargo.toml`, and
 //! `--update bin` replaces them with the current upstream builds.
 
-use disaity::prelude::*;
+use disaity::{prelude::*, tokio};
 
-#[tokio::main]
+// use can use pre-installed libs that disaity uses like `tokio` `serde` or others
+#[tokio::main(crate = "disaity::tokio")]
 async fn main() -> Result<(), Error> {
     Binaries::ensure().await?;
 

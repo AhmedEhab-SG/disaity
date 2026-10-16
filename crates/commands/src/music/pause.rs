@@ -5,6 +5,7 @@ use disaity_core::{Context, ContextExt, Error, say};
 
 use super::super::checks::{not_empty_queue, same_vc};
 
+/// pause the track if its being played
 #[command(
     slash_command,
     prefix_command,

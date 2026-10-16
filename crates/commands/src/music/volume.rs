@@ -5,6 +5,7 @@ use disaity_core::{Context, ContextExt, Error, say};
 
 use super::super::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen};
 
+/// adjust the audio volume of the queue between 0.0 to 200.0 throws if the song is not playing
 #[command(
     slash_command,
     prefix_command,

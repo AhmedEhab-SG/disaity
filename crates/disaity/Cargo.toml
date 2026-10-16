@@ -15,6 +15,3 @@ disaity-config.workspace = true
 disaity-core.workspace = true
 disaity-handlers.workspace = true
 disaity-subscriptions.workspace = true
-
-[dev-dependencies]
-tokio.workspace = true

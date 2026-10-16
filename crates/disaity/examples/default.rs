@@ -6,9 +6,9 @@
 //! cargo run --example default
 //! ```
 
-use disaity::{FreeGamesSubscription, StatusHandler, prelude::*};
+use disaity::{FreeGamesSubscription, StatusHandler, prelude::*, tokio};
 
-#[tokio::main]
+#[tokio::main(crate = "disaity::tokio")]
 async fn main() -> Result<(), Error> {
     Binaries::ensure().await?;
 

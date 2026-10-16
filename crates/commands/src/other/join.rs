@@ -4,6 +4,7 @@ use disaity_core::{Context, ContextExt, Error, VoiceUtils};
 
 use super::super::checks::{diff_vc, not_mute, user_not_deafen};
 
+/// join voice channel
 #[command(
     slash_command,
     prefix_command,

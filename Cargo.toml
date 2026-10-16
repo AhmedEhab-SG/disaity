@@ -58,5 +58,8 @@ disaity-commands = { path = "crates/commands", version = "0.1.0" }
 disaity-handlers = { path = "crates/handlers", version = "0.1.0" }
 disaity-subscriptions = { path = "crates/subscriptions", version = "0.1.0" }
 
+[patch.crates-io]
+poise = { git = "https://github.com/AhmedEhab-SG/poise", branch = "command-crate-path" }
+
 [profile.release]
 lto = "thin"

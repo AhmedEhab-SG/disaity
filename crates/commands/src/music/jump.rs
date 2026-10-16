@@ -4,6 +4,7 @@ use disaity_core::{Context, ContextExt, Error, say};
 
 use super::super::checks::{not_empty_queue, same_vc, user_not_deafen};
 
+/// jumps to a number in the queue (forward only)
 #[command(
     slash_command,
     prefix_command,
@@ -45,19 +46,17 @@ pub async fn jump(
         return Err("That track number does not exist in the queue.".into());
     }
 
-    if index != 0 {
-        queue.modify_queue(|vq| {
-            (0..index).for_each(|_| {
-                if let Some(queued) = vq.pop_front() {
-                    queued.stop().ok();
-                }
-            });
-        });
-    } else {
-        queue.skip()?;
-    }
+    // remove and stop every track before the target
+    queue.modify_queue(|vq| {
+        for queued in vq.drain(..index) {
+            queued.stop().ok();
+        }
+    });
 
-    ctx.utils().end_loading_react().await?;
+    // the target is now at the front but queued tracks wait paused, so play it
+    queue.resume()?;
+
+    ctx_utils.end_loading_react().await?;
 
     say!(ctx, format!("▶️ Jumped to track {}!", order));
 
