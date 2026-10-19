@@ -158,11 +158,27 @@
     "name": "ask",
     "keys": ["ask", "a"],
     "category": "chat",
-    "description": "Emilia will answer you.",
+    "description": "Ask any question, I will answer you.",
     "options": [
       {
         "name": "chat",
         "description": "Take to me.",
+        "type": 3,
+        "required": true
+      }
+    ]
+  },
+
+  "assist": {
+    "name": "assist",
+    "keys": ["assist", "ai"],
+    "category": "chat",
+    "description": "Tell me what you need and I'll run the right commands.",
+    "timeout": 60,
+    "options": [
+      {
+        "name": "request",
+        "description": "Tell me what you want, Will help you.",
         "type": 3,
         "required": true
       }
@@ -205,5 +221,49 @@
     "category": "subscription",
     "description": "Unsubscribe to free games in the server",
     "timeout": 40
+  },
+
+  "kick": {
+    "name": "kick",
+    "keys": ["kick", "k"],
+    "category": "manage",
+    "description": "Kick a member from the server.",
+    "ai": "general",
+    "options": [
+      {
+        "name": "member",
+        "description": "Who to kick.",
+        "type": 6,
+        "required": true
+      },
+      {
+        "name": "reason",
+        "description": "Why, shown in the audit log.",
+        "type": 3,
+        "required": true
+      }
+    ]
+  },
+
+  "move_member": {
+    "name": "move_member",
+    "keys": ["move_member", "mv"],
+    "category": "manage",
+    "description": "Move a member to another voice channel.",
+    "ai": "general",
+    "options": [
+      {
+        "name": "member",
+        "description": "Who to move.",
+        "type": 6,
+        "required": true
+      },
+      {
+        "name": "channel",
+        "description": "The voice channel id to move them to.",
+        "type": 3,
+        "required": true
+      }
+    ]
   }
 }

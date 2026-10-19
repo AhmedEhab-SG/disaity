@@ -3,7 +3,7 @@ use std::{str::FromStr, sync::Arc};
 use disaity_config::{CommandId, CommandRegistry};
 use poise::Command;
 
-use crate::{Data, Error, Handler};
+use crate::{CommandMeta, Data, Error, Handler};
 
 pub trait Feature: Send + Sync + 'static {
     fn enabled(&self, _data: &Data) -> bool {
@@ -39,6 +39,12 @@ impl Decorate for Command<Data, Error> {
         self.description = Some(entry.description.clone().into());
         self.aliases = entry.keys.clone().into_iter().map(Into::into).collect();
         self.category = Some(entry.category.clone().into());
+
+        // apply custom data with disaity meta data
+        if let Some(access) = entry.ai {
+            CommandMeta::in_slot(&mut self.custom_data).ai = access;
+        }
+
         self
     }
 }

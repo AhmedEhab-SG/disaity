@@ -6,7 +6,7 @@ mod persona;
 mod utils;
 
 pub use assets::{Assets, Platform, Provider};
-pub use commands::{Category, CommandId, CommandRegistry};
+pub use commands::{AiAccess, Category, CommandId, CommandRegistry};
 pub use env::{Env, LogLevel};
 pub use info::Info;
 pub use persona::{ActivityType, Persona, Preset, Status};

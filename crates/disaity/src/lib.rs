@@ -41,8 +41,8 @@ pub use disaity_core::{poise, reqwest, serde, serenity, songbird, sqlx, tokio};
 
 pub use disaity_commands::Commands;
 pub use disaity_config::{
-    ActivityType, Assets, Category, CommandId, CommandRegistry, Config, ConfigBuilder, Env, Info,
-    LogLevel, Persona, Platform, Preset, Provider, Status,
+    ActivityType, AiAccess, Assets, Category, CommandId, CommandRegistry, Config, ConfigBuilder,
+    Env, Info, LogLevel, Persona, Platform, Preset, Provider, Status,
 };
 pub use disaity_core::{
     AsSubscription, Binaries, BinarySpec, Client, Context, ContextExt, Data, DataBuilder, Database,

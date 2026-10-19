@@ -4,7 +4,8 @@ mod context;
 mod db;
 mod errors;
 mod feature;
-pub mod macros;
+mod macros;
+mod meta;
 mod utils;
 mod voice;
 
@@ -22,4 +23,6 @@ pub use context::{Context, ContextExt, Data, DataBuilder};
 pub use db::Database;
 pub use errors::{Error, ErrorExt};
 pub use feature::{AsSubscription, Decorate, Feature, FeatureBuilder, SubscriptionModule};
+pub use macros::Transcript;
+pub use meta::CommandMeta;
 pub use utils::{CommandUtils, Queued, ReactionUtils, TrackMetadata, VoiceUtils};

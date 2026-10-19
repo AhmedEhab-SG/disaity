@@ -1,5 +1,7 @@
 mod chat;
 pub mod checks;
+pub mod guard;
+mod manage;
 mod music;
 mod other;
 mod utils;
@@ -7,14 +9,15 @@ mod utils;
 use std::{collections::HashSet, str::FromStr};
 
 use poise::Command as PoiseCommand;
+use strum::VariantArray;
 
 use disaity_config::{Category, CommandId};
 use disaity_core::{Data, Decorate, Error, Feature};
 
-use chat::ask;
+use chat::{ask, assist};
+use manage::{kick, move_member};
 use music::{clear, jump, pause, play, queue, repeat, resume, seek, shuffle, skip, stop, volume};
 use other::{help, join, leave};
-use strum::VariantArray;
 
 #[derive(Default)]
 pub struct Commands {
@@ -31,10 +34,16 @@ impl Commands {
 
     fn ctor(cmd: &CommandId) -> Option<fn() -> PoiseCommand<Data, Error>> {
         Some(match cmd {
+            // chat
             CommandId::Ask => ask,
+            CommandId::Assist => assist,
+
+            // others
             CommandId::Help => help,
             CommandId::Join => join,
             CommandId::Leave => leave,
+
+            // music
             CommandId::Clear => clear,
             CommandId::Jump => jump,
             CommandId::Pause => pause,
@@ -48,6 +57,11 @@ impl Commands {
             CommandId::Stop => stop,
             CommandId::Volume => volume,
 
+            // manage
+            CommandId::Kick => kick,
+            CommandId::MoveMember => move_member,
+
+            // subscription (ignored bec its a feature needs other helpers)
             CommandId::FreeGames | CommandId::ClearFreeGames => return None,
         })
     }

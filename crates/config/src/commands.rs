@@ -9,10 +9,16 @@ use super::utils::{ConfigError, Merge};
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum CommandId {
+    //chat
     Ask,
+    Assist,
+
+    // others
     Help,
     Join,
     Leave,
+
+    // music
     Clear,
     Jump,
     Pause,
@@ -25,17 +31,32 @@ pub enum CommandId {
     Skip,
     Stop,
     Volume,
+
+    // subscription
     FreeGames,
     ClearFreeGames,
+
+    // manage
+    Kick,
+    MoveMember,
+}
+
+#[derive(Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AiAccess {
+    #[default]
+    Never,
+    General,
 }
 
 #[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString, VariantArray)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Category {
-    Chat,
     Music,
     Subscription,
+    Manage,
+    Chat,
     Other,
 }
 
@@ -65,6 +86,7 @@ pub struct CommandEntry {
     pub timeout: Option<u64>,
     pub action: Option<String>,
     pub options: Option<Vec<CommandOption>>,
+    pub ai: Option<AiAccess>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -81,6 +103,7 @@ pub struct CommandRegistry {
 pub struct CommandDetailsOverride {
     pub keys: Option<Vec<String>>,
     pub description: Option<String>,
+    pub ai: Option<AiAccess>,
 }
 
 impl Default for CommandRegistry {
@@ -135,6 +158,7 @@ impl CommandRegistry {
         match cat {
             Category::Music => "🎶",
             Category::Subscription => "📢",
+            Category::Manage => "🛡️",
             Category::Chat => "🗨️",
             Category::Other => "⚙️",
         }
@@ -155,11 +179,15 @@ impl CommandRegistry {
             };
 
             if let Some(keys) = over.keys {
-                config.keys = keys
+                config.keys = keys;
             }
 
             if let Some(description) = over.description {
                 config.description = description;
+            }
+
+            if let Some(ai) = over.ai {
+                config.ai = Some(ai);
             }
         }
 
