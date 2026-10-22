@@ -114,28 +114,96 @@ FFmpeg, so YouTube, SoundCloud and Spotify and fallback to `yt-dlp` if the
 target provider not found. Playlist are being scraped to work without
 registering.
 
-**Has it's own personality.** Personas are TOML — a system prompt for the AI
+**Has it's own personality.** Personas are TOML, a system prompt for the AI
 and Two ship with the crate (`Preset::Emilia`, `Preset::Rem`);
 point `Persona::from_file_over` at your own file to override
 any part of one and keep the rest.
 
 **Chat, if you want it.** The `ask` command talks to Gemini using the persona's
-system prompt as its character brief. It needs `GEMINI_API_KEY` — register
+system prompt as its character brief. It needs `GEMINI_API_KEY` register
 `Commands::chat()` without one and the client stops at startup and tells you
 so, rather than failing later on someone's first question. Drop that one line
 and the rest of the bot runs fine without a key.
 
-**Subscriptions moudle.** is a pair of commands — subscribe and unsubscribe
+**Subscriptions moudle.** is a pair of commands subscribe and unsubscribe
 on an event which run in the back ground. It needs `DB_PATH` to save the tasks
 and then posts them on schedule. Modules persist their subscriptions. They
 Implement `SubscriptionModule` so you can write your own.
 
-## Building it
+## Building
 
-You need the Rust toolchain — `rustup` is the easy way:
+### Unix
 
 ```bash
+# Head over to https://rust-lang.org and install `rustup` or
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# install toolchain stable
+rustup toolchain install stable
 ```
 
-Songbird's audio stack also wants `cmake` and a C compiler on the box.
+C compiler toolchain, and CMake is needed too.
+
+#### Linux
+
+```bash
+sudo apt install build-essential cmake          # Debian/Ubuntu
+
+# sudo dnf install @development-tools cmake     # Fedora
+# sudo pacman -S base-devel cmake               # Arch
+```
+
+#### macOS
+
+```bash
+# clang: linker and C compiler
+xcode-select --install
+
+# install cmake
+brew install cmake
+```
+
+### Windows
+
+#### Install Rust and CMake
+
+```powershell
+winget install -e --id Rustlang.Rustup
+
+# install cmake
+winget install -e --id Kitware.CMake
+```
+
+On windows there is two options using VisualSudio build tool or gnu
+
+#### **MSVC** — Rustup's default toolchain:
+
+```powershell
+# install msvc default on windows
+rustup toolchain install stable
+rustup default stable-x86_64-pc-windows-msvc
+
+# install VS build tools
+winget install --id Microsoft.VisualStudio.2022.BuildTools `
+  --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+
+```
+
+#### **MinGW** — Using gnu toolchain:
+
+```powershell
+# install toolchain gnu and default it
+rustup toolchain install stable-x86_64-pc-windows-gnu
+rustup default stable-x86_64-pc-windows-gnu
+
+# isntall MinGW-w64 GCC (gcc, as, ld, mingw32-make)
+winget install -e --id BrechtSanders.WinLibs.POSIX.UCRT
+```
+
+### Build
+
+Open a new shell after installing then build
+
+```bash
+cargo build
+```

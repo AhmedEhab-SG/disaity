@@ -32,7 +32,13 @@ sqlx = { version = "0.9.0", default-features = false, features = [
 ] }
 # async / net
 tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread"] }
-reqwest = { version = "0.12.28", features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12.28", default-features = false, features = [
+  "json",
+  "rustls-tls",
+  "charset",
+  "http2",
+  "system-proxy",
+] }
 scraper = "0.27.0"
 gemini-rust = "2.1.0"
 # discord
@@ -57,9 +63,6 @@ disaity-core = { path = "crates/core", version = "0.1.0" }
 disaity-commands = { path = "crates/commands", version = "0.1.0" }
 disaity-handlers = { path = "crates/handlers", version = "0.1.0" }
 disaity-subscriptions = { path = "crates/subscriptions", version = "0.1.0" }
-
-[patch.crates-io]
-poise = { git = "https://github.com/AhmedEhab-SG/poise", branch = "command-crate-path" }
 
 [profile.release]
 lto = "thin"
