@@ -29,7 +29,7 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     call_lock
-        .deafen(ctx.author().id != ctx.data().config.info.owner.id)
+        .deafen(Some(ctx.author().id.into()) != ctx.data().config.info.owner.as_ref().map(|o| o.id))
         .await?;
 
     ctx.say(

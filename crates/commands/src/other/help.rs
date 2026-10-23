@@ -15,7 +15,7 @@ use serenity::{
 };
 
 use disaity_config::{Category, CommandId};
-use disaity_core::{CommandUtils, Context, ContextExt, Error};
+use disaity_core::{CommandUtils, Context, ContextExt, Error, send};
 
 fn capitalize(s: &str) -> String {
     let mut chars = s.chars();
@@ -81,8 +81,6 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
     )
     .placeholder("Select a command for more information ⌘");
 
-    let owner = UserId::new(info.owner.id).to_user(&ctx).await?;
-
     let mut embed = CreateEmbed::new()
         .title("Hello,")
         .description(&persona.summary)
@@ -90,24 +88,27 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
         .color(persona.interactions.colors.primary)
         .author(CreateEmbedAuthor::new(author_name).icon_url(avatar_url));
 
-    let mut footer = CreateEmbedFooter::new(
-        info.signature_for(owner.global_name.as_deref().unwrap_or(&owner.name))
-            .unwrap_or_default(),
+    if let Some(owner) = &info.owner {
+        let user = UserId::new(owner.id).to_user(&ctx).await?;
+        let name = user.global_name.as_deref().unwrap_or(&user.name);
+
+        if let Some(signature) = info.signature_for(name) {
+            let mut footer = CreateEmbedFooter::new(signature);
+
+            if let Some(icon_url) = &owner.icon_url {
+                footer = footer.icon_url(icon_url);
+            }
+
+            embed = embed.footer(footer);
+        }
+    }
+
+    let reply = send!(
+        ctx,
+        CreateReply::default()
+            .embed(embed)
+            .components(vec![CreateActionRow::SelectMenu(select_menu)])
     );
-
-    if let Some(icon_url) = &info.owner.icon_url {
-        footer = footer.icon_url(icon_url);
-    };
-
-    embed = embed.footer(footer);
-
-    let reply = ctx
-        .send(
-            CreateReply::default()
-                .embed(embed)
-                .components(vec![CreateActionRow::SelectMenu(select_menu)]),
-        )
-        .await?;
 
     let message = reply.into_message().await?;
 

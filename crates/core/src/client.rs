@@ -11,8 +11,8 @@ use tracing::Instrument;
 use tracing_subscriber::EnvFilter;
 
 use super::{
-    AsSubscription, Data, Database, Error, ErrorExt, Feature, SubscriptionModule,
-    context::{AiAgent, DataBuilder},
+    AiAgent, AsSubscription, Data, Database, Error, ErrorExt, Feature, SubscriptionModule,
+    context::DataBuilder,
 };
 use disaity_config::Env;
 

@@ -82,4 +82,24 @@ impl ErrorExt {
 
         Ok(())
     }
+
+    /// the same failure a user would see, as plain text for the ai
+    pub fn text(error: &FrameworkError<'_, Data, Error>) -> String {
+        match error {
+            FrameworkError::Command { error, .. } => error.to_string(),
+            FrameworkError::CommandCheckFailed {
+                error: Some(error), ..
+            } => error.to_string(),
+            FrameworkError::MissingUserPermissions {
+                missing_permissions: Some(missing),
+                ..
+            } => format!("the requester is missing: {missing}"),
+            FrameworkError::MissingBotPermissions {
+                missing_permissions,
+                ..
+            } => format!("I'm missing: {missing_permissions}"),
+            FrameworkError::ArgumentParse { error, .. } => format!("bad arguments: {error}"),
+            other => other.to_string(),
+        }
+    }
 }

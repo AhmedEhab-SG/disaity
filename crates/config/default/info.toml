@@ -7,8 +7,3 @@ signature = [
   "Lovely built by {username}.",
   "Handcrafted by {username}.",
 ]
-
-[owner]
-id = 291260815716253696
-url = "https://ahmedehab-sg.com/"
-icon_url = "https://i.ibb.co/hFNhYk2/AES-solid-colors-512.png"

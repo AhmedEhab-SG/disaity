@@ -9,7 +9,7 @@ pub struct Transcript {
 impl Transcript {
     pub fn quiet() -> Self {
         Self {
-            quiet: false,
+            quiet: true,
             ..Self::default()
         }
     }

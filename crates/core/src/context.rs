@@ -1,30 +1,12 @@
-use gemini_rust::{Gemini, Model};
 use poise::Context as BaseContext;
 use reqwest::Client;
 use serenity::async_trait;
 
 use disaity_config::Config;
 
-use super::{db::Database, errors::Error, utils::Utils};
+use super::{AiAgent, Database, Error, Utils};
 
 pub type Context<'ctx> = BaseContext<'ctx, Data, Error>;
-
-pub struct AiAgent {
-    pub agent: Gemini,
-    pub fallback_agent: Gemini,
-}
-
-impl AiAgent {
-    pub fn connect(key: &str) -> Result<Self, Error> {
-        let agent = Gemini::new(key).map_err(|e| format!("failed to connect to gemini: {e}"))?;
-        let fallback_agent = Gemini::with_model(key, Model::Gemini25FlashLite)
-            .map_err(|e| format!("failed to connect to gemini: {e}"))?;
-        Ok(Self {
-            agent,
-            fallback_agent,
-        })
-    }
-}
 
 pub struct Data {
     pub http: Client,

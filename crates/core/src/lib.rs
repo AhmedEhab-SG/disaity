@@ -1,3 +1,4 @@
+mod agent;
 mod binaries;
 mod client;
 mod context;
@@ -17,6 +18,7 @@ pub use songbird;
 pub use sqlx;
 pub use tokio;
 
+pub use agent::AiAgent;
 pub use binaries::{Binaries, BinarySpec, FFMPEG, ResolvedBinary, YTDLP};
 pub use client::{Client, Handler, HandlerCx};
 pub use context::{Context, ContextExt, Data, DataBuilder};
@@ -25,4 +27,4 @@ pub use errors::{Error, ErrorExt};
 pub use feature::{AsSubscription, Decorate, Feature, FeatureBuilder, SubscriptionModule};
 pub use macros::Transcript;
 pub use meta::CommandMeta;
-pub use utils::{CommandUtils, Queued, ReactionUtils, TrackMetadata, VoiceUtils};
+pub use utils::{CommandUtils, Queued, ReactionUtils, TrackMetadata, Utils, VoiceUtils};

@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use disaity_core::{Context, Transcript};
+
 /// Parse user-supplied timestamp into `Duration`.
 /// Accepts:
 /// - "MM:SS" (e.g. "1:20")
@@ -134,4 +136,19 @@ pub fn format_duration_human(d: Duration) -> String {
     } else {
         format!("{}:{:02}", mins, secs)
     }
+}
+
+pub async fn audit_reason(ctx: Context<'_>, reason: &str) -> String {
+    let authur = ctx.author();
+
+    let via = match ctx.invocation_data::<Transcript>().await {
+        Some(_) => format!(" via {}", &ctx.data().config.persona.name),
+        None => String::new(),
+    };
+
+    // disord limits log to 512 char
+    format!("{} ({}){via}: {reason}", authur.name, authur.id)
+        .chars()
+        .take(512)
+        .collect()
 }

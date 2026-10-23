@@ -16,7 +16,7 @@ pub struct Owner {
 #[derive(Deserialize, Debug, Serialize, Clone)]
 pub struct Info {
     pub prefix: String,
-    pub owner: Owner,
+    pub owner: Option<Owner>,
     pub signature: Vec<String>,
     pub permissions: Vec<String>,
 }

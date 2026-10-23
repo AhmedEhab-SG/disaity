@@ -25,53 +25,57 @@ impl Rank {
     }
 }
 
-/// the author and the bot must both sit above the target, same rule discord uses
-pub fn rank_rule(author: Rank, bot: Rank, target: Rank) -> Result<(), &'static str> {
-    if target.id == author.id {
-        return Err("You can't do that to yourself.");
+pub struct Guard;
+
+impl Guard {
+    /// the author and the bot must both sit above the target, same rule discord uses
+    fn rank_rule(author: Rank, bot: Rank, target: Rank) -> Result<(), &'static str> {
+        if target.id == author.id {
+            return Err("You can't do that to yourself.");
+        }
+
+        if target.id == bot.id {
+            return Err("I won't do that to myself.");
+        }
+
+        if target.is_owner {
+            return Err("The server owner can't be targeted.");
+        }
+
+        if !author.is_owner && target.top >= author.top {
+            return Err("Their highest role is equal to or above yours.");
+        }
+
+        if target.top >= bot.top {
+            return Err("Their highest role is equal to or above mine.");
+        }
+
+        Ok(())
     }
 
-    if target.id == bot.id {
-        return Err("I won't do that to myself.");
+    /// shared by kick, ban, timeout, remove_role... call it at the top of the body
+    pub async fn outranks(ctx: Context<'_>, target: &Member) -> Result<(), Error> {
+        let author = ctx
+            .author_member()
+            .await
+            .ok_or("This command only works in servers.")?
+            .into_owned();
+
+        let guild = ctx
+            .guild()
+            .ok_or("This command only works in servers.")?
+            .clone();
+
+        let bot = guild
+            .member(ctx, ctx.framework().bot_id())
+            .await?
+            .into_owned();
+
+        Self::rank_rule(
+            Rank::of(&guild, &author),
+            Rank::of(&guild, &bot),
+            Rank::of(&guild, target),
+        )
+        .map_err(Into::into)
     }
-
-    if target.is_owner {
-        return Err("The server owner can't be targeted.");
-    }
-
-    if !author.is_owner && target.top >= author.top {
-        return Err("Their highest role is equal to or above yours.");
-    }
-
-    if target.top >= bot.top {
-        return Err("Their highest role is equal to or above mine.");
-    }
-
-    Ok(())
-}
-
-/// shared by kick, ban, timeout, remove_role... call it at the top of the body
-pub async fn outranks(ctx: Context<'_>, target: &Member) -> Result<(), Error> {
-    let author = ctx
-        .author_member()
-        .await
-        .ok_or("This command only works in servers.")?
-        .into_owned();
-
-    let guild = ctx
-        .guild()
-        .ok_or("This command only works in servers.")?
-        .clone();
-
-    let bot = guild
-        .member(ctx, ctx.framework().bot_id())
-        .await?
-        .into_owned();
-
-    rank_rule(
-        Rank::of(&guild, &author),
-        Rank::of(&guild, &bot),
-        Rank::of(&guild, target),
-    )
-    .map_err(Into::into)
 }

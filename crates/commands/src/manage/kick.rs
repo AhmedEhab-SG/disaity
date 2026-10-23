@@ -3,6 +3,8 @@ use serenity::all::Member;
 
 use disaity_core::{Context, Error, say};
 
+use super::super::{guard::Guard, utils::audit_reason};
+
 /// kicks a member who sits below you and the bot
 #[command(
     slash_command,
@@ -13,12 +15,21 @@ use disaity_core::{Context, Error, say};
 )]
 pub async fn kick(
     ctx: Context<'_>,
-    #[description = "Who to kick."] _member: Member,
+    #[description = "Who to kick."] member: Member,
     #[description = "Why, shown in the audit log."]
     #[rest]
-    _reason: String,
+    reason: String,
 ) -> Result<(), Error> {
-    say!(ctx, "not implemented yet");
+    Guard::outranks(ctx, &member).await?;
+
+    member
+        .kick_with_reason(ctx, &audit_reason(ctx, &reason).await)
+        .await?;
+
+    say!(
+        ctx,
+        format!("👢 Kicked **{}**: {reason}", member.display_name())
+    );
 
     Ok(())
 }

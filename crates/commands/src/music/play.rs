@@ -32,7 +32,9 @@ pub async fn play(
 
     let mut call_lock = call.lock().await;
 
-    if ctx.author().id != ctx.data().config.info.owner.id && call_lock.queue().is_empty() {
+    if Some(ctx.author().id.into()) != ctx.data().config.info.owner.to_owned().map(|o| o.id)
+        && call_lock.queue().is_empty()
+    {
         call_lock.deafen(true).await?;
     }
     // free the call to prevent stucking until the fetching happens

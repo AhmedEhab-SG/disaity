@@ -3,6 +3,23 @@ mod transcript;
 pub use transcript::Transcript;
 
 #[macro_export]
+macro_rules! send {
+    ($ctx:expr, $reply:expr, $msg:expr) => {
+        'send: {
+            let msg = ::std::string::String::from($msg);
+
+            if $crate::Transcript::capture($ctx, &msg).await {
+                break 'send None;
+            }
+
+            Some($ctx.send($reply).await?)
+        }
+    };
+
+    ($ctx:expr, $reply:expr) => {{ $ctx.send($reply).await? }};
+}
+
+#[macro_export]
 macro_rules! say {
     ($ctx:expr, $msg:expr, color = $color:expr) => {
         'say: {

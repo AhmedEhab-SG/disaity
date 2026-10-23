@@ -5,6 +5,7 @@
     "category": "music",
     "description": "Play's an audio.",
     "timeout": 40,
+    "ai": "general",
     "options": [
       {
         "name": "song",
@@ -19,14 +20,16 @@
     "name": "stop",
     "keys": ["stop", "st"],
     "category": "music",
-    "description": "Stop's playing."
+    "description": "Stop's playing.",
+    "ai": "general"
   },
 
   "skip": {
     "name": "skip",
     "keys": ["skip", "s"],
     "category": "music",
-    "description": "Skip's the current song."
+    "description": "Skip's the current song.",
+    "ai": "general"
   },
 
   "seek": {
@@ -34,6 +37,7 @@
     "keys": ["seek", "sk"],
     "category": "music",
     "description": "Seek's the current song.",
+    "ai": "general",
     "options": [
       {
         "name": "time",
@@ -48,35 +52,40 @@
     "name": "clear",
     "keys": ["clear", "c"],
     "category": "music",
-    "description": "Clears the queue."
+    "description": "Clears the queue.",
+    "ai": "general"
   },
 
   "join": {
     "name": "join",
     "keys": ["join", "j"],
     "category": "other",
-    "description": "I will join your channel."
+    "description": "I will join your channel.",
+    "ai": "general"
   },
 
   "leave": {
     "name": "leave",
     "keys": ["leave", "l"],
     "category": "other",
-    "description": "I will leave your channel."
+    "description": "I will leave your channel.",
+    "ai": "general"
   },
 
   "pause": {
     "name": "pause",
     "keys": ["pause", "ps"],
     "category": "music",
-    "description": "Pause's the current song."
+    "description": "Pause's the current song.",
+    "ai": "general"
   },
 
   "resume": {
     "name": "resume",
     "keys": ["resume", "r"],
     "category": "music",
-    "description": "Resume's the current song."
+    "description": "Resume's the current song.",
+    "ai": "general"
   },
 
   "repeat": {
@@ -84,6 +93,7 @@
     "keys": ["repeat", "rp"],
     "category": "music",
     "description": "Repeat queue or song you are playing.",
+    "ai": "general",
     "options": [
       {
         "name": "repeat",
@@ -112,14 +122,16 @@
     "name": "queue",
     "keys": ["queue", "q"],
     "category": "music",
-    "description": "Displays the current queue."
+    "description": "Displays the current queue.",
+    "ai": "general"
   },
 
   "shuffle": {
     "name": "shuffle",
     "keys": ["shuffle", "sh"],
     "category": "music",
-    "description": "Shuffle's the queue."
+    "description": "Shuffle's the queue.",
+    "ai": "general"
   },
 
   "volume": {
@@ -127,6 +139,7 @@
     "keys": ["volume", "v"],
     "category": "music",
     "description": "Change's the volume.",
+    "ai": "general",
     "options": [
       {
         "name": "percentage ",
@@ -144,6 +157,7 @@
     "keys": ["jump", "jp"],
     "category": "music",
     "description": "Jump's to the song.",
+    "ai": "general",
     "options": [
       {
         "name": "jump",
@@ -159,6 +173,7 @@
     "keys": ["ask", "a"],
     "category": "chat",
     "description": "Ask any question, I will answer you.",
+    "ai": "never",
     "options": [
       {
         "name": "chat",
@@ -175,6 +190,7 @@
     "category": "chat",
     "description": "Tell me what you need and I'll run the right commands.",
     "timeout": 60,
+    "ai": "never",
     "options": [
       {
         "name": "request",
@@ -190,7 +206,8 @@
     "keys": ["help", "h"],
     "category": "other",
     "description": "Displays all the commands. ⌘",
-    "action": "help_menu"
+    "action": "help_menu",
+    "ai": "never"
   },
 
   "free_games": {
@@ -199,6 +216,8 @@
     "category": "subscription",
     "description": "Subscribe to free games in all (platforms) in target a chennel and ping a role.",
     "timeout": 40,
+    "ai": "general",
+
     "options": [
       {
         "name": "channel",
@@ -220,7 +239,8 @@
     "keys": ["clear_free_games", "cfg"],
     "category": "subscription",
     "description": "Unsubscribe to free games in the server",
-    "timeout": 40
+    "timeout": 40,
+    "ai": "general"
   },
 
   "kick": {

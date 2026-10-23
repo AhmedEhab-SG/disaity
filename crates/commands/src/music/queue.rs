@@ -5,7 +5,7 @@ use serenity::all::{
     CreateInteractionResponse, CreateInteractionResponseMessage,
 };
 
-use disaity_core::{Context, ContextExt, Error, TrackMetadata};
+use disaity_core::{Context, ContextExt, Error, TrackMetadata, send};
 
 use super::super::checks::{not_empty_queue, same_vc};
 
@@ -45,6 +45,11 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     drop(call_lock);
 
     let mut tracks = Vec::new();
+
+    let now_playing = queue_snapshot
+        .first()
+        .map(|handle| handle.data::<TrackMetadata>().title.clone())
+        .unwrap_or_default();
 
     for (i, track_handle) in queue_snapshot.iter().enumerate() {
         let track_info = track_handle.data::<TrackMetadata>();
@@ -117,7 +122,16 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     // relaase typing interaction before the stream
     drop(typing);
 
-    ctx.send(builder).await?;
+    if send!(
+        ctx,
+        builder,
+        format!("{} tracks queued, now playing {now_playing}", tracks.len())
+    )
+    .is_none()
+    {
+        // exit the command if its none to dont wait for the whole time
+        return Ok(());
+    }
 
     // create an interaction collector that filters only our buttons
     let mut interaction_stream = ComponentInteractionCollector::new(serenity_context)

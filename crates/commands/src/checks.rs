@@ -1,7 +1,9 @@
 use disaity_core::{Context, Error};
 
 pub async fn dm_with_auth(ctx: Context<'_>) -> Result<bool, Error> {
-    if ctx.guild_id().is_some() && ctx.author().id != ctx.data().config.info.owner.id {
+    if ctx.guild_id().is_some()
+        && Some(ctx.author().id.into()) != ctx.data().config.info.owner.as_ref().map(|o| o.id)
+    {
         return Err(ctx
             .data()
             .config
@@ -14,6 +16,7 @@ pub async fn dm_with_auth(ctx: Context<'_>) -> Result<bool, Error> {
             .unwrap_or("You are not authorized to use this command in DMs.")
             .into());
     }
+
     Ok(true)
 }
 
