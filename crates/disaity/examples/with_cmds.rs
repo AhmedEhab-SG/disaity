@@ -29,7 +29,7 @@ use disaity::{
     check = "user_not_deafen"
 )]
 pub async fn hello_world(ctx: Context<'_>) -> Result<(), Error> {
-    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+    // let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     // use can use call to take any actions
     // let call = ctx.utils().get_or_join_voice().await?;
@@ -48,6 +48,8 @@ pub async fn hello_world(ctx: Context<'_>) -> Result<(), Error> {
             .unwrap_or("Hello Word"),
     )
     .await?;
+
+    // drop(typing);
 
     Ok(())
 }
