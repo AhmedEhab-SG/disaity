@@ -34,15 +34,6 @@ impl Commands {
 
     fn ctor(cmd: &CommandId) -> Option<fn() -> PoiseCommand<Data, Error>> {
         Some(match cmd {
-            // chat
-            CommandId::Ask => ask,
-            CommandId::Assist => assist,
-
-            // others
-            CommandId::Help => help,
-            CommandId::Join => join,
-            CommandId::Leave => leave,
-
             // music
             CommandId::Clear => clear,
             CommandId::Jump => jump,
@@ -57,12 +48,21 @@ impl Commands {
             CommandId::Stop => stop,
             CommandId::Volume => volume,
 
+            // subscription (ignored bec its a feature needs other helpers)
+            CommandId::FreeGames | CommandId::ClearFreeGames => return None,
+
             // manage
             CommandId::Kick => kick,
             CommandId::MoveMember => move_member,
 
-            // subscription (ignored bec its a feature needs other helpers)
-            CommandId::FreeGames | CommandId::ClearFreeGames => return None,
+            // chat
+            CommandId::Ask => ask,
+            CommandId::Assist => assist,
+
+            // others
+            CommandId::Help => help,
+            CommandId::Join => join,
+            CommandId::Leave => leave,
         })
     }
 
@@ -93,6 +93,10 @@ impl Commands {
 
     pub fn music() -> Self {
         Self::new().with_category(Category::Music)
+    }
+
+    pub fn manage() -> Self {
+        Self::new().with_category(Category::Manage)
     }
 
     pub fn chat() -> Self {

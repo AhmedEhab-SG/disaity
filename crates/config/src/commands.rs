@@ -9,15 +9,6 @@ use super::utils::{ConfigError, Merge};
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum CommandId {
-    //chat
-    Ask,
-    Assist,
-
-    // others
-    Help,
-    Join,
-    Leave,
-
     // music
     Clear,
     Jump,
@@ -39,6 +30,15 @@ pub enum CommandId {
     // manage
     Kick,
     MoveMember,
+
+    // chat
+    Ask,
+    Assist,
+
+    // others
+    Help,
+    Join,
+    Leave,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
