@@ -31,7 +31,7 @@ sqlx = { version = "0.9.0", default-features = false, features = [
   "sqlite",
 ] }
 # async / net
-tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread"] }
 reqwest = { version = "0.12.28", default-features = false, features = [
   "json",
   "rustls-tls",
