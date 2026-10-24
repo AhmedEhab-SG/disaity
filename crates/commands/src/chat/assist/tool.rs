@@ -32,9 +32,7 @@ impl<'a> Tool<'a> {
 
         // run_invocation skips a command without prefix_command and still returns Ok,
         // so the ai would be told it worked
-        if command.prefix_action.is_none() {
-            return None;
-        }
+        command.prefix_action?;
 
         // the same json poise registers with discord, so types and limits come for free
         let slash = serde_json::to_value(command.create_as_slash_command()?).ok()?;

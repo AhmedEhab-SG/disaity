@@ -142,7 +142,7 @@ pub async fn audit_reason(ctx: Context<'_>, reason: &str) -> String {
     let authur = ctx.author();
 
     let via = match ctx.invocation_data::<Transcript>().await {
-        Some(_) => format!(" via {}", &ctx.data().config.persona.name),
+        Some(_) => format!(" via {}", ctx.data().config.persona.name),
         None => String::new(),
     };
 
