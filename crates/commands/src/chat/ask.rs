@@ -3,7 +3,7 @@ use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
 use disaity_config::{CommandId, Config};
-use disaity_core::{Context, Error};
+use disaity_core::{AiAgent, Context, Error};
 
 use super::super::checks::dm_with_auth;
 
@@ -97,6 +97,7 @@ fn get_history(
 #[command(
     slash_command,
     prefix_command,
+    user_cooldown = 15,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | READ_MESSAGE_HISTORY",
     check = "dm_with_auth"
 )]
@@ -154,19 +155,21 @@ pub async fn ask(
 
         agent
             .create_interaction()
-            .with_thinking_level(InteractionThinkingLevel::High)
-            .with_google_search()
+            .with_thinking_level(InteractionThinkingLevel::Medium)
             .with_system_instruction(persona.personality.system.clone())
             .with_step_input(steps)
     };
 
-    // handles response and fallback to flash
+    // handles response and fallback to flash-lite when the primary is out of quota or busy
     let res_text = match build(&ai.agent, &history).execute().await {
         Ok(res) => res.output_text(),
-        Err(e) if e.to_string().contains("503") || e.to_string().contains("UNAVAILABLE") => {
+
+        Err(e) if AiAgent::is_exhausted(&e) => {
             tracing::warn!(
                 message = %persona.name,
-                "Gemini primary model busy (503), falling back to flash-lite"
+                error = %e,
+                "gemini primary model unavailable, falling back to {}",
+                AiAgent::FALLBACK_MODEL
             );
 
             build(&ai.fallback_agent, &history)

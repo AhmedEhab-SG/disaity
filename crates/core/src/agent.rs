@@ -1,4 +1,4 @@
-use gemini_rust::{Gemini, Model, Step, StepResult};
+use gemini_rust::{ClientError, Gemini, Model, Step, StepResult};
 use serde_json::{Value, json};
 
 use super::Error;
@@ -9,14 +9,31 @@ pub struct AiAgent {
 }
 
 impl AiAgent {
+    pub const MODEL: Model = Model::Gemini36Flash;
+    pub const FALLBACK_MODEL: Model = Model::Gemini35FlashLite;
+
     pub fn connect(key: &str) -> Result<Self, Error> {
-        let agent = Gemini::new(key).map_err(|e| format!("failed to connect to gemini: {e}"))?;
-        let fallback_agent = Gemini::with_model(key, Model::Gemini25FlashLite)
+        let agent = Gemini::with_model(key, Self::MODEL)
             .map_err(|e| format!("failed to connect to gemini: {e}"))?;
+
+        let fallback_agent = Gemini::with_model(key, Self::FALLBACK_MODEL)
+            .map_err(|e| format!("failed to connect to gemini: {e}"))?;
+
         Ok(Self {
             agent,
             fallback_agent,
         })
+    }
+
+    /// out of quota (429) or model overloaded (503): both mean try the cheaper model
+    pub fn is_exhausted(error: &ClientError) -> bool {
+        matches!(
+            error,
+            ClientError::BadResponse {
+                code: 429 | 503,
+                ..
+            }
+        )
     }
 
     /// discord option json to gemini schema
