@@ -42,7 +42,8 @@ reqwest = { version = "0.12.28", default-features = false, features = [
 scraper = "0.27.0"
 gemini-rust = "2.1.0"
 # discord
-poise = "0.7.1"
+poise = { git = "https://github.com/serenity-rs/poise", rev = "7346bc165532c65160df62be3114d6b279d9ce48" }
+# poise = "0.7.1" # TODO: restore poise v on next release
 symphonia = { version = "0.5.5", features = ["all"] }
 songbird = { version = "0.6.1", features = ["builtin-queue"] }
 serenity = { version = "0.12.5", default-features = false, features = [
@@ -67,7 +68,3 @@ disaity-subscriptions = { path = "crates/subscriptions", version = "0.1.0" }
 
 [profile.release]
 lto = "thin"
-
-# TODO: remove once a poise release includes the `crate` option (#418)
-[patch.crates-io]
-poise = { git = "https://github.com/serenity-rs/poise", rev = "7346bc165532c65160df62be3114d6b279d9ce48" }
