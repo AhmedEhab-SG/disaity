@@ -1,4 +1,4 @@
-use gemini_rust::InteractionTool;
+use genai::chat::Tool as AiTool;
 use serde_json::{Value, json};
 use serenity::all::Permissions;
 use strum::{Display, EnumString, VariantArray};
@@ -17,12 +17,12 @@ pub(super) enum LookUp {
 impl LookUp {
     const LIST_LIMIT: usize = 50;
 
-    /// every lookup as a gemini tool
-    pub fn declarations() -> Vec<InteractionTool> {
+    /// every lookup as a tool the ai can call
+    pub fn declarations() -> Vec<AiTool> {
         Self::VARIANTS.iter().map(Self::declaration).collect()
     }
 
-    fn declaration(&self) -> InteractionTool {
+    fn declaration(&self) -> AiTool {
         let (about, parameters) = match self {
             Self::FindMember => (
                 "Find members by username or nickname. Returns up to 10 with their ids.",
@@ -40,7 +40,9 @@ impl LookUp {
             ),
         };
 
-        InteractionTool::function(self.to_string(), about, parameters)
+        AiTool::new(self.to_string())
+            .with_description(about)
+            .with_schema(parameters)
     }
 
     /// the one `query` argument every lookup takes

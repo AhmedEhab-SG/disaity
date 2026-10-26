@@ -1,4 +1,4 @@
-use gemini_rust::InteractionTool;
+use genai::chat::Tool as AiTool;
 
 use super::{lookup::LookUp, tool::Tool};
 
@@ -9,8 +9,8 @@ pub(super) enum Call<'a> {
 }
 
 impl<'a> Call<'a> {
-    /// what gemini sees: the lookups first, then your commands
-    pub fn declarations(commands: &[Tool]) -> Vec<InteractionTool> {
+    /// what the ai sees: the lookups first, then your commands
+    pub fn declarations(commands: &[Tool]) -> Vec<AiTool> {
         let mut all = LookUp::declarations();
         all.extend(commands.iter().map(Tool::declaration));
         all

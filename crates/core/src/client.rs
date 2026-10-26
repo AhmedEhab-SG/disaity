@@ -11,7 +11,7 @@ use tracing::Instrument;
 use tracing_subscriber::EnvFilter;
 
 use super::{
-    AiAgent, AsSubscription, Data, Database, Error, ErrorExt, Feature, SubscriptionModule,
+    AiAgent, AiUrl, AsSubscription, Data, Database, Error, ErrorExt, Feature, SubscriptionModule,
     context::DataBuilder,
 };
 use disaity_config::Env;
@@ -121,6 +121,13 @@ impl Client {
     }
 
     pub async fn run(self) -> Result<(), Error> {
+        // reqwest 0.12 turns on rustls' ring and genai's reqwest 0.13 turns on aws-lc-rs.
+        // with both, rustls can't pick one and songbird's voice socket panics, so pick ring
+        // TODO: remove with the rustls dep after the serenity next release
+        rustls::crypto::ring::default_provider()
+            .install_default()
+            .ok();
+
         let Client {
             intents,
             mut commands,
@@ -148,14 +155,15 @@ impl Client {
             let prefix = Some(data.config.info.prefix.to_owned());
 
             if features.iter().any(|feature| feature.needs_ai()) {
-                let key = data
+                let url = data
                     .config
                     .env
-                    .gemini_api_key
+                    .ai_url
                     .as_deref()
-                    .ok_or("an AI feature is registered but GEMINI_API_KEY is not set")?;
+                    .ok_or("an AI feature is registered but GEMINI_API_KEY is not set")?
+                    .parse::<AiUrl>()?;
 
-                data.ai = Some(AiAgent::connect(key)?);
+                data.ai = Some(AiAgent::connect(&url)?);
             }
 
             if features.iter().any(|feature| feature.needs_db()) {

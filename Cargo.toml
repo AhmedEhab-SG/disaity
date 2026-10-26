@@ -39,8 +39,20 @@ reqwest = { version = "0.12.28", default-features = false, features = [
   "http2",
   "system-proxy",
 ] }
+# TODO: uncomment after serenity/songbird/poise next release (reqwest 0.13)
+# reqwest = { version = "0.13", default-features = false, features = [
+#   "json",
+#   "rustls",
+#   "charset",
+#   "http2",
+#   "system-proxy",
+# ] }
 scraper = "0.27.0"
-gemini-rust = "2.1.0"
+genai = "0.7.1"
+rustls = { version = "0.23.45", default-features = false, features = [
+  "ring",
+  "std",
+] } # TODO: remove after serenity/songbird/poise next release (reqwest 0.13)
 # discord
 poise = { git = "https://github.com/serenity-rs/poise", rev = "7346bc165532c65160df62be3114d6b279d9ce48" }
 # poise = "0.7.1" # TODO: restore poise v on next release

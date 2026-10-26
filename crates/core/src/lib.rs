@@ -10,6 +10,7 @@ mod meta;
 mod utils;
 mod voice;
 
+pub use genai;
 pub use poise;
 pub use reqwest;
 pub use serde;
@@ -18,7 +19,7 @@ pub use songbird;
 pub use sqlx;
 pub use tokio;
 
-pub use agent::AiAgent;
+pub use agent::{AiAgent, AiUrl};
 pub use binaries::{Binaries, BinarySpec, FFMPEG, ResolvedBinary, YTDLP};
 pub use client::{Client, Handler, HandlerCx};
 pub use context::{Context, ContextExt, Data, DataBuilder};

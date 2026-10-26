@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use gemini_rust::InteractionTool;
+use genai::chat::Tool as AiTool;
 use poise::{Command, MessageDispatchTrigger, PrefixContext};
 use serde_json::{Map, Value, json};
 use serenity::all::Message;
@@ -41,7 +41,7 @@ impl<'a> Tool<'a> {
         Some(Self { command, options })
     }
 
-    pub fn declaration(&self) -> InteractionTool {
+    pub fn declaration(&self) -> AiTool {
         let properties = self
             .options
             .iter()
@@ -55,14 +55,19 @@ impl<'a> Tool<'a> {
             .filter_map(|opt| opt["name"].as_str())
             .collect::<Vec<&str>>();
 
-        InteractionTool::Function {
-            name: Some(self.command.name.to_string()),
-            description: self.command.description.as_deref().map(str::to_owned),
-            // gemini rejects an object with no properties, so commands without arguments send none
-            parameters: (!properties.is_empty()).then(
-                || json!({ "type": "object", "properties": properties, "required": required }),
-            ),
+        let mut tool = AiTool::new(self.command.name.to_string());
+
+        if let Some(about) = &self.command.description {
+            tool = tool.with_description(about.to_string());
         }
+
+        if !properties.is_empty() {
+            tool = tool.with_schema(
+                json!({ "type": "object", "properties": properties, "required": required }),
+            );
+        }
+
+        tool
     }
 
     /// what gets passed to the command, like the text after `-play`

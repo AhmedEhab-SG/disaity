@@ -1,39 +1,84 @@
-use gemini_rust::{ClientError, Gemini, Model, Step, StepResult};
+mod url;
+
+pub use url::AiUrl;
+
+use genai::{
+    Client,
+    adapter::AdapterKind,
+    chat::{ChatOptions, ChatRequest, ChatResponse, ToolCall, ToolResponse},
+    resolver::{AuthData, Endpoint},
+};
 use serde_json::{Value, json};
 
 use super::Error;
 
 pub struct AiAgent {
-    pub agent: Gemini,
-    pub fallback_agent: Gemini,
+    client: Client,
+    model: String,
+    fallback: Option<String>,
+    options: ChatOptions,
 }
 
 impl AiAgent {
-    pub const MODEL: Model = Model::Gemini36Flash;
-    pub const FALLBACK_MODEL: Model = Model::Gemini35FlashLite;
+    pub fn connect(url: &AiUrl) -> Result<Self, Error> {
+        let kind = AdapterKind::from_lower_str(&url.provider)
+            .ok_or_else(|| format!("AI_URL: unknown provider `{}`", url.provider))?;
 
-    pub fn connect(key: &str) -> Result<Self, Error> {
-        let agent = Gemini::with_model(key, Self::MODEL)
-            .map_err(|e| format!("failed to connect to gemini: {e}"))?;
+        // only what the url set, and the rest of the adapter stays default
+        let endpoint = url.endpoint.clone().map(Endpoint::from_owned);
+        let auth = url.key.clone().map(AuthData::from_single);
 
-        let fallback_agent = Gemini::with_model(key, Self::FALLBACK_MODEL)
-            .map_err(|e| format!("failed to connect to gemini: {e}"))?;
+        let client = Client::builder()
+            .with_adapter_kind(kind)
+            .append_provider_config(kind, (endpoint, auth))
+            .build()?;
+
+        let mut options = ChatOptions::default();
+
+        if let Some(level) = &url.thinking {
+            options = options.with_reasoning_effort(level.parse()?);
+        }
+
+        tracing::info!(%url, "ai connected");
 
         Ok(Self {
-            agent,
-            fallback_agent,
+            client,
+            model: url.model.clone(),
+            fallback: url.fallback.clone(),
+            options,
         })
     }
 
-    /// out of quota (429) or model overloaded (503): both mean try the cheaper model
-    pub fn is_exhausted(error: &ClientError) -> bool {
-        matches!(
-            error,
-            ClientError::BadResponse {
-                code: 429 | 503,
-                ..
+    /// one call to the model, retried on the fallback
+    pub async fn chat(&self, req: &ChatRequest) -> Result<ChatResponse, Error> {
+        let res = self
+            .client
+            .exec_chat(&self.model, req.clone(), Some(&self.options))
+            .await;
+
+        match (res, &self.fallback) {
+            (Err(e), Some(fallback)) if Self::is_exhausted(&e) => {
+                tracing::warn!(error = %e, %fallback, "ai model unavailable, falling back");
+
+                Ok(self
+                    .client
+                    .exec_chat(fallback, req.clone(), Some(&self.options))
+                    .await?)
             }
-        )
+            (res, _) => Ok(res?),
+        }
+    }
+
+    /// out of quota try the cheaper model
+    pub fn is_exhausted(error: &genai::Error) -> bool {
+        error
+            .status()
+            .is_some_and(|status| matches!(status.as_u16(), 429 | 503))
+    }
+
+    /// all the text parts of an answer, models may split one reply into several
+    pub fn text(res: ChatResponse) -> String {
+        res.into_texts().concat()
     }
 
     /// discord option json to gemini schema
@@ -100,14 +145,8 @@ impl AiAgent {
             .join(" ")
     }
 
-    /// a run's json as the step gemini reads back, flagged when it failed
-    pub fn result_step(name: String, call_id: String, value: Value) -> Step {
-        let failed = value.get("error").is_some();
-        Step::FunctionResult {
-            name: Some(name),
-            call_id,
-            result: StepResult::from_json(value),
-            is_error: failed.then_some(true),
-        }
+    /// a run's json as the tool result the ai reads back
+    pub fn result(call: &ToolCall, value: Value) -> ToolResponse {
+        ToolResponse::from_tool_call(call, value.to_string())
     }
 }

@@ -37,17 +37,16 @@ pub use disaity_core as core;
 pub use disaity_handlers as handlers;
 pub use disaity_subscriptions as subscriptions;
 
-pub use disaity_core::{poise, reqwest, serde, serenity, songbird, sqlx, tokio};
-
 pub use disaity_commands::Commands;
 pub use disaity_config::{
     ActivityType, AiAccess, Assets, Category, CommandId, CommandRegistry, Config, ConfigBuilder,
     Env, Info, LogLevel, Persona, Platform, Preset, Provider, Status,
 };
 pub use disaity_core::{
-    AsSubscription, Binaries, BinarySpec, Client, Context, ContextExt, Data, DataBuilder, Database,
-    Decorate, Error, ErrorExt, FFMPEG, Feature, FeatureBuilder, Handler, HandlerCx, ReactionUtils,
-    ResolvedBinary, SubscriptionModule, TrackMetadata, VoiceUtils, YTDLP, say, send,
+    AiAgent, AiUrl, AsSubscription, Binaries, BinarySpec, Client, Context, ContextExt, Data,
+    DataBuilder, Database, Decorate, Error, ErrorExt, FFMPEG, Feature, FeatureBuilder, Handler,
+    HandlerCx, ReactionUtils, ResolvedBinary, SubscriptionModule, TrackMetadata, VoiceUtils, YTDLP,
+    genai, poise, reqwest, say, send, serde, serenity, songbird, sqlx, tokio,
 };
 pub use disaity_handlers::StatusHandler;
 pub use disaity_subscriptions::FreeGamesSubscription;

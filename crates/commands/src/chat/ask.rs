@@ -1,4 +1,4 @@
-use gemini_rust::{Gemini, InteractionContent, InteractionThinkingLevel, Step};
+use genai::chat::{ChatMessage, ChatRequest};
 use poise::{Context as MessageContext, command};
 use serenity::all::{GetMessages, Message, MessageInteractionMetadata, UserId};
 
@@ -130,55 +130,20 @@ pub async fn ask(
     let history = get_history(messages, current_msg_id, ctx.author().id, &data.config);
     let persona = &data.config.persona;
 
-    // build up a conversation with the user and gemeni with target agent
-    // could use a clean up
-    let build = |agent: &Gemini, history: &Vec<(bool, String)>| {
-        let mut steps: Vec<Step> = history
-            .iter()
-            .map(|(is_bot, content)| {
-                if *is_bot {
-                    Step::ModelOutput {
-                        content: vec![InteractionContent::text(content.as_str())],
-                        error: None,
-                    }
-                } else {
-                    Step::UserInput {
-                        content: vec![InteractionContent::text(content.as_str())],
-                    }
-                }
-            })
-            .collect();
+    // build a conversations
+    let mut turns = history
+        .into_iter()
+        .map(|(is_bot, content)| match is_bot {
+            true => ChatMessage::assistant(content),
+            false => ChatMessage::user(content),
+        })
+        .collect::<Vec<ChatMessage>>();
 
-        steps.push(Step::UserInput {
-            content: vec![InteractionContent::text(chat.trim())],
-        });
+    turns.push(ChatMessage::user(chat.trim()));
 
-        agent
-            .create_interaction()
-            .with_thinking_level(InteractionThinkingLevel::Medium)
-            .with_system_instruction(persona.personality.system.clone())
-            .with_step_input(steps)
-    };
+    let req = ChatRequest::new(turns).with_system(persona.personality.system.clone());
 
-    // handles response and fallback to flash-lite when the primary is out of quota or busy
-    let res_text = match build(&ai.agent, &history).execute().await {
-        Ok(res) => res.output_text(),
-
-        Err(e) if AiAgent::is_exhausted(&e) => {
-            tracing::warn!(
-                message = %persona.name,
-                error = %e,
-                "gemini primary model unavailable, falling back to {}",
-                AiAgent::FALLBACK_MODEL
-            );
-
-            build(&ai.fallback_agent, &history)
-                .execute()
-                .await?
-                .output_text()
-        }
-        Err(e_rest) => return Err(e_rest.into()),
-    };
+    let res_text = AiAgent::text(ai.chat(&req).await?);
 
     // discord can only handle limited text in msg makes chunks
     let char_vec: Vec<char> = res_text.chars().collect();

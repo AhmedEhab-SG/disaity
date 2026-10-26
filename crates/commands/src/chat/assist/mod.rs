@@ -4,9 +4,9 @@ mod consts;
 mod lookup;
 mod tool;
 
-use gemini_rust::{InteractionContent, InteractionThinkingLevel, Step};
+use genai::chat::{ChatMessage, ChatRequest, ToolCall};
 use poise::command;
-use serde_json::{Value, json};
+use serde_json::json;
 
 use disaity_core::{AiAgent, Context, Error, say};
 
@@ -70,57 +70,30 @@ pub async fn assist(
 
     let author = ctx.author();
 
-    let mut input = vec![Step::UserInput {
-        content: vec![InteractionContent::text(format!(
-            "Requested by: {} (id {})\nCurrent channel id: {}\n\nRequest: {}",
-            author.name,
-            author.id,
-            ctx.channel_id(),
-            request.trim()
-        ))],
-    }];
+    let mut req = ChatRequest::new(vec![ChatMessage::user(format!(
+        "Requested by: {} (id {})\nCurrent channel id: {}\n\nRequest: {}",
+        author.name,
+        author.id,
+        ctx.channel_id(),
+        request.trim()
+    ))])
+    .with_system(format!("{RULES}\n{}", persona.personality.system))
+    .with_tools(declarations);
 
-    let mut previous: Option<String> = None;
     let mut ran = 0;
 
     for _ in 0..MAX_TURNS {
-        let mut builder = ai
-            .agent
-            .create_interaction()
-            .with_system_instruction(format!("{RULES}\n{}", persona.personality.system))
-            .with_thinking_level(InteractionThinkingLevel::High)
-            .with_tools(declarations.clone())
-            .with_step_input(input.to_owned());
+        let res = ai.chat(&req).await?;
 
-        if let Some(id) = &previous {
-            builder = builder.with_previous_interaction(id)
-        }
-
-        let interaction = builder.execute().await?;
-
-        if let Some(err) = &interaction.error {
-            let reason = err.message.as_deref().unwrap_or("unknown error");
-
-            return Err(format!("Gemini failed: {reason}").into());
-        }
-
-        let calls = interaction
-            .steps
-            .iter()
-            .filter_map(|step| match step {
-                Step::FunctionCall {
-                    name,
-                    arguments,
-                    id,
-                } => Some((name.clone(), arguments.clone(), id.clone())),
-
-                _ => None,
-            })
-            .collect::<Vec<(String, Value, String)>>();
+        let calls = res
+            .tool_calls()
+            .into_iter()
+            .cloned()
+            .collect::<Vec<ToolCall>>();
 
         // no more calls ai is done and talking to the user
         if calls.is_empty() {
-            let text = interaction.output_text();
+            let text = AiAgent::text(res);
             let reply = if text.is_empty() {
                 "Done.".to_owned()
             } else {
@@ -131,19 +104,24 @@ pub async fn assist(
             return Ok(());
         }
 
+        // the ai's own turn goes in first, with the thought signatures gemini wants back
+        if let Some(turn) = res.into_assistant_message_for_tool_use() {
+            req = req.append_message(turn);
+        }
+
         let mut results = Vec::new();
         let mut plan = Vec::new();
 
-        for (name, args, call_id) in calls {
-            match Call::find(&name, &commands) {
+        for call in &calls {
+            match Call::find(&call.fn_name, &commands) {
                 // read only, needs no confirm
                 Some(Call::Lookup(lookup)) => {
                     let value = lookup
-                        .run(ctx, &args)
+                        .run(ctx, &call.fn_arguments)
                         .await
                         .unwrap_or_else(|e| json!({"error": e.to_string()}));
 
-                    results.push(AiAgent::result_step(name, call_id, value));
+                    results.push(AiAgent::result(call, value));
                 }
 
                 Some(Call::Command(tool)) => {
@@ -151,18 +129,18 @@ pub async fn assist(
                     let missing = tool.command.required_permissions - author_perms;
 
                     if missing.is_empty() {
-                        plan.push((name, call_id, tool, args));
+                        plan.push((call, tool));
                     } else {
                         let error = format!("the requester is missing: {missing}");
                         let value = json!({ "ok": false, "error": error });
 
-                        results.push(AiAgent::result_step(name, call_id, value));
+                        results.push(AiAgent::result(call, value));
                     }
                 }
 
                 None => {
                     let value = json!({ "ok": false, "error": "no such command" });
-                    results.push(AiAgent::result_step(name, call_id, value));
+                    results.push(AiAgent::result(call, value));
                 }
             }
         }
@@ -177,7 +155,7 @@ pub async fn assist(
         }
 
         // check for any of the requirment need confirmation
-        let needs_click = plan.iter().any(|(_, _, tool, _)| {
+        let needs_click = plan.iter().any(|(_, tool)| {
             tool.command
                 .required_permissions
                 .intersects(Confirm::powerful())
@@ -186,7 +164,7 @@ pub async fn assist(
         if needs_click {
             let lines = plan
                 .iter()
-                .map(|(_, _, tool, args)| tool.describe(prefix, args))
+                .map(|(call, tool)| tool.describe(prefix, &call.fn_arguments))
                 .collect::<Vec<String>>();
 
             // exit if not confirmed
@@ -195,17 +173,16 @@ pub async fn assist(
             }
         }
 
-        // one at a time, in the order gemini asked for
-        for (name, call_id, tool, args) in plan {
-            let value = tool.run(ctx, &msg, &args).await;
+        // one at a time, in the order the ai asked for
+        for (call, tool) in plan {
+            let value = tool.run(ctx, &msg, &call.fn_arguments).await;
 
-            tracing::info!(%name, by = %ctx.author().id, ok = %value["ok"], "assist: ran");
+            tracing::info!(name = %call.fn_name, by = %ctx.author().id, ok = %value["ok"], "assist: ran");
 
-            results.push(AiAgent::result_step(name, call_id, value));
+            results.push(AiAgent::result(call, value));
         }
 
-        previous = interaction.id().map(str::to_owned);
-        input = results;
+        req = req.append_message(results);
     }
 
     drop(typing);

@@ -16,7 +16,7 @@ pub enum LogLevel {
 #[derive(Debug, Clone)]
 pub struct Env {
     pub client_token: Option<String>,
-    pub gemini_api_key: Option<String>,
+    pub ai_url: Option<String>,
     pub db_path: Option<String>,
     pub log_level: Option<LogLevel>,
 }
@@ -25,7 +25,7 @@ impl Default for Env {
     fn default() -> Self {
         Self {
             client_token: Self::get_client_token(),
-            gemini_api_key: Self::get_gemini_api_key(),
+            ai_url: Self::get_ai_url(),
             db_path: Self::get_db_path(),
             log_level: Self::get_log_level(),
         }
@@ -41,8 +41,8 @@ impl Env {
         var("CLIENT_TOKEN").ok()
     }
 
-    fn get_gemini_api_key() -> Option<String> {
-        var("GEMINI_API_KEY").ok()
+    fn get_ai_url() -> Option<String> {
+        var("AI_URL").ok()
     }
 
     fn get_db_path() -> Option<String> {
@@ -54,8 +54,8 @@ impl Env {
         self
     }
 
-    pub fn with_gemini_api_key(mut self, key: impl AsRef<OsStr>) -> Self {
-        self.gemini_api_key = var(key).ok();
+    pub fn with_ai_url(mut self, key: impl AsRef<OsStr>) -> Self {
+        self.ai_url = var(key).ok();
         self
     }
 
