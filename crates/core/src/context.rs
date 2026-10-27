@@ -12,9 +12,9 @@ pub type Context<'ctx> = BaseContext<'ctx, Data, Error>;
 pub type State = Box<dyn Any + Send + Sync>;
 
 pub struct Data {
+    pub config: Config,
     pub http: Client,
     pub ai: Option<AiAgent>,
-    pub config: Config,
     pub db: Option<Database>,
     state: Option<State>,
 }
@@ -32,19 +32,6 @@ impl<'a> ContextExt<'a> for Context<'a> {
 }
 
 impl Data {
-    pub async fn new() -> Result<Self, Error> {
-        let config = Config::new();
-        let http = Client::new();
-
-        Ok(Self {
-            http,
-            config,
-            ai: None,
-            db: None,
-            state: None,
-        })
-    }
-
     /// get ref from user data wanted to share
     pub fn state<T>(&self) -> Result<&T, Error>
     where
@@ -95,14 +82,12 @@ impl DataBuilder {
     }
 
     pub async fn build(self) -> Result<Data, Error> {
-        let config = self.config.unwrap_or_default();
-
         Ok(Data {
             http: self.http.unwrap_or_default(),
-            config,
+            config: self.config.unwrap_or_default(),
+            state: self.state,
             ai: None,
             db: None,
-            state: None,
         })
     }
 }
