@@ -115,17 +115,19 @@ impl Persona {
         toml::from_str(base.raw()).expect("malformed default persona")
     }
 
-    pub fn from_default_over(self, path: &Path) -> Result<Self, ConfigError> {
-        let mut default = Value::try_from(&self)?;
-        let user_value: Value = toml::from_str(&fs::read_to_string(path)?)?;
-        Self::safe_merge(&mut default, user_value);
-        Ok(default.try_into()?)
+    /// persona from a file, nothing fallback to preset default
+    pub fn from_file(path: &Path) -> Result<Self, ConfigError> {
+        Ok(toml::from_str(&fs::read_to_string(path)?)?)
     }
 
-    pub fn from_file_over(self, base: Preset, path: &Path) -> Result<Self, ConfigError> {
-        let mut base_val: Value = toml::from_str(base.raw())?;
+    /// merge a file over this persona, keys you leave out keep their value
+    pub fn from_file_over(self, path: &Path) -> Result<Self, ConfigError> {
+        let mut base = Value::try_from(&self)?;
+
         let user_val: Value = toml::from_str(&fs::read_to_string(path)?)?;
-        Self::safe_merge(&mut base_val, user_val);
-        Ok(base_val.try_into()?)
+
+        Self::safe_merge(&mut base, user_val);
+
+        Ok(base.try_into()?)
     }
 }

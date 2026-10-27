@@ -48,7 +48,7 @@ for more info, then `cargo run`.
 
 Some features requires additional enviroment key;
 
-- `chat` features uses gemini ai models needs an api secret.
+- `chat` features uses ai models needs provider url.
 - `subscription` features uses SQLite just need a path folder.
 
 refer to [.env.example](https://github.com/AhmedEhab-SG/disaity/tree/main/.env.example)
@@ -85,7 +85,7 @@ async fn main() -> Result<(), Error> {
 }
 ```
 
-Or test [example](crates/disaity/examples/basic.rs)
+Or test an [example](crates/disaity/examples/basic.rs)
 
 ```bash
 git clone https://github.com/AhmedEhab-SG/disaity
@@ -107,28 +107,21 @@ on how to setup and use disiaty with its builtin features to make you custom cha
 > Binaries::ensure().await?; // looks in this order to find the bin
 > ```
 
-## Features
+## Default Features
 
 **Playing music from any provider.** Playback goes through `yt-dlp` and
-FFmpeg, so YouTube, SoundCloud and Spotify and fallback to `yt-dlp` if the
-target provider not found. Playlist are being scraped to work without
-registering.
+FFmpeg, YouTube, SoundCloud and Spotify defaults `yt-dlp`.
 
-**Has it's own personality.** Personas are TOML, a system prompt for the AI
-and Two ship with the crate (`Preset::Emilia`, `Preset::Rem`);
-point `Persona::from_file_over` at your own file to override
-any part of one and keep the rest.
+**Has it's own personality.** Personas are TOML, a system prompt for the AI;
+point `Persona::from_file_over` at your own file to override any part or crate new.
 
-**Chat, if you want it.** The `ask` command talks to Gemini using the persona's
-system prompt as its character brief. It needs `GEMINI_API_KEY` register
-`Commands::chat()` without one and the client stops at startup and tells you
-so, rather than failing later on someone's first question. Drop that one line
-and the rest of the bot runs fine without a key.
+**Chat and asists you** Talks to any ai using the persona's as a character.
+The ai could excute what you need, It needs `AI_URL` register `Commands::chat()`
 
-**Subscriptions moudle.** is a pair of commands subscribe and unsubscribe
-on an event which run in the back ground. It needs `DB_PATH` to save the tasks
-and then posts them on schedule. Modules persist their subscriptions. They
-Implement `SubscriptionModule` so you can write your own.
+**Manage, handling server for you** Most of the server utils and customization.
+
+**Subscriptions events.** A persistent tasks keeps running on background,
+It needs `DB_PATH` to save it's options.
 
 ## Building
 

@@ -160,7 +160,7 @@ impl Client {
                     .env
                     .ai_url
                     .as_deref()
-                    .ok_or("an AI feature is registered but GEMINI_API_KEY is not set")?
+                    .ok_or("an AI feature is registered but AI_URL is not set")?
                     .parse::<AiUrl>()?;
 
                 data.ai = Some(AiAgent::connect(&url)?);

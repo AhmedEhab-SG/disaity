@@ -1,3 +1,5 @@
+use std::{error, fmt};
+
 use toml::Value;
 
 pub trait Merge {
@@ -20,7 +22,6 @@ pub trait Merge {
 }
 
 // Error wrapper
-#[derive(Debug)]
 pub enum ConfigError {
     Io(std::io::Error),
     TomlDe(toml::de::Error),
@@ -51,3 +52,22 @@ impl From<serde_json::Error> for ConfigError {
         Self::SerdeJson(e)
     }
 }
+
+impl fmt::Display for ConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(e) => write!(f, "can't read the config file: {e}"),
+            Self::TomlDe(e) => write!(f, "{e}"),
+            Self::TomlSer(e) => write!(f, "can't write the config as toml: {e}"),
+            Self::SerdeJson(e) => write!(f, "JSON parse error: {e}"),
+        }
+    }
+}
+
+impl fmt::Debug for ConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl error::Error for ConfigError {}
