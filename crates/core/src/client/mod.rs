@@ -1,31 +1,23 @@
+mod event;
+mod handler;
+
 use std::sync::Arc;
 
 use poise::{Command, Framework, FrameworkOptions, PrefixFrameworkOptions, builtins};
-use serenity::{
-    all::{ClientBuilder, Context as SerenityContext, prelude::GatewayIntents},
-    async_trait,
-    gateway::ShardManager,
-};
+use serenity::all::{ClientBuilder, prelude::GatewayIntents};
 use songbird::SerenityInit;
 use tracing::Instrument;
 use tracing_subscriber::EnvFilter;
+
+use disaity_config::Env;
+
+use event::{Handlers, dispatch};
+pub use handler::{Handler, HandlerCx};
 
 use super::{
     AiAgent, AiUrl, AsSubscription, Data, Database, Error, ErrorExt, Feature, SubscriptionModule,
     context::DataBuilder,
 };
-use disaity_config::Env;
-
-pub struct HandlerCx<'a> {
-    pub serenity: &'a SerenityContext,
-    pub shared_manager: Arc<ShardManager>,
-    pub data: &'a Data,
-}
-
-#[async_trait]
-pub trait Handler: Send + Sync + 'static {
-    async fn setup(&self, cx: &HandlerCx<'_>) -> Result<(), Error>;
-}
 
 pub struct Client {
     intents: GatewayIntents,
@@ -51,18 +43,6 @@ impl Client {
     pub fn new() -> Self {
         Self::default()
     }
-
-    fn default_intents() -> GatewayIntents {
-        GatewayIntents::non_privileged()
-            | GatewayIntents::GUILDS
-            | GatewayIntents::GUILD_MEMBERS
-            | GatewayIntents::GUILD_MESSAGES
-            | GatewayIntents::GUILD_VOICE_STATES
-            | GatewayIntents::GUILD_INTEGRATIONS
-            | GatewayIntents::MESSAGE_CONTENT
-            | GatewayIntents::DIRECT_MESSAGES
-    }
-
     pub fn with_intents(mut self, intents: GatewayIntents) -> Self {
         self.intents = intents;
         self
@@ -190,13 +170,19 @@ impl Client {
                 }
             }
 
+            let event_handlers = handlers.clone();
+
             let framework = Framework::builder()
                 .options(FrameworkOptions {
                     prefix_options: PrefixFrameworkOptions {
                         prefix: prefix.map(Into::into),
                         ..Default::default()
                     },
+
                     commands,
+
+                    event_handler: |framework, event| Box::pin(dispatch(framework, event)),
+
                     on_error: |error| {
                         Box::pin(async move {
                             ErrorExt::on_error(error).await.ok();
@@ -211,7 +197,7 @@ impl Client {
 
                             let cx = HandlerCx {
                                 serenity: ctx,
-                                shared_manager: framework.shard_manager().clone(),
+                                shard_manager: framework.shard_manager().clone(),
                                 data: &data,
                             };
 
@@ -234,6 +220,7 @@ impl Client {
 
             ClientBuilder::new(token, intents)
                 .framework(framework)
+                .type_map_insert::<Handlers>(event_handlers)
                 .register_songbird()
                 .await?
                 .start()
@@ -243,5 +230,16 @@ impl Client {
         }
         .instrument(span)
         .await
+    }
+
+    fn default_intents() -> GatewayIntents {
+        GatewayIntents::non_privileged()
+            | GatewayIntents::GUILDS
+            | GatewayIntents::GUILD_MEMBERS
+            | GatewayIntents::GUILD_MESSAGES
+            | GatewayIntents::GUILD_VOICE_STATES
+            | GatewayIntents::GUILD_INTEGRATIONS
+            | GatewayIntents::MESSAGE_CONTENT
+            | GatewayIntents::DIRECT_MESSAGES
     }
 }

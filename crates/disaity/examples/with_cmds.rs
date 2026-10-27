@@ -1,13 +1,20 @@
-//! You can use raw command to create your custom command.
+//! Your own command and a handler, next to the built-in ones.
 //!
 //! ```sh
 //! cp .env.example .env                        # then fill all needed tokens
 //! cargo run --example with_cmds
 //! ```
+//!
+//! Commands are plain poise commands. `crate = "disaity::poise"` points the
+//! macro at the poise disaity re-exports, so you don't add poise yourself.
 
-use disaity::{Context, Error, commands::Check, poise::command, prelude::*, tokio};
+use std::sync::atomic::{AtomicU64, Ordering};
 
-/// installing poise crate you use the raw_commands method
+use disaity::{WelcomeHandler, commands::Check, prelude::*, tokio};
+
+static PINGS: AtomicU64 = AtomicU64::new(0);
+
+/// replies with how many pings the bot got since it started
 #[command(
     crate = "disaity::poise",
     slash_command,
@@ -21,16 +28,16 @@ use disaity::{Context, Error, commands::Check, poise::command, prelude::*, tokio
     check = "Check::dm_with_auth"
 )]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
-    // let typing = ctx.defer_or_broadcast().await.ok().flatten();
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     // use can use call to take any actions
     // let call = ctx.utils().get_or_join_voice().await?;
 
-    // let mut call_lock = call.lock().await;
+    let count = PINGS.fetch_add(1, Ordering::Relaxed) + 1;
 
-    say!(ctx, "Pong");
+    say!(ctx, format!("Pong #{count}"));
 
-    // drop(typing);
+    drop(typing);
 
     Ok(())
 }
@@ -53,6 +60,7 @@ async fn main() -> Result<(), Error> {
         .with_tracing()
         .with_feature(Commands::all())
         .with_raw_commands([ping()])
+        .with_handler(WelcomeHandler)
         .with_data(data)
         .run()
         .await

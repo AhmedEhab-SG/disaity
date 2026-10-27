@@ -1,9 +1,8 @@
 use std::{sync::Arc, sync::Mutex, time::Duration};
 
 use serenity::{
-    all::{Cache, ChannelId, GuildId},
+    all::{Cache, ChannelId, Guild, GuildId, UserId},
     async_trait,
-    model::guild::Guild,
 };
 use songbird::{
     Call, CoreEvent, Event, EventContext, EventHandler, Songbird, TrackEvent, tracks::TrackQueue,
@@ -54,18 +53,23 @@ impl IdleCheck {
 
         // using the same guild to
         // avoid looking up for the guild again from CacheRef
-        self.queue.is_empty() || !Self::is_user_in(&guild, channel_id)
+        self.queue.is_empty() || !Self::is_user_in(&guild, channel_id, bot_id)
     }
 
-    fn is_user_in(guild: &Guild, channel_id: ChannelId) -> bool {
+    fn is_user_in(guild: &Guild, channel_id: ChannelId, bot_id: UserId) -> bool {
         guild.voice_states.values().any(|vs| {
-            let is_bot = matches!(&vs.member, Some(m) if m.user.bot);
+            let is_bot = vs.user_id == bot_id || matches!(&vs.member, Some(m) if m.user.bot);
+
             vs.channel_id == Some(channel_id) && !is_bot
         })
     }
 }
 
 pub(super) struct IdleEvent;
+
+impl IdleEvent {
+    const CHECK_EVERY: Duration = Duration::from_secs(IdleTimer::IDLE_TIMEOUT.as_secs() / 10);
+}
 
 impl RegisterVoiceEvent for IdleEvent {
     async fn register(call: &mut Call, cx: &VoiceEventCtx) {
@@ -82,9 +86,8 @@ impl RegisterVoiceEvent for IdleEvent {
 
         call.add_global_event(Event::Track(TrackEvent::Play), check.clone());
         call.add_global_event(Event::Track(TrackEvent::End), check.clone());
-        // TODO it needs to get handled on serenity event voice status update
-        // if a user disconnects and reconnect it the timer will still arm
-        call.add_global_event(Event::Core(CoreEvent::ClientDisconnect), check);
+        call.add_global_event(Event::Core(CoreEvent::ClientDisconnect), check.clone());
+        call.add_global_event(Event::Periodic(Self::CHECK_EVERY, None), check);
     }
 }
 

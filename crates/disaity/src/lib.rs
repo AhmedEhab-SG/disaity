@@ -48,5 +48,5 @@ pub use disaity_core::{
     HandlerCx, ReactionUtils, ResolvedBinary, SubscriptionModule, TrackMetadata, VoiceUtils, YTDLP,
     genai, poise, reqwest, say, send, serde, serenity, songbird, sqlx, tokio,
 };
-pub use disaity_handlers::StatusHandler;
+pub use disaity_handlers::{StatusHandler, WelcomeHandler};
 pub use disaity_subscriptions::FreeGamesSubscription;

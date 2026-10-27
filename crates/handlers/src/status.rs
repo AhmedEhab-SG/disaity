@@ -1,12 +1,10 @@
-use serenity::{all::ActivityData, async_trait, gateway::ShardManager};
 use std::{sync::Arc, time::Duration};
+
+use serenity::{all::ActivityData, async_trait, gateway::ShardManager};
 use tokio::time::sleep;
 
 use disaity_config::{ActivityType, Status};
 use disaity_core::{Error, Handler, HandlerCx};
-
-/// How long one status stays up before the next entry in the persona's list.
-const ROTATE_EVERY: Duration = Duration::from_secs(15 * 60);
 
 pub struct StatusHandler;
 
@@ -27,12 +25,15 @@ impl Handler for StatusHandler {
             return Ok(());
         }
 
-        Self::start_status_loop(cx.shared_manager.clone(), statuses);
+        Self::start_status_loop(cx.shard_manager.clone(), statuses);
         Ok(())
     }
 }
 
 impl StatusHandler {
+    /// How long one status stays up before the next entry in the persona's list.
+    const ROTATE_EVERY: Duration = Duration::from_secs(15 * 60);
+
     fn start_status_loop(shard_manager: Arc<ShardManager>, statuses: Vec<ActivityData>) {
         tokio::spawn(async move {
             for status in statuses.iter().cycle() {
@@ -47,7 +48,7 @@ impl StatusHandler {
                 // Explicitly drop the lock so we aren't holding it while sleeping
                 drop(runners);
 
-                sleep(ROTATE_EVERY).await;
+                sleep(Self::ROTATE_EVERY).await;
             }
         });
     }
