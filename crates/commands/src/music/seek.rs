@@ -3,10 +3,7 @@ use songbird::tracks::PlayMode;
 
 use disaity_core::{Context, ContextExt, Error, say};
 
-use super::super::{
-    checks::{not_empty_queue, not_mute, same_vc, user_not_deafen},
-    utils::{format_duration_human, parse_timestamp},
-};
+use super::super::{Check, Utils};
 
 /// specific time on the current playing track if its passes it
 /// it skips the current track HH:MM:SS
@@ -16,10 +13,10 @@ use super::super::{
     guild_only,
     broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | SPEAK | ADD_REACTIONS",
-    check = "same_vc",
-    check = "not_empty_queue",
-    check = "not_mute",
-    check = "user_not_deafen"
+    check = "Check::same_vc",
+    check = "Check::not_empty_queue",
+    check = "Check::not_mute",
+    check = "Check::user_not_deafen"
 )]
 pub async fn seek(
     ctx: Context<'_>,
@@ -51,7 +48,7 @@ pub async fn seek(
         return Err("The music is must be already playing to seek a time frame in it".into());
     }
 
-    let target = parse_timestamp(&time).map_err(|msg| {
+    let target = Utils::parse_timestamp(&time).map_err(|msg| {
         format!(
             "Invalid time: {}. Examples: `1:20`, `90`, `1m20s`, `1:02:30`",
             msg
@@ -64,7 +61,7 @@ pub async fn seek(
 
     say!(
         ctx,
-        format!("Seeked to {}", format_duration_human(result_time))
+        format!("Seeked to {}", Utils::format_duration_human(result_time))
     );
 
     Ok(())

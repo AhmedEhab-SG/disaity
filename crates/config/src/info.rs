@@ -4,7 +4,7 @@ use rand::seq::IndexedRandom;
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
-use crate::utils::{ConfigError, Merge};
+use super::utils::{ConfigError, Merge};
 
 #[derive(Deserialize, Debug, Clone, Serialize)]
 pub struct Owner {
@@ -43,6 +43,31 @@ impl Info {
 
     pub fn with_prefix(mut self, prefix: impl Into<String>) -> Self {
         self.prefix = prefix.into();
+        self
+    }
+
+    pub fn with_owner(mut self, owner: Owner) -> Self {
+        self.owner = Some(owner);
+        self
+    }
+
+    pub fn with_signature(mut self, signature: Vec<String>) -> Self {
+        self.signature = signature;
+        self
+    }
+
+    pub fn with_permissions(mut self, permissions: Vec<String>) -> Self {
+        self.permissions = permissions;
+        self
+    }
+
+    pub fn extend_signature(mut self, signature: Vec<String>) -> Self {
+        self.signature.extend(signature);
+        self
+    }
+
+    pub fn extend_permissions(mut self, permissions: Vec<String>) -> Self {
+        self.permissions.extend(permissions);
         self
     }
 

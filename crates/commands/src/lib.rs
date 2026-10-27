@@ -1,6 +1,6 @@
 mod chat;
-pub mod checks;
-pub mod guard;
+mod checks;
+mod guard;
 mod manage;
 mod music;
 mod other;
@@ -13,6 +13,10 @@ use strum::VariantArray;
 
 use disaity_config::{Category, CommandId};
 use disaity_core::{Data, Decorate, Error, Feature};
+
+pub use checks::Check;
+pub use guard::Guard;
+pub use utils::Utils;
 
 use chat::{ask, assist};
 use manage::{kick, move_member};

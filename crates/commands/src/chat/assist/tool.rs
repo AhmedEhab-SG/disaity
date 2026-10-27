@@ -34,7 +34,7 @@ impl<'a> Tool<'a> {
         // so the ai would be told it worked
         command.prefix_action?;
 
-        // the same json poise registers with discord, so types and limits come for free
+        // the same json poise registers with discord
         let slash = serde_json::to_value(command.create_as_slash_command()?).ok()?;
         let options = slash["options"].as_array().cloned().unwrap_or_default();
 

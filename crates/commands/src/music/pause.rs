@@ -3,7 +3,7 @@ use songbird::tracks::PlayMode;
 
 use disaity_core::{Context, ContextExt, Error, say};
 
-use super::super::checks::{not_empty_queue, same_vc};
+use super::super::Check;
 
 /// pause the track if its being played
 #[command(
@@ -12,8 +12,8 @@ use super::super::checks::{not_empty_queue, same_vc};
     guild_only,
     broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | ADD_REACTIONS",
-    check = "same_vc",
-    check = "not_empty_queue"
+    check = "Check::same_vc",
+    check = "Check::not_empty_queue"
 )]
 pub async fn pause(ctx: Context<'_>) -> Result<(), Error> {
     let ctx_utils = ctx.utils();

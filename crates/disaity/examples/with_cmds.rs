@@ -5,30 +5,22 @@
 //! cargo run --example with_cmds
 //! ```
 
-use disaity::{
-    Context, Error,
-    commands::checks::{diff_vc, not_mute, user_not_deafen},
-    poise::command,
-    prelude::*,
-    tokio,
-};
+use disaity::{Context, Error, commands::Check, poise::command, prelude::*, tokio};
 
 /// installing poise crate you use the raw_commands method
 #[command(
     crate = "disaity::poise",
     slash_command,
     prefix_command,
-    rename = "hello_world",
-    aliases("hello"),
+    rename = "Ping",
+    aliases("pg"),
     category = "fun",
     guild_only,
     broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
-    check = "diff_vc",
-    check = "not_mute",
-    check = "user_not_deafen"
+    check = "Check::dm_with_auth"
 )]
-pub async fn hello_world(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     // let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     // use can use call to take any actions
@@ -36,18 +28,7 @@ pub async fn hello_world(ctx: Context<'_>) -> Result<(), Error> {
 
     // let mut call_lock = call.lock().await;
 
-    ctx.say(
-        ctx.data()
-            .config
-            .persona
-            .interactions
-            .events
-            .guild
-            .on_welcome
-            .get_random_res()
-            .unwrap_or("Hello Word"),
-    )
-    .await?;
+    say!(ctx, "Pong");
 
     // drop(typing);
 
@@ -71,7 +52,7 @@ async fn main() -> Result<(), Error> {
     Client::new()
         .with_tracing()
         .with_feature(Commands::all())
-        // .with_raw_commands([hello_world()])
+        .with_raw_commands([ping()])
         .with_data(data)
         .run()
         .await

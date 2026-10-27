@@ -3,7 +3,7 @@ use songbird::tracks::PlayMode;
 
 use disaity_core::{Context, ContextExt, Error, say};
 
-use super::super::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen};
+use super::super::Check;
 
 /// resume pasued track throws error when its not playing
 #[command(
@@ -12,10 +12,10 @@ use super::super::checks::{not_empty_queue, not_mute, same_vc, user_not_deafen};
     guild_only,
     broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | SPEAK | ADD_REACTIONS",
-    check = "same_vc",
-    check = "not_empty_queue",
-    check = "not_mute",
-    check = "user_not_deafen"
+    check = "Check::same_vc",
+    check = "Check::not_empty_queue",
+    check = "Check::not_mute",
+    check = "Check::user_not_deafen"
 )]
 pub async fn resume(ctx: Context<'_>) -> Result<(), Error> {
     let ctx_utils = ctx.utils();

@@ -4,7 +4,7 @@ use rand::seq::IndexedRandom;
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
-use crate::utils::{ConfigError, Merge};
+use super::utils::{ConfigError, Merge};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Persona {

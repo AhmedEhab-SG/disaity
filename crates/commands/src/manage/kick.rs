@@ -3,7 +3,7 @@ use serenity::all::Member;
 
 use disaity_core::{Context, Error, say};
 
-use super::super::{guard::Guard, utils::audit_reason};
+use super::super::{Guard, Utils};
 
 /// kicks a member who sits below you and the bot
 #[command(
@@ -23,7 +23,7 @@ pub async fn kick(
     Guard::outranks(ctx, &member).await?;
 
     member
-        .kick_with_reason(ctx, &audit_reason(ctx, &reason).await)
+        .kick_with_reason(ctx, &Utils::audit_reason(ctx, &reason).await)
         .await?;
 
     say!(

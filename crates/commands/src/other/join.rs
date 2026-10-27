@@ -2,7 +2,7 @@ use poise::command;
 
 use disaity_core::{Context, ContextExt, Error, VoiceUtils};
 
-use super::super::checks::{diff_vc, not_mute, user_not_deafen};
+use super::super::Check;
 
 /// join voice channel
 #[command(
@@ -11,9 +11,9 @@ use super::super::checks::{diff_vc, not_mute, user_not_deafen};
     guild_only,
     broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
-    check = "diff_vc",
-    check = "not_mute",
-    check = "user_not_deafen"
+    check = "Check::diff_vc",
+    check = "Check::not_mute",
+    check = "Check::user_not_deafen"
 )]
 pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
     // let _typing = ctx.defer_or_broadcast().await.ok().flatten();

@@ -1,4 +1,4 @@
-/// how many times gemini may come back with more calls before we give up
+/// how many times ai may come back with more calls before we give up
 pub(super) const MAX_TURNS: usize = 6;
 pub(super) const MAX_COMMANDS: usize = 5;
 

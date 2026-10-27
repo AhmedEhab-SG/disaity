@@ -2,7 +2,7 @@ use poise::command;
 
 use disaity_core::{Context, Error};
 
-use super::super::checks::same_vc;
+use super::super::Check;
 
 /// leave voice channel and distroy call hooks
 #[command(
@@ -11,7 +11,7 @@ use super::super::checks::same_vc;
     guild_only,
     broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
-    check = "same_vc"
+    check = "Check::same_vc"
 )]
 pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
     // let _typing = ctx.defer_or_broadcast().await.ok().flatten();

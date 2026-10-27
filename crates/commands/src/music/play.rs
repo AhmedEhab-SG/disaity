@@ -4,7 +4,7 @@ use tokio::time::{Duration, timeout};
 use disaity_config::CommandId;
 use disaity_core::{Context, ContextExt, Error, ReactionUtils, VoiceUtils, say};
 
-use super::super::checks::{not_mute, user_not_deafen};
+use super::super::Check;
 
 /// takes a list or track to join the channel and start playing
 #[command(
@@ -12,8 +12,8 @@ use super::super::checks::{not_mute, user_not_deafen};
     prefix_command,
     guild_only,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT | SPEAK | EMBED_LINKS | ADD_REACTIONS",
-    check = "not_mute",
-    check = "user_not_deafen"
+    check = "Check::not_mute",
+    check = "Check::user_not_deafen"
 )]
 pub async fn play(
     ctx: Context<'_>,

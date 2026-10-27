@@ -3,7 +3,7 @@ use serenity::all::{ChannelId, ChannelType, Member};
 
 use disaity_core::{Context, Error, say};
 
-use super::super::guard::Guard;
+use super::super::Guard;
 
 /// moves a member into another voice channel
 #[command(
