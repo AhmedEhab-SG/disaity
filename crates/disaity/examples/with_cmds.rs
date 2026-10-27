@@ -19,7 +19,7 @@ static PINGS: AtomicU64 = AtomicU64::new(0);
     crate = "disaity::poise",
     slash_command,
     prefix_command,
-    rename = "Ping",
+    rename = "ping",
     aliases("pg"),
     category = "fun",
     guild_only,
