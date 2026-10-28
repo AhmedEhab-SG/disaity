@@ -81,7 +81,7 @@ impl Playlist {
         // One yt-dlp run lists the whole playlist, with each song's title,
         // duration, channel and thumbnail.
         let output = Command::new(binaries.ytdlp.path())
-            .args(binaries.ffmpeg_args())
+            .args(binaries.ytdlp_args())
             .args([
                 "--flat-playlist",
                 "--yes-playlist",

@@ -125,7 +125,7 @@ impl TrackResolver {
             YoutubeDl::new_ytdl_like(ytdlp, self.http.clone(), query)
         };
 
-        Ok(src.user_args(binaries.ffmpeg_args()))
+        Ok(src.user_args(binaries.ytdlp_args()))
     }
 
     fn track_metadata(
