@@ -1,5 +1,5 @@
 use genai::chat::{ChatMessage, ChatRequest};
-use poise::{Context as MessageContext, command};
+use poise::command;
 
 use disaity_config::CommandId;
 use disaity_core::{AiAgent, Context, Error};
@@ -30,7 +30,11 @@ pub async fn ask(
 
     let _typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    let history = Utils::get_cmd_history(&ctx, &data.config, &CommandId::Ask, 50).await?;
+    let cmd_utils = Utils::new(ctx);
+
+    let history = cmd_utils
+        .get_cmd_history(&data.config, &CommandId::Ask, 50)
+        .await?;
 
     let persona = &data.config.persona;
 
@@ -49,23 +53,12 @@ pub async fn ask(
 
     let res_text = AiAgent::text(ai.chat(&req).await?);
 
-    // discord can only handle limited text in msg makes chunks
-    let char_vec: Vec<char> = res_text.chars().collect();
-    let chunks = char_vec.chunks(1900);
+    let (first, rest) = cmd_utils.res_with_first_quoted(res_text, chat);
 
-    for (i, chunk) in chunks.enumerate() {
-        let mut content: String = chunk.iter().collect();
+    ctx.reply(first).await?;
 
-        //  reply on only the 1st message
-        if i == 0 {
-            if let MessageContext::Application(_) = ctx {
-                content = format!("> {}\n\n{}", chat.trim(), content);
-            }
-            ctx.reply(content).await?;
-            continue;
-        }
-
-        ctx.say(content).await?;
+    for chunk in rest {
+        ctx.say(chunk).await?;
     }
 
     Ok(())

@@ -6,12 +6,66 @@ use serenity::all::{GetMessages, MessageInteractionMetadata};
 use disaity_config::{CommandId, Config};
 use disaity_core::{Context, Error, Transcript};
 
-pub struct Utils;
+pub struct Utils<'a> {
+    ctx: Context<'a>,
+}
 
-impl Utils {
+impl<'a> Utils<'a> {
+    pub const MAX_MSG: usize = 1900;
+    pub const MAX_QUOTED_MSG: usize = 300;
+    pub const QUOTE_PREFIX: &str = ">";
+
+    pub fn new(ctx: Context<'a>) -> Self {
+        Self { ctx }
+    }
+
+    pub fn quote_query(query: &str) -> String {
+        let mut max_query = query.chars().take(Self::MAX_QUOTED_MSG).collect::<String>();
+
+        if max_query.chars().count() == Self::MAX_QUOTED_MSG {
+            max_query.push('…');
+        }
+
+        let quoted = max_query
+            .lines()
+            .map(|line| format!("{} {line}", Self::QUOTE_PREFIX))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        format!("{quoted}\n\n")
+    }
+
+    pub fn res_with_first_quoted(&self, response: String, query: String) -> (String, Vec<String>) {
+        let quoted_query = match self.ctx {
+            MessageContext::Application(_) => Self::quote_query(query.trim()),
+            _ => String::new(),
+        };
+
+        // discord can only handle limited text in msg makes chunks
+        let res_text_chars = response.chars().collect::<Vec<char>>();
+
+        // discord can only handle limited text in msg makes chunks;
+        // the 1st one also carries the quoted prompt
+        let first_chunk_len = Utils::MAX_MSG
+            .saturating_sub(quoted_query.chars().count())
+            .min(res_text_chars.len());
+
+        let (first, rest) = res_text_chars.split_at(first_chunk_len);
+
+        // quoted on only the 1st message
+        let first_chunk = format!("{quoted_query}{}", first.iter().collect::<String>());
+
+        let chunks = rest
+            .chunks(Utils::MAX_MSG)
+            .map(|chunk| chunk.iter().collect::<String>())
+            .collect::<Vec<String>>();
+
+        (first_chunk, chunks)
+    }
+
     /// get chat history and filter a conversations between user and bot with prefix
     pub async fn get_cmd_history(
-        ctx: &Context<'_>,
+        &self,
         config: &Config,
         command_id: &CommandId,
         limit: u8,
@@ -19,17 +73,18 @@ impl Utils {
         let prefix = &config.info.prefix;
         let keys = &config.commands_registry.get_command(command_id).keys;
 
-        let messages = ctx
+        let messages = self
+            .ctx
             .channel_id()
-            .messages(ctx.http(), GetMessages::new().limit(limit))
+            .messages(self.ctx.http(), GetMessages::new().limit(limit))
             .await?;
 
-        let current_msg_id: Option<u64> = match ctx {
+        let current_msg_id: Option<u64> = match self.ctx {
             MessageContext::Prefix(p) => Some(p.msg.id.into()),
             MessageContext::Application(p) => Some(p.interaction.id.into()),
         };
 
-        let user_id = ctx.author().id;
+        let user_id = self.ctx.author().id;
 
         let mut history: Vec<(bool, String)> = messages
             .into_iter()
@@ -81,14 +136,22 @@ impl Utils {
                 // SLASH COMMAND HISTORY EXTRACTION
                 // If the bot replied to a slash command, it formatted it with "> prompt \n\n response"
                 if is_interaction_for_user {
-                    if let Some((prompt_block, response)) = content.split_once("\n\n")
-                        && prompt_block.starts_with("> ")
-                    {
-                        let user_prompt = prompt_block[2..].trim().to_string();
-                        let bot_response = response.trim().to_string();
+                    if let Some((prompt_block, response)) = content.split_once("\n\n") {
+                        if let Some(lines) = prompt_block
+                            .lines()
+                            .map(|line| {
+                                line.strip_prefix(&format!("{} ", Self::QUOTE_PREFIX))
+                                    .or(line.strip_prefix(Self::QUOTE_PREFIX))
+                            })
+                            .collect::<Option<Vec<_>>>()
+                        {
+                            let user_prompt = lines.join("\n").trim().to_string();
 
-                        // Yield two messages from one Discord message
-                        return Some(vec![(is_bot, bot_response), (!is_bot, user_prompt)]);
+                            let bot_response = response.trim().to_string();
+
+                            // Yield two messages from one Discord message
+                            return Some(vec![(is_bot, bot_response), (!is_bot, user_prompt)]);
+                        }
                     }
 
                     // then its other command
@@ -103,6 +166,7 @@ impl Utils {
             .collect();
 
         history.reverse();
+
         Ok(history)
     }
 
