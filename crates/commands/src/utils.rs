@@ -136,22 +136,21 @@ impl<'a> Utils<'a> {
                 // SLASH COMMAND HISTORY EXTRACTION
                 // If the bot replied to a slash command, it formatted it with "> prompt \n\n response"
                 if is_interaction_for_user {
-                    if let Some((prompt_block, response)) = content.split_once("\n\n") {
-                        if let Some(lines) = prompt_block
+                    if let Some((prompt_block, response)) = content.split_once("\n\n")
+                        && let Some(lines) = prompt_block
                             .lines()
                             .map(|line| {
                                 line.strip_prefix(&format!("{} ", Self::QUOTE_PREFIX))
                                     .or(line.strip_prefix(Self::QUOTE_PREFIX))
                             })
                             .collect::<Option<Vec<_>>>()
-                        {
-                            let user_prompt = lines.join("\n").trim().to_string();
+                    {
+                        let user_prompt = lines.join("\n").trim().to_string();
 
-                            let bot_response = response.trim().to_string();
+                        let bot_response = response.trim().to_string();
 
-                            // Yield two messages from one Discord message
-                            return Some(vec![(is_bot, bot_response), (!is_bot, user_prompt)]);
-                        }
+                        // Yield two messages from one Discord message
+                        return Some(vec![(is_bot, bot_response), (!is_bot, user_prompt)]);
                     }
 
                     // then its other command
