@@ -86,7 +86,7 @@ impl<'a> Utils<'a> {
 
         let user_id = self.ctx.author().id;
 
-        let mut history: Vec<(bool, String)> = messages
+        let mut history = messages
             .into_iter()
             .filter_map(|m| {
                 // Ignore the current command trigger and empty messages
@@ -162,7 +162,7 @@ impl<'a> Utils<'a> {
             })
             .flatten()
             .take(10)
-            .collect();
+            .collect::<Vec<(bool, String)>>();
 
         history.reverse();
 
