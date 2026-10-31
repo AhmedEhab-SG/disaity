@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use chrono::NaiveDateTime;
+use jiff::civil::DateTime;
 use reqwest::Client;
 use serde::Deserialize;
 use serenity::async_trait;
@@ -161,8 +161,8 @@ impl Giveaway {
             worth => format!("~~{worth}~~ **Free**"),
         };
 
-        let until = NaiveDateTime::parse_from_str(&self.end_date, "%Y-%m-%d %H:%M:%S")
-            .map(|date| date.format("%b %-d, %Y").to_string())
+        let until = DateTime::strptime("%Y-%m-%d %H:%M:%S", &self.end_date)
+            .map(|date| date.strftime("%b %-d, %Y").to_string())
             .unwrap_or_else(|_| "No end date".to_string());
 
         let description = self

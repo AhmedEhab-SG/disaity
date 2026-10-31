@@ -13,5 +13,4 @@ serenity.workspace = true
 tracing.workspace = true
 tokio.workspace = true
 reqwest.workspace = true
-chrono.workspace = true
 serde.workspace = true
