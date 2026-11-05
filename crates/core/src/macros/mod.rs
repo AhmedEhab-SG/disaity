@@ -3,6 +3,45 @@ mod transcript;
 pub use transcript::Transcript;
 
 #[macro_export]
+macro_rules! reply {
+    ($ctx:expr, $msg:expr, color = $color:expr $(,)?) => {
+        'reply: {
+            let ctx = $ctx;
+            let msg = ::std::string::String::from($msg);
+
+            // quiet mode, assist posts one summary instead
+            if $crate::Transcript::capture(ctx, &msg).await {
+                break 'reply;
+            }
+
+            match ctx {
+                // interactions can't reply to a message, same as say!
+                $crate::Context::Application(_) => {
+                    ctx.send(
+                        $crate::poise::CreateReply::default().embed(
+                            $crate::serenity::all::CreateEmbed::new()
+                                .description(msg)
+                                .color($color),
+                        ),
+                    )
+                    .await?;
+                }
+
+                $crate::Context::Prefix(_) => {
+                    ctx.reply(msg).await?;
+                }
+            };
+        }
+    };
+
+    ($ctx:expr, $msg:expr $(,)?) => {{
+        let ctx = $ctx;
+        let color = ctx.data().config.persona.interactions.colors.accent;
+        $crate::reply!(ctx, $msg, color = color);
+    }};
+}
+
+#[macro_export]
 macro_rules! send {
     ($ctx:expr, $reply:expr, $msg:expr) => {
         'send: {
@@ -21,7 +60,7 @@ macro_rules! send {
 
 #[macro_export]
 macro_rules! say {
-    ($ctx:expr, $msg:expr, color = $color:expr) => {
+    ($ctx:expr, $msg:expr, color = $color:expr $(,)?) => {
         'say: {
             let msg = ::std::string::String::from($msg);
 
@@ -49,7 +88,7 @@ macro_rules! say {
         }
     };
 
-    ($ctx:expr, $msg:expr, application_only, color = $color:expr) => {
+    ($ctx:expr, $msg:expr, application_only, color = $color:expr $(,)?) => {
         'say: {
             let msg = ::std::string::String::from($msg);
 
@@ -70,17 +109,17 @@ macro_rules! say {
         }
     };
 
-    ($ctx:expr, $msg:expr) => {{
+    ($ctx:expr, $msg:expr $(,)?) => {{
         let color = $ctx.data().config.persona.interactions.colors.accent;
         $crate::say!($ctx, $msg, color = color);
     }};
 
-    ($ctx:expr, $msg:expr, application_only) => {{
+    ($ctx:expr, $msg:expr, application_only $(,)?) => {{
         let color = $ctx.data().config.persona.interactions.colors.accent;
         $crate::say!($ctx, $msg, application_only, color = color);
     }};
 
-    ($ctx:expr, $msg:expr, prefix_only) => {
+    ($ctx:expr, $msg:expr, prefix_only $(,)?) => {
         'say: {
             let msg = ::std::string::String::from($msg);
 

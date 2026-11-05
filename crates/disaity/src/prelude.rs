@@ -3,6 +3,6 @@ pub use super::{
     ContextExt, Data, DataBuilder, Env, Error, Feature, FeatureBuilder, Handler, HandlerCx, Info,
     Persona, Preset, ReactionUtils, SubscriptionModule, VoiceUtils,
     poise::command,
-    say, send,
+    reply, say, send,
     serenity::{all::FullEvent, async_trait},
 };

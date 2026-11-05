@@ -4,16 +4,19 @@ mod consts;
 mod lookup;
 mod tool;
 
-use genai::chat::{ChatMessage, ChatRequest, ToolCall};
+use disaity_config::CommandId;
+use genai::chat::{ChatRequest, StopReason, ToolCall};
 use poise::command;
 use serde_json::json;
 
-use disaity_core::{AiAgent, Context, Error, say};
+use disaity_core::{AiAgent, Context, Error, reply, say};
 
 use call::Call;
 use confirm::Confirm;
 use consts::{MAX_COMMANDS, MAX_TURNS, RULES};
 use tool::Tool;
+
+use super::super::{Check, Utils};
 
 /// understands a casual request and runs your own commands for it
 #[command(
@@ -21,7 +24,8 @@ use tool::Tool;
     prefix_command,
     guild_only,
     user_cooldown = 10,
-    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | EMBED_LINKS"
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | EMBED_LINKS",
+    check = "Check::dm_with_auth"
 )]
 pub async fn assist(
     ctx: Context<'_>,
@@ -54,7 +58,7 @@ pub async fn assist(
     // the lookups and your commands, the whole menu gemini picks from
     let declarations = Call::declarations(&commands);
 
-    // the message every command runs from, made once per request
+    // the message every command runs from
     let msg = Tool::carrier(ctx).await?;
 
     let author_perms = {
@@ -70,15 +74,22 @@ pub async fn assist(
 
     let author = ctx.author();
 
-    let mut req = ChatRequest::new(vec![ChatMessage::user(format!(
-        "Requested by: {} (id {})\nCurrent channel id: {}\n\nRequest: {}",
-        author.name,
-        author.id,
-        ctx.channel_id(),
-        request.trim()
-    ))])
-    .with_system(format!("{RULES}\n{}", persona.personality.system))
-    .with_tools(declarations);
+    let cmd_utils = Utils::new(ctx);
+
+    let turns = cmd_utils
+        .get_cmd_history(&CommandId::Assist, 50, 10)
+        .await?
+        .into_turns(Some(format!(
+            "Requested by: {} (id {})\nCurrent channel id: {}\n\nRequest: {}",
+            author.name,
+            author.id,
+            ctx.channel_id(),
+            request.trim()
+        )));
+
+    let mut req = ChatRequest::new(turns)
+        .with_system(format!("{RULES}\n{}", persona.personality.system))
+        .with_tools(declarations);
 
     let mut ran = 0;
 
@@ -93,18 +104,34 @@ pub async fn assist(
 
         // no more calls ai is done and talking to the user
         if calls.is_empty() {
-            let text = AiAgent::text(res);
-            let reply = if text.is_empty() {
-                "Done.".to_owned()
-            } else {
-                text
-            };
+            let text = Utils::ai_answer(res, ran > 0, persona);
 
-            say!(ctx, reply);
+            let (first, rest) = cmd_utils.res_with_first_quoted(text, request);
+
+            drop(typing);
+
+            reply!(ctx, first);
+
+            for chunk in rest {
+                say!(ctx, chunk);
+            }
+
             return Ok(());
         }
 
-        // the ai's own turn goes in first, with the thought signatures gemini wants back
+        // cut off mid-plan, don't run half of it
+        if matches!(res.stop_reason, Some(StopReason::MaxTokens(_))) {
+            return Err(persona
+                .interactions
+                .events
+                .ai
+                .on_max_tokens
+                .get_random_res()
+                .unwrap_or("…")
+                .into());
+        }
+
+        // the ai's own turn goes in first, with the thought signatures wants back
         if let Some(turn) = res.into_assistant_message_for_tool_use() {
             req = req.append_message(turn);
         }

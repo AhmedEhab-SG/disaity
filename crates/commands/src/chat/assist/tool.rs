@@ -10,6 +10,7 @@ use disaity_config::AiAccess;
 use disaity_core::{AiAgent, CommandMeta, Context, Data, Error, ErrorExt, Transcript};
 
 /// one of your commands, seen from the ai's side
+#[derive(Debug)]
 pub(super) struct Tool<'a> {
     pub command: &'a Command<Data, Error>,
     /// discord's option json for each parameter, in order
@@ -91,8 +92,8 @@ impl<'a> Tool<'a> {
     pub async fn carrier(ctx: Context<'_>) -> Result<Message, Error> {
         match ctx {
             Context::Prefix(prefix) => Ok(prefix.msg.clone()),
-            Context::Application(_) => {
-                let mut msg = ctx.say("🔎 On it…").await?.into_message().await?;
+            Context::Application(app) => {
+                let mut msg = app.interaction.get_response(ctx.http()).await?;
                 msg.author = ctx.author().clone();
                 msg.member = None;
                 msg.guild_id = ctx.guild_id();

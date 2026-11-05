@@ -10,7 +10,6 @@ use super::super::Check;
     slash_command,
     prefix_command,
     guild_only,
-    broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | ADD_REACTIONS",
     check = "Check::same_vc",
     check = "Check::not_empty_queue",
@@ -26,7 +25,7 @@ pub async fn volume(
 ) -> Result<(), Error> {
     let ctx_utils = ctx.utils();
 
-    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     if !(0.0..=200.0).contains(&percentage) {
         return Err("Please enter a volume percentage between 0 and 200.".into());
@@ -58,6 +57,8 @@ pub async fn volume(
     track_handle.set_volume(percentage / 100.0).ok();
 
     ctx_utils.end_loading_react().await?;
+
+    drop(typing);
 
     say!(ctx, format!("changed the volume to {percentage}%"));
 

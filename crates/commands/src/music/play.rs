@@ -24,7 +24,7 @@ pub async fn play(
 ) -> Result<(), Error> {
     let ctx_utils = ctx.utils();
 
-    ctx.defer().await?;
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let call = ctx.utils().get_or_join_voice().await?;
 
@@ -65,6 +65,8 @@ pub async fn play(
     } else {
         format!("**Fetched** {}", queued.first_title)
     };
+
+    drop(typing);
 
     say!(ctx, response, application_only);
 

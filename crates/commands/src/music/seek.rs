@@ -11,7 +11,6 @@ use super::super::{Check, Utils};
     slash_command,
     prefix_command,
     guild_only,
-    broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | SPEAK | ADD_REACTIONS",
     check = "Check::same_vc",
     check = "Check::not_empty_queue",
@@ -23,7 +22,7 @@ pub async fn seek(
     #[description = "Enter time number or format you want to play in current song."] time: String,
 ) -> Result<(), Error> {
     let ctx_utils = ctx.utils();
-    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let guild_id = ctx.guild_id().ok_or("this commad only works in servers.")?;
 
@@ -63,6 +62,8 @@ pub async fn seek(
         ctx,
         format!("Seeked to {}", Utils::format_duration_human(result_time))
     );
+
+    drop(typing);
 
     Ok(())
 }

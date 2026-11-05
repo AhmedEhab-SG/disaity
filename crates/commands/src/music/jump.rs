@@ -9,7 +9,6 @@ use super::super::Check;
     slash_command,
     prefix_command,
     guild_only,
-    broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | ADD_REACTIONS",
     check = "Check::same_vc",
     check = "Check::not_empty_queue",
@@ -20,7 +19,8 @@ pub async fn jump(
     #[description = "Enter song number."] order: u32,
 ) -> Result<(), Error> {
     let ctx_utils = ctx.utils();
-    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let guild_id = ctx.guild_id().ok_or("this commad only works in servers.")?;
 
@@ -57,6 +57,8 @@ pub async fn jump(
     queue.resume()?;
 
     ctx_utils.end_loading_react().await?;
+
+    drop(typing);
 
     say!(ctx, format!("▶️ Jumped to track {}!", order));
 

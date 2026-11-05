@@ -31,6 +31,7 @@ pub struct Events {
     pub lifecycle: Lifecycle,
     pub guild: Guild,
     pub dm: Dm,
+    pub ai: Ai,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -58,6 +59,14 @@ pub struct Guild {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Dm {
     pub on_error: EventValues,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Ai {
+    pub on_done: EventValues,
+    pub on_no_answer: EventValues,
+    pub on_content_filter: EventValues,
+    pub on_max_tokens: EventValues,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

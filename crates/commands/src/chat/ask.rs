@@ -1,8 +1,8 @@
-use genai::chat::{ChatMessage, ChatRequest};
+use genai::chat::ChatRequest;
 use poise::command;
 
 use disaity_config::CommandId;
-use disaity_core::{AiAgent, Context, Error};
+use disaity_core::{Context, Error, reply, say};
 
 use super::super::{Check, Utils};
 
@@ -28,37 +28,27 @@ pub async fn ask(
         .as_ref()
         .ok_or("AI is not configured on this bot.")?;
 
-    let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let cmd_utils = Utils::new(ctx);
 
-    let history = cmd_utils
-        .get_cmd_history(&data.config, &CommandId::Ask, 50)
-        .await?;
+    let turns = cmd_utils
+        .get_cmd_history(&CommandId::Ask, 50, 10)
+        .await?
+        .into_turns(Some(chat.trim()));
 
-    let persona = &data.config.persona;
+    let req = ChatRequest::new(turns).with_system(&data.config.persona.personality.system.clone());
 
-    // build a conversations
-    let mut turns = history
-        .into_iter()
-        .map(|(is_bot, content)| match is_bot {
-            true => ChatMessage::assistant(content),
-            false => ChatMessage::user(content),
-        })
-        .collect::<Vec<ChatMessage>>();
-
-    turns.push(ChatMessage::user(chat.trim()));
-
-    let req = ChatRequest::new(turns).with_system(persona.personality.system.clone());
-
-    let res_text = AiAgent::text(ai.chat(&req).await?);
+    let res_text = Utils::ai_answer(ai.chat(&req).await?, false, &data.config.persona);
 
     let (first, rest) = cmd_utils.res_with_first_quoted(res_text, chat);
 
-    ctx.reply(first).await?;
+    drop(typing);
+
+    reply!(ctx, first);
 
     for chunk in rest {
-        ctx.say(chunk).await?;
+        say!(ctx, chunk);
     }
 
     Ok(())

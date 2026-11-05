@@ -1,6 +1,6 @@
 use poise::command;
 
-use disaity_core::{Context, ContextExt, Error, VoiceUtils};
+use disaity_core::{Context, ContextExt, Error, VoiceUtils, say};
 
 use super::super::Check;
 
@@ -9,14 +9,13 @@ use super::super::Check;
     slash_command,
     prefix_command,
     guild_only,
-    broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
     check = "Check::diff_vc",
     check = "Check::not_mute",
     check = "Check::user_not_deafen"
 )]
 pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
-    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let call = ctx.utils().get_or_join_voice().await?;
 
@@ -32,7 +31,10 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
         .deafen(Some(ctx.author().id.into()) != ctx.data().config.info.owner.as_ref().map(|o| o.id))
         .await?;
 
-    ctx.say(
+    drop(typing);
+
+    say!(
+        ctx,
         ctx.data()
             .config
             .persona
@@ -41,9 +43,8 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
             .guild
             .on_join_vc
             .get_random_res()
-            .unwrap_or("Yes"),
-    )
-    .await?;
+            .unwrap_or("Yes")
+    );
 
     Ok(())
 }

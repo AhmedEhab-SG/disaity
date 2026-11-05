@@ -7,7 +7,7 @@
 //! Needs `CLIENT_TOKEN` and `CLIENT_TOKEN_ALT` in your `.env`. Set `LOG_LEVEL`
 //! there too — `debug` or `trace` — to watch both personas on stderr.
 
-use disaity::{FreeGamesSubscription, StatusHandler, prelude::*, tokio};
+use disaity::{FreeGamesSubscription, StatusHandler, WelcomeHandler, prelude::*, tokio};
 
 #[tokio::main(crate = "disaity::tokio")]
 async fn main() -> Result<(), Error> {
@@ -25,8 +25,9 @@ async fn main() -> Result<(), Error> {
     let client = Client::new()
         .with_tracing()
         .with_feature(Commands::music())
-        .with_feature(Commands::other())
         .with_feature(Commands::chat())
+        .with_feature(Commands::other())
+        .with_handler(WelcomeHandler)
         .with_handler(StatusHandler)
         .with_subscription(FreeGamesSubscription)
         .with_data(data);
@@ -44,9 +45,9 @@ async fn main() -> Result<(), Error> {
 
     let client_alt = Client::new()
         .with_tracing()
-        .with_feature(Commands::music())
-        .with_feature(Commands::other())
+        .with_feature(Commands::manage())
         .with_feature(Commands::chat())
+        .with_feature(Commands::other())
         .with_handler(StatusHandler)
         .with_data(data_alt);
 

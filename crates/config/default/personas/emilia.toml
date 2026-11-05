@@ -62,6 +62,14 @@ on_error = [
   "Unfortunately, slash commands don't functional in DMs T_T",
 ]
 
+[interactions.events.ai]
+on_done = ["All done!", "There, it's taken care of."]
+on_no_answer = ["Hmm... I didn't quite get that. Could you say it another way?"]
+on_content_filter = ["I'm sorry, but I can't help with that one."]
+on_max_tokens = [
+  "That was a lot all at once... could you ask me something shorter?",
+]
+
 [interactions.colors]
 primary = 5793266
 success = 39423

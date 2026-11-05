@@ -30,11 +30,10 @@ fn capitalize(s: &str) -> String {
 #[command(
     slash_command,
     prefix_command,
-    // broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | EMBED_LINKS | ADD_REACTIONS"
 )]
 pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
-    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let serenity_context = ctx.serenity_context();
     let ctx_data = ctx.data();
@@ -109,6 +108,8 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
             .embed(embed)
             .components(vec![CreateActionRow::SelectMenu(select_menu)])
     );
+
+    drop(typing);
 
     let message = reply.into_message().await?;
 

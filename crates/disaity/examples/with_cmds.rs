@@ -23,7 +23,6 @@ static PINGS: AtomicU64 = AtomicU64::new(0);
     aliases("pg"),
     category = "fun",
     guild_only,
-    broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
     check = "Check::dm_with_auth"
 )]
@@ -35,9 +34,9 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 
     let count = PINGS.fetch_add(1, Ordering::Relaxed) + 1;
 
-    say!(ctx, format!("Pong #{count}"));
-
     drop(typing);
+
+    say!(ctx, format!("Pong #{count}"));
 
     Ok(())
 }

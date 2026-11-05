@@ -1,6 +1,6 @@
 use poise::command;
 
-use disaity_core::{Context, Error};
+use disaity_core::{Context, Error, say};
 
 use super::super::Check;
 
@@ -9,12 +9,11 @@ use super::super::Check;
     slash_command,
     prefix_command,
     guild_only,
-    broadcast_typing,
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
     check = "Check::same_vc"
 )]
 pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
-    // let _typing = ctx.defer_or_broadcast().await.ok().flatten();
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let guild_id = ctx
         .guild_id()
@@ -26,7 +25,10 @@ pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
 
     manager.remove(guild_id).await?;
 
-    ctx.say(
+    drop(typing);
+
+    say!(
+        ctx,
         ctx.data()
             .config
             .persona
@@ -35,9 +37,8 @@ pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
             .guild
             .on_leave_vc
             .get_random_res()
-            .unwrap_or("Bye"),
-    )
-    .await?;
+            .unwrap_or("Bye")
+    );
 
     Ok(())
 }
