@@ -37,7 +37,7 @@ pub async fn ask(
         .await?
         .into_turns(Some(chat.trim()));
 
-    let req = ChatRequest::new(turns).with_system(&data.config.persona.personality.system.clone());
+    let req = ChatRequest::new(turns).with_system(&data.config.persona.personality.system);
 
     let res_text = Utils::ai_answer(ai.chat(&req).await?, false, &data.config.persona);
 
