@@ -6,47 +6,59 @@ use serde_json::Value;
 
 use crate::errors::Error;
 
+use walk::Walker;
+
 pub(super) struct Spotify;
 
 impl Spotify {
     /// Marks a playlist song that has to be searched by title and artist, since
     /// Spotify itself can't be streamed.
+    const URL: &str = "open.spotify.com/";
     pub(super) const SEARCH_PREFIX: &str = "spotifysearch:";
+    const LIST_INDICATORS: [&str; 2] = ["playlist/", "album/"];
     const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-    const LIST_INDICATORS: [&str; 2] = ["open.spotify.com/playlist/", "open.spotify.com/album/"];
 
     pub(super) fn is_list(url: &str) -> bool {
-        Self::LIST_INDICATORS
-            .iter()
-            .any(|indicator| url.contains(indicator))
+        url.split_once(Self::URL)
+            .is_some_and(|(_, path)| Self::LIST_INDICATORS.iter().any(|p| path.contains(p)))
     }
 
-    /// The "title artist" text of a single Spotify song, read from its page title.
+    /// The "title artist" text of a single Spotify song, read from its meta
+    /// tags. The `<title>` wording changes between songs, these don't.
+    ///
+    /// No browser User-Agent here: with one, Spotify serves the web player
+    /// shell instead of the song page.
     pub(super) async fn song_title(http: &Client, url: &str) -> Result<String, Error> {
-        let res = http.get(url).send().await?.text().await?;
+        let html = http.get(url).send().await?.text().await?;
+        let document = Html::parse_document(&html);
 
-        let title = res
-            .find("<title>")
-            .map(|start| start + 7)
-            .and_then(|start_idx| {
-                res[start_idx..]
-                    .find("</title>")
-                    .map(|end_idx| &res[start_idx..start_idx + end_idx])
-            })
-            .ok_or("failed to get extract the song title")?
-            .replace(" - song and lyrics by", "")
-            .replace(" | Spotify", "");
+        let meta = |selector: &str| {
+            let selector = Selector::parse(selector).ok()?;
+            document
+                .select(&selector)
+                .next()?
+                .value()
+                .attr("content")
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        };
 
-        Ok(title)
+        let title =
+            meta(r#"meta[property="og:title"]"#).ok_or("failed to extract the song title")?;
+        let artist = meta(r#"meta[name="music:musician_description"]"#).unwrap_or_default();
+
+        Ok(format!("{title} {artist}").trim_end().to_string())
     }
 
     /// A search query per track of a Spotify playlist or album, scraped from the
     /// JSON the page embeds.
     pub(super) async fn playlist_queries(http: &Client, url: &str) -> Result<Vec<String>, Error> {
         let html = Self::fetch_page(http, url).await?;
+
         let state = Self::page_state(&html)?;
 
-        let queries = walk::track_queries(&state);
+        let queries = Self::track_queries(&state);
 
         if queries.is_empty() {
             println!(
@@ -70,6 +82,21 @@ impl Spotify {
         Ok(queries)
     }
 
+    /// A search query per track found anywhere in Spotify's page state. The page
+    /// layout changes often, so this looks for track-shaped objects instead of
+    /// following one fixed path.
+    fn track_queries(state: &Value) -> Vec<String> {
+        let mut walker = Walker::default();
+
+        // Start from the most likely branch.
+        walker.walk(state.get("entity").unwrap_or(state), None, None);
+
+        // Fallback: walk the whole state blob too.
+        walker.walk(state, None, None);
+
+        walker.queries
+    }
+
     /// The embed page is tried first, then the regular one.
     async fn fetch_page(http: &Client, url: &str) -> Result<String, Error> {
         let clean_url = url.split('?').next().unwrap_or(url).trim_end_matches('/');
@@ -77,7 +104,7 @@ impl Spotify {
         let embed_url = if clean_url.contains("/embed/") {
             clean_url.to_string()
         } else {
-            clean_url.replace("open.spotify.com/", "open.spotify.com/embed/")
+            clean_url.replace(Self::URL, format!("{}embed/", Self::URL).as_str())
         };
 
         for candidate in [embed_url.as_str(), clean_url] {

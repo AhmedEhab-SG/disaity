@@ -5,7 +5,7 @@ use disaity_core::{Context, Error};
 
 use super::Utils;
 
-/// who said a turn: Client is this bot, User is whoever ran the command
+/// Turns role user and bot
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SpeakerRole {
     Client,
@@ -19,7 +19,7 @@ pub struct History {
     pub conversation: Vec<(SpeakerRole, String)>,
 }
 
-/// for the ai chat commands, ask and assist
+/// History utils handling content for slash and prefix
 impl Utils<'_> {
     const MAX_MSG: usize = 1900;
     const MAX_QUOTED_MSG: usize = 300;
@@ -94,7 +94,7 @@ impl Utils<'_> {
         let user_id = self.ctx.author().id;
         let bot_id = self.ctx.framework().bot_id();
 
-        // "~assist kick bob" -> "kick bob", None for anything else
+        // stripping prefix and get msg closure
         let asked = |content: &str| {
             keys.iter()
                 .find_map(|k| content.strip_prefix(&format!("{prefix}{k} ")))
@@ -109,7 +109,7 @@ impl Utils<'_> {
                     return None;
                 }
 
-                // say! and reply! send an embed on slash, plain text on prefix
+                // extract content from slash, text on prefix
                 let content = match m.embeds.first() {
                     Some(embed) if m.content.is_empty() => embed.description.clone()?,
                     _ => m.content.clone(),
@@ -145,7 +145,7 @@ impl Utils<'_> {
                 }
 
                 // SLASH COMMAND HISTORY EXTRACTION
-                // If the bot replied to a slash command, it formatted it with "> prompt \n\n response"
+                // If the bot replied to a slash command, it formatted it with "`QUOTE_PREFIX` request \n\n response"
                 if is_interaction_for_user {
                     if let Some((prompt_block, response)) = content.split_once("\n\n")
                         && let Some(lines) = prompt_block
@@ -160,7 +160,7 @@ impl Utils<'_> {
 
                         let bot_response = response.trim().to_string();
 
-                        // Yield two messages from one Discord message
+                        // return the 2 msg from the bot with the oringal request from desc
                         return Some(vec![
                             (SpeakerRole::Client, bot_response),
                             (SpeakerRole::User, user_prompt),
@@ -171,7 +171,7 @@ impl Utils<'_> {
                     return None;
                 }
 
-                // Regular prefix command reply
+                // prefix command reply
                 Some(vec![(SpeakerRole::Client, content.trim().to_string())])
             })
             .flatten()
@@ -180,7 +180,8 @@ impl Utils<'_> {
 
         history.reverse();
 
-        // the cap or limit can cut the question, start on a question and removes orphen answer
+        // INFO: the cap or limit can cut the question
+        // start on a question and removes orphen answer
         let first_question = history
             .iter()
             .position(|(role, _)| *role == SpeakerRole::User);
