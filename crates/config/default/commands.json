@@ -216,7 +216,6 @@
     "category": "subscription",
     "description": "Free games from every platform, posted in a channel.",
     "timeout": 40,
-    "ai": "general",
     "options": [
       {
         "name": "channel",
@@ -303,7 +302,6 @@
     "keys": ["role", "rl"],
     "category": "manage",
     "description": "Give or take a member's roles.",
-    "ai": "general",
 
     "subcommands": {
       "add": {
