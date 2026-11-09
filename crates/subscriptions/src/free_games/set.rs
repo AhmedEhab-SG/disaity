@@ -11,17 +11,19 @@ use super::store::{FreeGamesStore, FreeGamesStoreInfo};
 #[command(
     slash_command,
     prefix_command,
-    broadcast_typing,
     guild_only,
+    required_permissions = "MANAGE_GUILD",
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | EMBED_LINKS | ADD_REACTIONS"
 )]
-pub async fn free_games(
+pub async fn set(
     ctx: Context<'_>,
     #[description = "Enter the channel id you want to send the notification on."]
     channel_id: ChannelId,
     #[description = "Add role id that u want to ping! (Optional)"] role_id: Option<RoleId>,
 ) -> Result<(), Error> {
     let ctx_utils = ctx.utils();
+
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let guild = ctx
         .guild()
@@ -75,6 +77,8 @@ pub async fn free_games(
             "🎮 Free Game notifications successfully configured in this channel!",
         )
         .await?;
+
+    drop(typing);
 
     say!(
         ctx,

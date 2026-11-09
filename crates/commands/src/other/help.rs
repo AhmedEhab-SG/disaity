@@ -1,7 +1,7 @@
 use std::{str::FromStr, time::Duration};
 
 use poise::{
-    CreateReply, command,
+    Command, CreateReply, command,
     serenity_prelude::{CreateEmbed, CreateEmbedFooter},
 };
 use serenity::{
@@ -15,7 +15,7 @@ use serenity::{
 };
 
 use disaity_config::{Category, CommandId};
-use disaity_core::{CommandUtils, Context, ContextExt, Error, send};
+use disaity_core::{CommandUtils, Context, ContextExt, Data, Error, send};
 
 fn capitalize(s: &str) -> String {
     let mut chars = s.chars();
@@ -24,6 +24,48 @@ fn capitalize(s: &str) -> String {
         .next()
         .map(|first_char| first_char.to_uppercase().chain(chars).collect())
         .unwrap_or_default()
+}
+
+/// one command in a category's list. a parent lists its subcommands,
+/// since only those can run
+fn entry<'a>(cmd: &'a Command<Data, Error>, prefix: &str) -> String {
+    let name: &str = &cmd.name;
+
+    let about = |cmd: &'a Command<Data, Error>| -> &'a str {
+        cmd.description.as_deref().unwrap_or("No description")
+    };
+
+    let keys = std::iter::once(name)
+        .chain(
+            cmd.aliases
+                .iter()
+                .map(|alias| alias.as_ref())
+                .filter(|alias| *alias != name),
+        )
+        .map(|key| format!("{prefix}{key}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    if cmd.subcommands.is_empty() {
+        return format!(
+            "**{}**: *{}*\nusage: `{keys} or /{name}`\n",
+            capitalize(name),
+            about(cmd)
+        );
+    }
+
+    let subs = cmd
+        .subcommands
+        .iter()
+        .map(|sub| format!("• `{}`: *{}*", sub.name, about(sub)))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    format!(
+        "**{}**: *{}*\nusage: `{keys} <subcommand> or /{name} <subcommand>`\n{subs}\n",
+        capitalize(name),
+        about(cmd)
+    )
 }
 
 /// present all the commands
@@ -148,27 +190,7 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
                                 .description(
                                     cat_commands
                                         .iter()
-                                        .map(|cmd| {
-                                            let name: &str = &cmd.name;
-                                            let usage = std::iter::once(name)
-                                                .chain(
-                                                    cmd.aliases
-                                                        .iter()
-                                                        .map(|alias| alias.as_ref())
-                                                        .filter(|alias| *alias != name),
-                                                )
-                                                .map(|key| format!("{prefix}{key}"))
-                                                .collect::<Vec<_>>()
-                                                .join(", ");
-
-                                            format!(
-                                                "**{}**: *{}*\nusage: `{usage} or /{name}`\n",
-                                                capitalize(name),
-                                                cmd.description
-                                                    .as_deref()
-                                                    .unwrap_or("No description")
-                                            )
-                                        })
+                                        .map(|cmd| entry(cmd, prefix))
                                         .collect::<Vec<_>>()
                                         .join("\n"),
                                 )

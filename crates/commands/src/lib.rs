@@ -19,7 +19,7 @@ pub use guard::Guard;
 pub use utils::Utils;
 
 use chat::{ask, assist};
-use manage::{kick, move_member};
+use manage::{kick, move_member, role};
 use music::{clear, jump, pause, play, queue, repeat, resume, seek, shuffle, skip, stop, volume};
 use other::{help, join, leave};
 
@@ -53,11 +53,12 @@ impl Commands {
             CommandId::Volume => volume,
 
             // subscription (ignored bec its a feature needs other helpers)
-            CommandId::FreeGames | CommandId::ClearFreeGames => return None,
+            CommandId::FreeGames => return None,
 
             // manage
             CommandId::Kick => kick,
             CommandId::MoveMember => move_member,
+            CommandId::Role => role,
 
             // chat
             CommandId::Ask => ask,
@@ -138,8 +139,8 @@ impl Feature for Commands {
             for config in reg.get_cmds_from_cat(cat) {
                 match CommandId::from_str(&config.name) {
                     Ok(cmd) => wanted.push(cmd),
-                    Err(_) => eprintln!(
-                        "Warning: command '{}' in category '{cat}' has no enum variant",
+                    Err(_) => tracing::warn!(
+                        "command '{}' in category '{cat}' has no enum variant, skipping it",
                         config.name
                     ),
                 }

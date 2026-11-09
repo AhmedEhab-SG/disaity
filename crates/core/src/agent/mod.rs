@@ -81,13 +81,17 @@ impl AiAgent {
         res.into_texts().concat()
     }
 
-    /// discord option json to gemini schema
+    /// discord option json to ai schema
     pub fn schema(option: &Value) -> Value {
         let about = option["description"].as_str().unwrap_or_default();
 
         // poise send ChoiceParamter enums to discord as number
-        // but typed commands read the name
-        if let Some(choices) = option["choices"].as_array() {
+        // but typed commands read the name.
+        // serenity always sends `choices`, empty for a normal parameter
+        if let Some(choices) = option["choices"]
+            .as_array()
+            .filter(|choices| !choices.is_empty())
+        {
             let names = choices
                 .iter()
                 .map(|choice| choice["name"].clone())
@@ -107,8 +111,9 @@ impl AiAgent {
             _ => json!({ "type": "string", "description": about }),
         };
 
+        // null when the parameter has no limit
         for (from, to) in [("min_value", "minimum"), ("max_value", "maximum")] {
-            if let Some(limit) = option.get(from) {
+            if let Some(limit) = option.get(from).filter(|limit| !limit.is_null()) {
                 out[to] = limit.clone();
             }
         }

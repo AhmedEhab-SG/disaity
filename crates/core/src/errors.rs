@@ -15,8 +15,32 @@ pub struct ErrorExt;
 
 // TODO add presona response reflects Log level
 impl ErrorExt {
+    fn tracing_error(error: &FrameworkError<'_, Data, Error>) {
+        match &error {
+            FrameworkError::UnknownCommand { .. }
+            | FrameworkError::ArgumentParse { .. }
+            | FrameworkError::CommandCheckFailed { .. }
+            | FrameworkError::MissingUserPermissions { .. }
+            | FrameworkError::CooldownHit { .. }
+            | FrameworkError::SubcommandRequired { .. }
+            | FrameworkError::NotAnOwner { .. }
+            | FrameworkError::GuildOnly { .. }
+            | FrameworkError::DmOnly { .. }
+            | FrameworkError::NsfwOnly { .. } => tracing::debug!("{error}"),
+
+            FrameworkError::Command { error: why, .. } => tracing::warn!("{error}: {why}"),
+
+            FrameworkError::MissingBotPermissions { .. } => tracing::warn!("{error}"),
+
+            FrameworkError::Setup { error: why, .. }
+            | FrameworkError::EventHandler { error: why, .. } => tracing::error!("{error}: {why}"),
+
+            _ => tracing::error!("{error}"),
+        }
+    }
+
     pub async fn on_error(error: FrameworkError<'_, Data, Error>) -> Result<(), Error> {
-        tracing::error!("an error occurred: {error}");
+        Self::tracing_error(&error);
 
         match error {
             FrameworkError::CommandCheckFailed { ctx, error, .. } => {

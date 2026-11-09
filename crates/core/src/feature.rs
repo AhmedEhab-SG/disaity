@@ -1,9 +1,9 @@
 use std::{str::FromStr, sync::Arc};
 
-use disaity_config::{CommandId, CommandRegistry};
-use poise::Command;
+use disaity_config::{AiAccess, CommandId, CommandRegistry};
+use poise::{Command, command};
 
-use crate::{CommandMeta, Data, Error, Handler};
+use crate::{CommandMeta, Context, Data, Error, Handler};
 
 pub trait Feature: Send + Sync + 'static {
     fn enabled(&self, _data: &Data) -> bool {
@@ -33,25 +33,59 @@ impl Decorate for Command<Data, Error> {
             return self;
         };
 
+        // the registry's text and ai access, written onto one command
+        let apply = |cmd: &mut Command<Data, Error>,
+                     name: &str,
+                     keys: &[String],
+                     description: &str,
+                     ai: Option<AiAccess>| {
+            cmd.name = name.to_owned().into();
+            cmd.description = Some(description.to_owned().into());
+            cmd.aliases = keys.iter().cloned().map(Into::into).collect();
+
+            // apply custom data with disaity meta data
+            if let Some(access) = ai {
+                CommandMeta::in_slot(&mut cmd.custom_data).ai = access;
+            }
+        };
+
         let entry = registry.get_command(&id);
 
-        self.name = entry.name.clone().into();
-        self.description = Some(entry.description.clone().into());
-        self.aliases = entry.keys.clone().into_iter().map(Into::into).collect();
+        apply(
+            &mut self,
+            &entry.name,
+            &entry.keys,
+            &entry.description,
+            entry.ai,
+        );
         self.category = Some(entry.category.clone().into());
 
-        // apply custom data with disaity meta data
-        if let Some(access) = entry.ai {
-            CommandMeta::in_slot(&mut self.custom_data).ai = access;
+        // a parent's subcommands read the same entry, keyed by their function name
+        for sub in &mut self.subcommands {
+            let sub_entry = entry.subcommand(&sub.name);
+
+            apply(
+                sub,
+                &sub_entry.name,
+                &sub_entry.keys,
+                &sub_entry.description,
+                sub_entry.ai,
+            );
+            sub.category = self.category.clone();
         }
 
         self
     }
 }
 
+/// a background feed a server signs up for. disaity builds the parent command,
+/// the three actions under it are yours: `/<name> set`, `clear` and `status`
 pub trait SubscriptionModule: Send + Sync + 'static {
-    fn add(&self) -> Command<Data, Error>;
+    /// the parent command's name, `cmd_name` in `/cmd_name set`
+    fn name(&self) -> &'static str;
+    fn set(&self) -> Command<Data, Error>;
     fn clear(&self) -> Command<Data, Error>;
+    fn status(&self) -> Command<Data, Error>;
     fn handler(&self) -> Arc<dyn Handler>;
     fn enabled(&self, _data: &Data) -> bool {
         true
@@ -60,14 +94,36 @@ pub trait SubscriptionModule: Send + Sync + 'static {
 
 pub struct AsSubscription<S: SubscriptionModule>(pub S);
 
+impl<S: SubscriptionModule> AsSubscription<S> {
+    // the parent every subscription gets. it never runs: slash can't call it alone,
+    // and a bare prefix call gets poise's "pick a subcommand" reply.
+    // the doc line is the slash description of subscriptions that aren't in commands.json
+    /// Set up, clear or check this subscription.
+    #[command(slash_command, prefix_command, guild_only, category = "subscription")]
+    async fn subscription(_ctx: Context<'_>) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
 impl<S: SubscriptionModule> Feature for AsSubscription<S> {
+    fn enabled(&self, data: &Data) -> bool {
+        self.0.enabled(data)
+    }
+
     fn needs_db(&self) -> bool {
         true
     }
 
     fn commands(&self, data: &Data) -> Vec<Command<Data, Error>> {
-        let reg = &data.config.commands_registry;
-        vec![self.0.add().decorate(reg), self.0.clear().decorate(reg)]
+        let mut parent = Self::subscription();
+
+        parent.name = self.0.name().into();
+
+        parent.subcommands = vec![self.0.set(), self.0.clear(), self.0.status()];
+
+        parent.subcommand_required = true;
+
+        vec![parent.decorate(&data.config.commands_registry)]
     }
 
     fn handler(&self) -> Option<Arc<dyn Handler>> {

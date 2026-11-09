@@ -69,7 +69,7 @@ impl ResolvedBinary {
             if path.is_file() {
                 return Ok(Self::new(spec, path, Source::Override));
             }
-            println!(
+            tracing::warn!(
                 "⚠️ {} is set but does not point at a file, ignoring it.",
                 spec.override_var
             );

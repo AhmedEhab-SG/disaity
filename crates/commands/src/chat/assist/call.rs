@@ -24,7 +24,7 @@ impl<'a> Call<'a> {
 
         commands
             .iter()
-            .find(|tool| tool.command.name == name)
+            .find(|tool| tool.name == name)
             .map(Self::Command)
     }
 }

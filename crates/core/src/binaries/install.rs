@@ -13,16 +13,17 @@ pub(super) async fn run(action: Action) -> Result<(), Error> {
     for &spec in ALL_BIN {
         match (ResolvedBinary::locate(spec), action) {
             (Ok(found), Action::Install) if found.is_bundled() => {
-                println!("✅ {} is installed → {}", spec.name, found.path().display());
+                tracing::info!("✅ {} is installed → {}", spec.name, found.path().display());
             }
 
             (Ok(found), Action::Update) if found.is_bundled() => {
                 fetch::download(spec, found.path()).await?;
             }
 
-            (Ok(found), Action::Update) => println!("⏭️ {}", not_ours(spec, &found)),
+            (Ok(found), Action::Update) => tracing::info!("⏭️ {}", not_ours(spec, &found)),
 
-            (Err(error), Action::Update) => println!("⏭️ {error}"),
+            // skipped, the other binaries still update
+            (Err(error), Action::Update) => tracing::warn!("⏭️ {error}"),
 
             (_, Action::Install) => {
                 fetch::download(spec, &BinUtils::install_root()?.join(spec.relative_path()))

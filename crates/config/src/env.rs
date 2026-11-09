@@ -62,6 +62,8 @@ impl Env {
     pub fn get_log_level() -> Option<LogLevel> {
         var("LOG_LEVEL").ok().map(|lvl| {
             LogLevel::from_str(lvl.as_str()).unwrap_or_else(|e| {
+                // not tracing: this runs while with_tracing builds the subscriber,
+                // so no subscriber exists yet and a tracing event would be dropped
                 eprintln!("LOG_LEVEL: {e}; falling back to {}", LogLevel::Debug);
                 LogLevel::Debug
             })

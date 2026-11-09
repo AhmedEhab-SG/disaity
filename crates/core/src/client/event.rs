@@ -41,7 +41,7 @@ pub(super) async fn dispatch(
     for handler in &handlers {
         // one broken handler shouldn't stop the rest from seeing the event
         if let Err(error) = handler.event(&cx, event).await {
-            tracing::warn!(event = event.snake_case_name(), "a handler failed: {error}");
+            tracing::error!(event = event.snake_case_name(), "a handler failed: {error}");
         }
     }
 
@@ -70,7 +70,7 @@ pub(super) async fn dispatch(
 //
 //         for handler in &self.handlers {
 //             if let Err(error) = handler.event(&cx, event).await {
-//                 tracing::warn!(event = event.snake_case_name(), "a handler failed: {error}");
+//                 tracing::error!(event = event.snake_case_name(), "a handler failed: {error}");
 //             }
 //         }
 //     }

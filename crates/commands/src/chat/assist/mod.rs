@@ -47,13 +47,7 @@ pub async fn assist(
     let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     // every command uses ai flag, turned into something gemini can call
-    let commands = ctx
-        .framework()
-        .options()
-        .commands
-        .iter()
-        .filter_map(Tool::from_command)
-        .collect::<Vec<Tool>>();
+    let commands = Tool::all(&ctx.framework().options().commands);
 
     // the lookups and your commands, the whole menu gemini picks from
     let declarations = Call::declarations(&commands);
@@ -153,7 +147,7 @@ pub async fn assist(
 
                 Some(Call::Command(tool)) => {
                     // skip the confirm click when the user couldn't run it on his own
-                    let missing = tool.command.required_permissions - author_perms;
+                    let missing = tool.required_permissions() - author_perms;
 
                     if missing.is_empty() {
                         plan.push((call, tool));
@@ -182,11 +176,9 @@ pub async fn assist(
         }
 
         // check for any of the requirment need confirmation
-        let needs_click = plan.iter().any(|(_, tool)| {
-            tool.command
-                .required_permissions
-                .intersects(Confirm::powerful())
-        });
+        let needs_click = plan
+            .iter()
+            .any(|(_, tool)| tool.required_permissions().intersects(Confirm::powerful()));
 
         if needs_click {
             let lines = plan

@@ -61,13 +61,13 @@ impl Spotify {
         let queries = Self::track_queries(&state);
 
         if queries.is_empty() {
-            println!(
+            tracing::debug!(
                 "Diagnostic: state.data keys = {:?}",
                 state.as_object().map(|o| o.keys().collect::<Vec<_>>())
             );
 
             if let Some(entity) = state.get("entity") {
-                println!(
+                tracing::debug!(
                     "Diagnostic: entity keys = {:?}",
                     entity.as_object().map(|o| o.keys().collect::<Vec<_>>())
                 );
@@ -78,7 +78,7 @@ impl Spotify {
             );
         }
 
-        println!("✅ Successfully scraped {} tracks", queries.len());
+        tracing::debug!("✅ Successfully scraped {} tracks", queries.len());
         Ok(queries)
     }
 
@@ -135,9 +135,11 @@ impl Spotify {
             .next()
             .map(|element| element.inner_html())
             .ok_or_else(|| {
-                println!(
+                // the error itself goes back to the caller, this is only the clue.
+                // chars, not bytes: slicing inside a multi-byte char panics
+                tracing::debug!(
                     "--- RAW HTML START ---\n{}\n--- RAW HTML END ---",
-                    &html[..html.len().min(1000)]
+                    html.chars().take(1000).collect::<String>()
                 );
                 "Could not find script#__NEXT_DATA__ in Spotify HTML"
             })?;

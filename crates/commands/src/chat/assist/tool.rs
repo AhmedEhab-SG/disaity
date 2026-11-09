@@ -3,7 +3,7 @@ use std::any::Any;
 use genai::chat::Tool as AiTool;
 use poise::{Command, MessageDispatchTrigger, PrefixContext};
 use serde_json::{Map, Value, json};
-use serenity::all::Message;
+use serenity::all::{Message, Permissions};
 use tokio::sync::Mutex;
 
 use disaity_config::AiAccess;
@@ -12,13 +12,45 @@ use disaity_core::{AiAgent, CommandMeta, Context, Data, Error, ErrorExt, Transcr
 /// one of your commands, seen from the ai's side
 #[derive(Debug)]
 pub(super) struct Tool<'a> {
-    pub command: &'a Command<Data, Error>,
+    /// what the ai calls: `play`, or `free_games_set` for a subcommand
+    pub name: String,
+    /// parent first, the command that runs last: `[play]` or `[free_games, set]`
+    pub tree: Vec<&'a Command<Data, Error>>,
     /// discord's option json for each parameter, in order
     pub options: Vec<Value>,
 }
 
 impl<'a> Tool<'a> {
-    pub fn from_command(command: &'a Command<Data, Error>) -> Option<Self> {
+    /// every command and subcommand the ai may run
+    pub fn all(commands: &'a [Command<Data, Error>]) -> Vec<Self> {
+        let mut tools = Vec::new();
+
+        for command in commands {
+            Self::collect(vec![command], &mut tools);
+        }
+
+        tools
+    }
+
+    /// a parent can't run on its own, only the ends of the tree become tools
+    fn collect(tree: Vec<&'a Command<Data, Error>>, tools: &mut Vec<Self>) {
+        let command = tree[tree.len() - 1];
+
+        if command.subcommands.is_empty() {
+            tools.extend(Self::leaf(tree));
+            return;
+        }
+
+        for sub in &command.subcommands {
+            let mut branch = tree.clone();
+            branch.push(sub);
+            Self::collect(branch, tools);
+        }
+    }
+
+    fn leaf(tree: Vec<&'a Command<Data, Error>>) -> Option<Self> {
+        let command = tree[tree.len() - 1];
+
         let access = CommandMeta::of(command).map_or(AiAccess::Never, |meta| meta.ai);
 
         // a match, so a new AiAccess level makes the compiler point here
@@ -35,11 +67,40 @@ impl<'a> Tool<'a> {
         // so the ai would be told it worked
         command.prefix_action?;
 
-        // the same json poise registers with discord
-        let slash = serde_json::to_value(command.create_as_slash_command()?).ok()?;
-        let options = slash["options"].as_array().cloned().unwrap_or_default();
+        // the same json poise registers with discord, for this command's own parameters
+        let options = command
+            .parameters
+            .iter()
+            .map(|param| serde_json::to_value(param.create_as_slash_command_option()?).ok())
+            .collect::<Option<Vec<Value>>>()?;
 
-        Some(Self { command, options })
+        let name = Self::path(&tree, "_");
+
+        Some(Self {
+            name,
+            tree,
+            options,
+        })
+    }
+
+    /// the names down the tree: `free_games set` with a space, `free_games_set` with `_`
+    fn path(tree: &[&Command<Data, Error>], sep: &str) -> String {
+        tree.iter()
+            .map(|cmd| cmd.name.as_ref())
+            .collect::<Vec<&str>>()
+            .join(sep)
+    }
+
+    /// the command that runs, the last one in the tree
+    pub fn command(&self) -> &'a Command<Data, Error> {
+        self.tree[self.tree.len() - 1]
+    }
+
+    /// what the user needs: poise checks every command in the tree, parent included
+    pub fn required_permissions(&self) -> Permissions {
+        self.tree.iter().fold(Permissions::empty(), |all, cmd| {
+            all | cmd.required_permissions
+        })
     }
 
     pub fn declaration(&self) -> AiTool {
@@ -56,9 +117,9 @@ impl<'a> Tool<'a> {
             .filter_map(|opt| opt["name"].as_str())
             .collect::<Vec<&str>>();
 
-        let mut tool = AiTool::new(self.command.name.to_string());
+        let mut tool = AiTool::new(self.name.clone());
 
-        if let Some(about) = &self.command.description {
+        if let Some(about) = &self.command().description {
             tool = tool.with_description(about.to_string());
         }
 
@@ -80,7 +141,7 @@ impl<'a> Tool<'a> {
     pub fn describe(&self, prefix: &str, args: &Value) -> String {
         format!(
             "{prefix}{} {}",
-            self.command.name,
+            Self::path(&self.tree, " "),
             AiAgent::line(&self.options, args, true)
         )
         .trim_end()
@@ -106,15 +167,15 @@ impl<'a> Tool<'a> {
     pub async fn run(&self, ctx: Context<'_>, msg: &Message, args: &Value) -> Value {
         let args = self.args(args);
         let notebook: Mutex<Box<dyn Any + Send + Sync>> = Mutex::new(Box::new(Transcript::quiet()));
-        let tree = [self.command];
 
         let sub = PrefixContext {
             msg,
             content_start: 0,
-            invoked_command_name: &self.command.name,
+            invoked_command_name: &self.command().name,
             args: &args,
             framework: ctx.framework(),
-            command_tree: &tree,
+            // poise runs the last command and checks every one before it
+            command_tree: &self.tree,
             invocation_data: &notebook,
             trigger: MessageDispatchTrigger::MessageCreate,
             __non_exhaustive: (),

@@ -7,12 +7,14 @@ use super::store::FreeGamesStore;
 #[command(
     slash_command,
     prefix_command,
-    broadcast_typing,
     guild_only,
+    required_permissions = "MANAGE_GUILD",
     required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | EMBED_LINKS | ADD_REACTIONS"
 )]
-pub async fn clear_free_games(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn clear(ctx: Context<'_>) -> Result<(), Error> {
     let ctx_utils = ctx.utils();
+
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
     let guild_id = ctx
         .guild_id()
@@ -31,6 +33,8 @@ pub async fn clear_free_games(ctx: Context<'_>) -> Result<(), Error> {
         .await?;
 
     ctx_utils.end_loading_react().await?;
+
+    drop(typing);
 
     if removed {
         say!(

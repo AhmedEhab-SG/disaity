@@ -8,7 +8,7 @@ use super::{archive, spec::BinarySpec, utils::BinUtils};
 /// creating the directories above it.
 pub(super) async fn download(spec: &BinarySpec, path: &Path) -> Result<(), Error> {
     let url = spec.download_url()?;
-    println!("⬇️ {url}");
+    tracing::info!("⬇️ {url}");
 
     let parent = path
         .parent()
@@ -27,7 +27,7 @@ pub(super) async fn download(spec: &BinarySpec, path: &Path) -> Result<(), Error
     result?;
 
     BinUtils::make_executable(path)?;
-    println!("✅ {} → {}", spec.name, path.display());
+    tracing::info!("✅ {} → {}", spec.name, path.display());
 
     Ok(())
 }

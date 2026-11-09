@@ -1,11 +1,11 @@
 use std::{collections::HashMap, fmt::Debug, fs, path::Path, str::FromStr};
 
 use serde::Deserialize;
-use strum::{Display, EnumString, VariantArray};
+use strum::{Display, EnumString, IntoStaticStr, VariantArray};
 
 use super::utils::{ConfigError, Merge};
 
-#[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString)]
+#[derive(Display, Deserialize, Debug, Clone, Eq, Hash, PartialEq, EnumString, IntoStaticStr)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum CommandId {
@@ -25,11 +25,11 @@ pub enum CommandId {
 
     // subscription
     FreeGames,
-    ClearFreeGames,
 
     // manage
     Kick,
     MoveMember,
+    Role,
 
     // chat
     Ask,
@@ -78,6 +78,17 @@ pub struct CommandOption {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+pub struct SubcommandEntry {
+    pub name: String,
+    pub keys: Vec<String>,
+    pub description: String,
+    pub ai: Option<AiAccess>,
+
+    #[serde(default)]
+    pub options: Vec<CommandOption>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct CommandEntry {
     pub name: String,
     pub keys: Vec<String>,
@@ -85,8 +96,13 @@ pub struct CommandEntry {
     pub description: String,
     pub timeout: Option<u64>,
     pub action: Option<String>,
-    pub options: Option<Vec<CommandOption>>,
     pub ai: Option<AiAccess>,
+
+    #[serde(default)]
+    pub options: Vec<CommandOption>,
+
+    #[serde(default)]
+    pub subcommands: HashMap<String, SubcommandEntry>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -106,6 +122,17 @@ pub struct CommandDetailsOverride {
     pub ai: Option<AiAccess>,
 }
 
+impl CommandEntry {
+    pub fn subcommand(&self, name: &str) -> &SubcommandEntry {
+        self.subcommands.get(name).unwrap_or_else(|| {
+            panic!(
+                "Expected subcommand '{name}' under '{}', but it was not found in registry",
+                self.name
+            )
+        })
+    }
+}
+
 impl Default for CommandRegistry {
     fn default() -> Self {
         let json_data = include_str!("../default/commands.json");
@@ -121,9 +148,10 @@ impl Default for CommandRegistry {
                     .or_default()
                     .push(config.clone());
             } else {
-                eprintln!(
-                    "Warning: Unknown category '{}' in command '{}'",
-                    config.category, config.name
+                tracing::warn!(
+                    "unknown category '{}' in command '{}', it won't be in any category",
+                    config.category,
+                    config.name
                 );
             }
         }
@@ -170,7 +198,10 @@ impl CommandRegistry {
 
         for (name, over) in overwrite {
             let Ok(cmd) = CommandId::from_str(&name) else {
-                eprintln!("Warning: unknown command '{name}' in {}", path.display());
+                tracing::warn!(
+                    "unknown command '{name}' in {}, skipping it",
+                    path.display()
+                );
                 continue;
             };
 

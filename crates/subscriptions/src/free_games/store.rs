@@ -74,16 +74,16 @@ impl FreeGamesStore {
         Ok(rows.iter().map(Self::from_row).collect())
     }
 
-    // pub async fn get(&self, guild_id: GuildId) -> Result<Option<FreeGamesStoreInfo>, Error> {
-    //     let row = sqlx::query(
-    //         "SELECT channel_id, role_id, country, city FROM free_games_subscriptions WHERE guild_id = ?",
-    //     )
-    //     .bind(guild_id.to_string())
-    //     .fetch_optional(&self.pool)
-    //     .await?;
-    //
-    //     Ok(row.as_ref().map(Self::from_row))
-    // }
+    pub async fn get(&self, guild_id: GuildId) -> Result<Option<FreeGamesStoreInfo>, Error> {
+        let row = sqlx::query(
+            "SELECT guild_id, channel_id, role_id FROM free_games_subscriptions WHERE guild_id = ?",
+        )
+        .bind(guild_id.get().to_string())
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(row.as_ref().map(Self::from_row))
+    }
 
     pub async fn create(&self, info: FreeGamesStoreInfo) -> Result<(), Error> {
         sqlx::query(

@@ -47,7 +47,7 @@ impl Binaries {
         };
 
         for resolved in [&binaries.ffmpeg, &binaries.ytdlp] {
-            println!("{resolved}");
+            tracing::info!("{resolved}");
         }
 
         Ok(BINARIES.get_or_init(|| binaries))
