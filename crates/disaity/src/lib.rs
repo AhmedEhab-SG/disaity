@@ -43,10 +43,11 @@ pub use disaity_config::{
     Env, Info, LogLevel, Persona, Platform, Preset, Provider, Status,
 };
 pub use disaity_core::{
-    AiAgent, AiUrl, AsSubscription, Binaries, BinarySpec, Client, Context, ContextExt, Data,
-    DataBuilder, Database, Decorate, Error, ErrorExt, FFMPEG, Feature, FeatureBuilder, Handler,
-    HandlerCx, ReactionUtils, ResolvedBinary, SubscriptionModule, TrackMetadata, VoiceUtils, YTDLP,
-    genai, poise, reply, reqwest, say, send, serde, serenity, songbird, sqlx, tokio,
+    AiAgent, AiUrl, AsSubscription, Binaries, BinarySpec, Client, CommandMeta, Context, ContextExt,
+    Data, DataBuilder, Database, Decorate, Error, ErrorExt, FFMPEG, Feature, FeatureBuilder,
+    Handler, HandlerCx, ReactionUtils, ResolvedBinary, SubscriptionModule, TrackMetadata,
+    VoiceUtils, YTDLP, genai, poise, reply, reqwest, say, send, serde, serenity, songbird, sqlx,
+    tokio,
 };
 pub use disaity_handlers::{StatusHandler, WelcomeHandler};
 pub use disaity_subscriptions::FreeGamesSubscription;
