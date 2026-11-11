@@ -3,7 +3,7 @@ use super::spec::{BinarySpec, Download};
 pub(super) const BIN_DIR: &str = "bin";
 
 /// Names a single directory that holds `bin/`, skipping the usual search.
-pub(super) const HOME_VAR: &str = "DISAITY_HOME";
+pub(super) const HOME: &str = "DISAITY_HOME";
 
 pub const FFMPEG: BinarySpec = BinarySpec {
     name: "ffmpeg",
@@ -43,4 +43,4 @@ pub const YTDLP: BinarySpec = BinarySpec {
 };
 
 /// Every binary the framework resolves, in the order it reports them.
-pub(super) const ALL_BIN: &[&BinarySpec] = &[&FFMPEG, &YTDLP];
+pub(crate) const ALL_BIN: &[&BinarySpec] = &[&FFMPEG, &YTDLP];

@@ -3,11 +3,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use anyhow::{Result, bail};
 use strum::Display;
 
-use crate::errors::Error;
-
-use super::{consts::BIN_DIR, spec::BinarySpec, utils::BinUtils};
+use super::{spec::BinarySpec, utils::BinUtils};
 
 /// Where a resolved binary came from, so a system copy shadowing an installed
 /// one is visible at startup.
@@ -56,15 +55,15 @@ impl ResolvedBinary {
         self.source
     }
 
-    /// Whether this is the copy `--install bin` put in `bin/`, which is the
+    /// Whether this is the copy `--bin install` put in `bin/`, which is the
     /// only one an update may write over.
     pub(super) fn is_bundled(&self) -> bool {
         self.source == Source::Bundled
     }
 
-    /// Search an override, then every root, then `PATH` — first hit wins, so a
-    /// copy we installed beats one the system happens to have.
-    pub(super) fn locate(spec: &'static BinarySpec) -> Result<Self, Error> {
+    /// Search an override, then our one `bin/`, then `PATH` — first hit wins, so
+    /// a copy we installed beats one the system happens to have.
+    pub(super) fn locate(spec: &'static BinarySpec) -> Result<Self> {
         if let Some(path) = env::var_os(spec.override_var).map(PathBuf::from) {
             if path.is_file() {
                 return Ok(Self::new(spec, path, Source::Override));
@@ -76,7 +75,7 @@ impl ResolvedBinary {
         }
 
         let relative = spec.relative_path();
-        if let Some(path) = BinUtils::roots()
+        if let Some(path) = BinUtils::home()
             .into_iter()
             .map(|root| root.join(&relative))
             .find(|path| path.is_file())
@@ -84,16 +83,16 @@ impl ResolvedBinary {
             return Ok(Self::new(spec, path, Source::Bundled));
         }
 
-        if let Some(path) = BinUtils::which(&spec.file_name()) {
+        if let Ok(path) = which::which(spec.name) {
             return Ok(Self::new(spec, path, Source::System));
         }
 
-        Err(format!(
-            "{} was not found: run with `--install {BIN_DIR}` to download it, \
+        bail!(
+            "{} was not found: run with `bin install` to download it, \
              or point {} at your own copy",
-            spec.name, spec.override_var
+            spec.name,
+            spec.override_var
         )
-        .into())
     }
 
     fn new(spec: &'static BinarySpec, path: PathBuf, source: Source) -> Self {

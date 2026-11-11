@@ -1,6 +1,6 @@
 use std::{env, path::PathBuf};
 
-use crate::errors::Error;
+use anyhow::{Context, Result};
 
 use super::consts::BIN_DIR;
 
@@ -32,7 +32,7 @@ pub struct BinarySpec {
 }
 
 impl BinarySpec {
-    /// `ffmpeg`, or `ffmpeg.exe` where that is what it is called.
+    /// `bin`, or `bin.exe` where that is what it is called.
     pub(super) fn file_name(&self) -> String {
         format!("{}{}", self.name, env::consts::EXE_SUFFIX)
     }
@@ -45,12 +45,12 @@ impl BinarySpec {
         path
     }
 
-    pub(super) fn download_url(&self) -> Result<String, Error> {
+    pub(super) fn download_url(&self) -> Result<String> {
         self.downloads
             .iter()
             .find(|download| download.is_host())
             .map(|download| format!("{}/{}", self.base_url, download.file))
-            .ok_or_else(|| {
+            .with_context(|| {
                 format!(
                     "no {} build is published for {}-{}: install one yourself and point {} at it",
                     self.name,
@@ -58,7 +58,6 @@ impl BinarySpec {
                     env::consts::ARCH,
                     self.override_var
                 )
-                .into()
             })
     }
 }

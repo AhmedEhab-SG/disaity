@@ -1,0 +1,26 @@
+[package]
+name = "disaity-cli"
+description = "Command line interface to control the bot or disaity framework for it's lib or bin needed."
+edition = { workspace = true }
+version = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+
+# `cargo install --path crates/cli` to use `disaity` cmd
+[[bin]]
+name = "disaity"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+clap_complete = { workspace = true }
+dirs = { workspace = true }
+indicatif = { workspace = true }
+reqwest = { workspace = true }
+strum = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+tracing = { workspace = true }
+tracing-indicatif = { workspace = true }
+tracing-subscriber = { workspace = true }
+which = { workspace = true }

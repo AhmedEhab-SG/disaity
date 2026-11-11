@@ -1,17 +1,17 @@
 [package]
 name = "disaity"
-description = "A batteries-included Discord bot framework for music and AI chat, built on serenity, poise and songbird."
-edition.workspace = true
-version.workspace = true
-repository.workspace = true
-license.workspace = true
+description = "A batteries-included Discord bot framework for creating bots, built on serenity, poise and songbird."
 readme = "../../README.md"
 keywords = ["discord", "bot", "music", "serenity", "poise"]
 categories = ["api-bindings"]
+edition = { workspace = true }
+version = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
 
 [dependencies]
-disaity-commands.workspace = true
-disaity-config.workspace = true
-disaity-core.workspace = true
-disaity-handlers.workspace = true
-disaity-subscriptions.workspace = true
+disaity-commands = { workspace = true }
+disaity-config = { workspace = true }
+disaity-core = { workspace = true }
+disaity-handlers = { workspace = true }
+disaity-subscriptions = { workspace = true }

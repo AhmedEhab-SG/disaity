@@ -1,16 +1,16 @@
 [package]
 name = "disaity-handlers"
-edition.workspace = true
-version.workspace = true
-repository.workspace = true
-license.workspace = true
-description = "Built-in event handlers for the disaity Discord bot framework."
+description = "Built-in event handlers for the disaity framework."
+edition = { workspace = true }
+version = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
 
 [dependencies]
-disaity-config.workspace = true
-disaity-core.workspace = true
-serenity.workspace = true
-tracing.workspace = true
-tokio.workspace = true
-reqwest.workspace = true
-serde.workspace = true
+disaity-config = { workspace = true }
+disaity-core = { workspace = true }
+serenity = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }

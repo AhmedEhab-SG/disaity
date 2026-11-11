@@ -1,5 +1,4 @@
 mod agent;
-mod binaries;
 mod client;
 mod context;
 mod db;
@@ -20,7 +19,6 @@ pub use sqlx;
 pub use tokio;
 
 pub use agent::{AiAgent, AiUrl};
-pub use binaries::{Binaries, BinarySpec, FFMPEG, ResolvedBinary, YTDLP};
 pub use client::{Client, Handler, HandlerCx};
 pub use context::{Context, ContextExt, Data, DataBuilder};
 pub use db::Database;

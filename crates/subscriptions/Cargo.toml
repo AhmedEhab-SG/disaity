@@ -1,18 +1,18 @@
 [package]
 name = "disaity-subscriptions"
-edition.workspace = true
-version.workspace = true
-repository.workspace = true
-license.workspace = true
-description = "Built-in background subscription modules for the disaity Discord bot framework."
+description = "Built-in background subscription modules for the disaity framework."
+edition = { workspace = true }
+version = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
 
 [dependencies]
-disaity-core.workspace = true
-disaity-config.workspace = true
-sqlx.workspace = true
-poise.workspace = true
-serenity.workspace = true
-tokio.workspace = true
-reqwest.workspace = true
-jiff.workspace = true
-serde.workspace = true
+disaity-core = { workspace = true }
+disaity-config = { workspace = true }
+sqlx = { workspace = true }
+poise = { workspace = true }
+serenity = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+jiff = { workspace = true }
+serde = { workspace = true }

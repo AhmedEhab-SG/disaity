@@ -15,6 +15,9 @@ pub trait Feature: Send + Sync + 'static {
     fn needs_ai(&self) -> bool {
         false
     }
+    fn needs_bin(&self) -> bool {
+        false
+    }
     fn commands(&self, _data: &Data) -> Vec<Command<Data, Error>> {
         Vec::new()
     }
@@ -140,6 +143,7 @@ pub struct FeatureBuilder {
     handler: Option<Arc<dyn Handler>>,
     gate: Option<Gate>,
     needs_ai: bool,
+    needs_bin: bool,
 }
 
 impl FeatureBuilder {
@@ -179,15 +183,26 @@ impl FeatureBuilder {
         self.needs_ai = true;
         self
     }
+
+    pub fn requires_bin(mut self) -> Self {
+        self.needs_bin = true;
+        self
+    }
 }
 
 impl Feature for FeatureBuilder {
     fn needs_ai(&self) -> bool {
         self.needs_ai
     }
+
+    fn needs_bin(&self) -> bool {
+        self.needs_bin
+    }
+
     fn enabled(&self, data: &Data) -> bool {
         self.gate.as_ref().is_none_or(|g| g(data))
     }
+
     fn commands(&self, data: &Data) -> Vec<Command<Data, Error>> {
         let reg = &data.config.commands_registry;
         self.commands
@@ -195,6 +210,7 @@ impl Feature for FeatureBuilder {
             .map(|make| make().decorate(reg))
             .collect()
     }
+
     fn handler(&self) -> Option<Arc<dyn Handler>> {
         self.handler.clone()
     }
