@@ -14,7 +14,7 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 
     drop(typing);
 
-    say!(ctx, format!("Pong!"));
+    say!(ctx, "Pong!");
 
     Ok(())
 }
