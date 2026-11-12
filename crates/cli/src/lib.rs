@@ -1,8 +1,8 @@
 mod binaries;
 mod commands;
 mod interface;
-mod logs;
+mod logger;
 
-pub(crate) use binaries::{Binaries, BinarySpec, FFMPEG, Install, ResolvedBinary, YTDLP};
-pub(crate) use commands::{bin, completions};
+pub use binaries::{Binaries, BinarySpec, FFMPEG, ResolvedBinary, YTDLP};
+pub(crate) use commands::Action;
 pub use interface::Interface;

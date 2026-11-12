@@ -1,9 +1,9 @@
 use std::{ffi::OsStr, str::FromStr};
 
 use dotenv::var;
-use strum::{Display, EnumString};
+use strum::{AsRefStr, Display, EnumString};
 
-#[derive(Debug, Clone, Display, PartialEq, EnumString)]
+#[derive(Debug, Clone, Display, PartialEq, EnumString, AsRefStr)]
 #[strum(serialize_all = "lowercase")]
 pub enum LogLevel {
     Trace,

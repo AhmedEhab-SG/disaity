@@ -2,7 +2,7 @@
 //!
 //! ```sh
 //! cp .env.example .env                        # then fill all needed tokens
-//! cargo run --example default -- --install bin  # once, to fetch yt-dlp and ffmpeg
+//! cargo run --example default -- -bi          # to fetch bins
 //! cargo run --example default
 //! ```
 
@@ -10,8 +10,6 @@ use disaity::{FreeGamesSubscription, StatusHandler, prelude::*, tokio};
 
 #[tokio::main(crate = "disaity::tokio")]
 async fn main() -> Result<(), Error> {
-    Binaries::ensure().await?;
-
     Client::new()
         .with_tracing()
         .with_feature(Commands::all())

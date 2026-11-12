@@ -4,7 +4,9 @@ use reqwest::Client;
 use serde_json::Value;
 use tokio::process::Command;
 
-use crate::{binaries::Binaries, errors::Error};
+use disaity_cli::Binaries;
+
+use crate::errors::Error;
 
 use super::{Batch, resolver::TrackResolver, spotify::Spotify};
 

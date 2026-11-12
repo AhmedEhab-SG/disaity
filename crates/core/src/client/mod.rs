@@ -1,5 +1,6 @@
 mod event;
 mod handler;
+mod logger;
 
 use std::sync::Arc;
 
@@ -7,17 +8,19 @@ use poise::{Command, Framework, FrameworkOptions, PrefixFrameworkOptions, builti
 use serenity::all::{ClientBuilder, prelude::GatewayIntents};
 use songbird::SerenityInit;
 use tracing::Instrument;
-use tracing_subscriber::EnvFilter;
 
-use disaity_config::Env;
+use disaity_cli::{Binaries, Interface};
 
-use event::{Handlers, dispatch};
-pub use handler::{Handler, HandlerCx};
+use crate::client::logger::Traced;
 
 use super::{
     AiAgent, AiUrl, AsSubscription, Data, Database, Error, ErrorExt, Feature, SubscriptionModule,
     context::DataBuilder,
 };
+
+use event::{Handlers, dispatch};
+pub use handler::{Handler, HandlerCx};
+use logger::Logger;
 
 pub struct Client {
     intents: GatewayIntents,
@@ -25,6 +28,7 @@ pub struct Client {
     handlers: Vec<Arc<dyn Handler>>,
     features: Vec<Box<dyn Feature>>,
     data: Option<Data>,
+    traced: bool,
 }
 
 impl Default for Client {
@@ -35,11 +39,23 @@ impl Default for Client {
             commands: Vec::default(),
             handlers: Vec::default(),
             data: None,
+            traced: false,
         }
     }
 }
 
 impl Client {
+    fn default_intents() -> GatewayIntents {
+        GatewayIntents::non_privileged()
+            | GatewayIntents::GUILDS
+            | GatewayIntents::GUILD_MEMBERS
+            | GatewayIntents::GUILD_MESSAGES
+            | GatewayIntents::GUILD_VOICE_STATES
+            | GatewayIntents::GUILD_INTEGRATIONS
+            | GatewayIntents::MESSAGE_CONTENT
+            | GatewayIntents::DIRECT_MESSAGES
+    }
+
     pub fn new() -> Self {
         Self::default()
     }
@@ -75,28 +91,8 @@ impl Client {
         self
     }
 
-    pub fn with_tracing(self) -> Self {
-        let filter = match (EnvFilter::try_from_default_env(), Env::get_log_level()) {
-            (Ok(rust_log), _) => rust_log,
-            (Err(_), Some(level)) => EnvFilter::new(format!(
-                "warn,\
-                 disaity_core={level},\
-                 disaity_commands={level},\
-                 disaity_config={level},\
-                 disaity_handlers={level},\
-                 disaity_subscriptions={level},\
-                 serenity={level},\
-                 poise={level},\
-                 songbird={level}"
-            )),
-            (Err(_), None) => return self,
-        };
-
-        tracing_subscriber::fmt()
-            .with_env_filter(filter)
-            .try_init()
-            .ok();
-
+    pub fn with_tracing(mut self) -> Self {
+        self.traced = true;
         self
     }
 
@@ -108,21 +104,36 @@ impl Client {
             .install_default()
             .ok();
 
+        if Interface::run_once().await? {
+            return Ok(());
+        }
+
         let Client {
             intents,
             mut commands,
             mut handlers,
             features,
             data,
+            traced,
         } = self;
+
+        if traced {
+            Logger::init();
+        }
 
         let mut data = match data {
             Some(d) => d,
             None => DataBuilder::new().build().await?,
         };
 
-        let span = tracing::error_span!("", message = %data.config.persona.name);
-        let setup_span = span.clone();
+        let name = &data.config.persona.name;
+
+        // the empty traced span to read it on loggger
+        let span = if traced {
+            tracing::error_span!("", message = %name, traced = tracing::field::Empty)
+        } else {
+            tracing::error_span!("", message = %name)
+        };
 
         async move {
             let token = data
@@ -134,6 +145,12 @@ impl Client {
 
             let prefix = Some(data.config.info.prefix.to_owned());
 
+            // ensure bin on demand
+            if features.iter().any(|feature| feature.needs_bin()) {
+                Binaries::ensure().await?;
+            }
+
+            // connect ai on demand
             if features.iter().any(|feature| feature.needs_ai()) {
                 let url = data
                     .config
@@ -146,6 +163,7 @@ impl Client {
                 data.ai = Some(AiAgent::connect(&url)?);
             }
 
+            // connect db on demand
             if features.iter().any(|feature| feature.needs_db()) {
                 let db_path = data
                     .config
@@ -191,35 +209,34 @@ impl Client {
                     ..Default::default()
                 })
                 .setup(move |ctx, _ready, framework| {
-                    Box::pin(
-                        async move {
-                            builtins::register_globally(ctx, &framework.options().commands).await?;
+                    Box::pin(async move {
+                        builtins::register_globally(ctx, &framework.options().commands).await?;
 
-                            let cx = HandlerCx {
-                                serenity: ctx,
-                                shard_manager: framework.shard_manager().clone(),
-                                data: &data,
-                            };
+                        let cx = HandlerCx {
+                            serenity: ctx,
+                            shard_manager: framework.shard_manager().clone(),
+                            data: &data,
+                        };
 
-                            tracing::debug!(
-                                handlers = handlers.len(),
-                                commands = framework.options().commands.len(),
-                                "registered, running handler setup"
-                            );
+                        tracing::debug!(
+                            handlers = handlers.len(),
+                            commands = framework.options().commands.len(),
+                            features = features.len(),
+                            traced = traced,
+                            "registered, running handler setup"
+                        );
 
-                            for handler in &handlers {
-                                handler.setup(&cx).await?;
-                            }
-
-                            Ok(data)
+                        for handler in &handlers {
+                            handler.setup(&cx).await?;
                         }
-                        .instrument(setup_span),
-                    )
+
+                        Ok(data)
+                    })
                 })
                 .build();
 
             ClientBuilder::new(token, intents)
-                .framework(framework)
+                .framework(Traced::new(framework))
                 .type_map_insert::<Handlers>(event_handlers)
                 .register_songbird()
                 .await?
@@ -230,16 +247,5 @@ impl Client {
         }
         .instrument(span)
         .await
-    }
-
-    fn default_intents() -> GatewayIntents {
-        GatewayIntents::non_privileged()
-            | GatewayIntents::GUILDS
-            | GatewayIntents::GUILD_MEMBERS
-            | GatewayIntents::GUILD_MESSAGES
-            | GatewayIntents::GUILD_VOICE_STATES
-            | GatewayIntents::GUILD_INTEGRATIONS
-            | GatewayIntents::MESSAGE_CONTENT
-            | GatewayIntents::DIRECT_MESSAGES
     }
 }

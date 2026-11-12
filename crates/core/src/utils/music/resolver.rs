@@ -6,9 +6,10 @@ use songbird::{
     tracks::Track,
 };
 
+use disaity_cli::Binaries;
 use disaity_config::{Assets, Provider};
 
-use crate::{binaries::Binaries, context::Context, errors::Error};
+use crate::{context::Context, errors::Error};
 
 use super::{TrackMetadata, playlist::ListedMeta, spotify::Spotify};
 

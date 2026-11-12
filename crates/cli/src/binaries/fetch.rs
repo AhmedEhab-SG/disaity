@@ -32,7 +32,7 @@ impl<'a> Fetch<'a> {
 
         let staged = parent.join(format!("{}.part", spec.name));
 
-        let result = match self.stream(&url, &spec).await {
+        let result = match self.stream(&url, spec).await {
             Ok(()) if Archive::is_archive(&url) => Archive::new(&staged).unpack(spec, self.path),
 
             Ok(()) => fs::rename(&staged, self.path).map_err(Into::into),

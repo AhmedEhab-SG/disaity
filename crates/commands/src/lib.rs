@@ -21,7 +21,7 @@ pub use utils::Utils;
 use chat::{ask, assist};
 use manage::{kick, move_member, role};
 use music::{clear, jump, pause, play, queue, repeat, resume, seek, shuffle, skip, stop, volume};
-use other::{help, join, leave};
+use other::{help, join, leave, ping};
 
 #[derive(Default)]
 pub struct Commands {
@@ -69,6 +69,7 @@ impl Commands {
             CommandId::Help => help,
             CommandId::Join => join,
             CommandId::Leave => leave,
+            CommandId::Ping => ping,
         })
     }
 
@@ -138,6 +139,10 @@ impl Feature for Commands {
 
     fn needs_db(&self) -> bool {
         self.needs_db
+    }
+
+    fn needs_bin(&self) -> bool {
+        self.needs_bin
     }
 
     fn commands(&self, data: &Data) -> Vec<PoiseCommand<Data, Error>> {

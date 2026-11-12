@@ -12,6 +12,7 @@ license = { workspace = true }
 [dependencies]
 disaity-commands = { workspace = true }
 disaity-config = { workspace = true }
+disaity-cli = { workspace = true }
 disaity-core = { workspace = true }
 disaity-handlers = { workspace = true }
 disaity-subscriptions = { workspace = true }

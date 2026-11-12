@@ -72,6 +72,14 @@
     "ai": "general"
   },
 
+  "ping": {
+    "name": "ping",
+    "keys": ["ping", "pg"],
+    "category": "other",
+    "description": "I will pong you back.",
+    "ai": "general"
+  },
+
   "pause": {
     "name": "pause",
     "keys": ["pause", "ps"],

@@ -1,66 +1,122 @@
 //! Your own command and a handler, next to the built-in ones.
 //!
 //! ```sh
-//! cp .env.example .env                        # then fill all needed tokens
+//! cp .env.example .env                        # then fill CLIENT_TOKEN
 //! cargo run --example with_cmds
 //! ```
 //!
-//! Commands are plain poise commands. `crate = "disaity::poise"` points the
-//! macro at the poise disaity re-exports, so you don't add poise yourself.
+//! Commands are poise commands. `crate = "disaity::poise"` to use the rexport
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicI64, Ordering};
 
-use disaity::{WelcomeHandler, commands::Check, prelude::*, tokio};
+use disaity::{prelude::*, tokio};
 
-static PINGS: AtomicU64 = AtomicU64::new(0);
+// counter
+static COUNT: AtomicI64 = AtomicI64::new(0);
 
-/// replies with how many pings the bot got since it started
+// placeholder main cmd for subcmds
+/// a counter everyone shares
 #[command(
     crate = "disaity::poise",
     slash_command,
     prefix_command,
-    rename = "ping",
-    aliases("pg"),
-    category = "fun",
+    rename = "count",
+    aliases("ct"),
+    category = "counter",
     guild_only,
-    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL | CONNECT",
-    check = "Check::dm_with_auth"
+    required_bot_permissions = "SEND_MESSAGES | VIEW_CHANNEL",
+    subcommand_required,
+    subcommands("counter_plus", "counter_minus", "counter_set", "counter_clear")
 )]
-pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn counter(_ctx: Context<'_>) -> Result<(), Error> {
+    Ok(())
+}
+
+/// add one to the counter
+#[command(
+    crate = "disaity::poise",
+    slash_command,
+    prefix_command,
+    rename = "plus"
+)]
+pub async fn counter_plus(ctx: Context<'_>) -> Result<(), Error> {
     let typing = ctx.defer_or_broadcast().await.ok().flatten();
 
-    // use can use call to take any actions
-    // let call = ctx.utils().get_or_join_voice().await?;
-
-    let count = PINGS.fetch_add(1, Ordering::Relaxed) + 1;
+    let count = COUNT.fetch_add(1, Ordering::Relaxed) + 1;
 
     drop(typing);
 
-    say!(ctx, format!("Pong #{count}"));
+    say!(ctx, format!("Counter #{count}"));
+
+    Ok(())
+}
+
+/// take one from the counter
+#[command(
+    crate = "disaity::poise",
+    slash_command,
+    prefix_command,
+    rename = "minus"
+)]
+pub async fn counter_minus(ctx: Context<'_>) -> Result<(), Error> {
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
+
+    let count = COUNT.fetch_sub(1, Ordering::Relaxed) - 1;
+
+    drop(typing);
+
+    say!(ctx, format!("Counter #{count}"));
+
+    Ok(())
+}
+
+/// set the counter to a number
+#[command(
+    crate = "disaity::poise",
+    slash_command,
+    prefix_command,
+    rename = "set"
+)]
+pub async fn counter_set(
+    ctx: Context<'_>,
+    #[description = "The number to set the counter to"] count: i64,
+) -> Result<(), Error> {
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
+
+    COUNT.store(count, Ordering::Relaxed);
+
+    drop(typing);
+
+    say!(ctx, format!("Counter #{count}"));
+
+    Ok(())
+}
+
+/// reset the counter to zero
+#[command(
+    crate = "disaity::poise",
+    slash_command,
+    prefix_command,
+    rename = "clear"
+)]
+pub async fn counter_clear(ctx: Context<'_>) -> Result<(), Error> {
+    let typing = ctx.defer_or_broadcast().await.ok().flatten();
+
+    COUNT.store(0, Ordering::Relaxed);
+
+    drop(typing);
+
+    say!(ctx, "Counter #0");
 
     Ok(())
 }
 
 #[tokio::main(crate = "disaity::tokio")]
 async fn main() -> Result<(), Error> {
-    Binaries::ensure().await?;
-
-    let data = DataBuilder::new()
-        .with_config(
-            ConfigBuilder::new()
-                .with_info(Info::new().with_prefix("~"))
-                .with_persona(Persona::new(Preset::Emilia))
-                .build(),
-        )
-        .build()
-        .await?;
-
+    // default prefix is `!`
     Client::new()
         .with_tracing()
-        .with_feature(Commands::all())
-        .with_raw_commands([ping()])
-        .with_handler(WelcomeHandler)
-        .with_data(data)
+        .with_raw_commands([counter()]) // add your commands with there subcommands
         .run()
         .await
 }

@@ -5,8 +5,6 @@
 //! use disaity::prelude::*;
 //!
 //! # async fn run() -> Result<(), Error> {
-//! Binaries::ensure().await?;
-//!
 //! let data = DataBuilder::new()
 //!     .with_config(
 //!         ConfigBuilder::new()
@@ -18,36 +16,32 @@
 //!     .await?;
 //!
 //! Client::new()
-//!     .with_feature(Commands::music())
+//!     .with_feature(Commands::new().with(CommandId::Ping))
 //!     .with_data(data)
 //!     .run()
 //!     .await
 //! # }
 //! ```
-//!
-//! # External binaries
-//!
-//! Run your bot once with `--install bin` to fetch the current upstream build
-//! of each into, and `--update bin` to replace them later if music needed.
 
 pub mod prelude;
-pub use disaity_commands as commands;
-pub use disaity_config as config;
-pub use disaity_core as core;
-pub use disaity_handlers as handlers;
-pub use disaity_subscriptions as subscriptions;
+use disaity_cli as cli;
+use disaity_commands as commands;
+use disaity_config as config;
+use disaity_core as core;
+use disaity_handlers as handlers;
+use disaity_subscriptions as subscriptions;
 
-pub use disaity_commands::Commands;
-pub use disaity_config::{
+pub use cli::{Binaries, BinarySpec, FFMPEG, Interface, ResolvedBinary, YTDLP};
+pub use commands::Commands;
+pub use config::{
     ActivityType, AiAccess, Assets, Category, CommandId, CommandRegistry, Config, ConfigBuilder,
     Env, Info, LogLevel, Persona, Platform, Preset, Provider, Status,
 };
-pub use disaity_core::{
-    AiAgent, AiUrl, AsSubscription, Binaries, BinarySpec, Client, CommandMeta, Context, ContextExt,
-    Data, DataBuilder, Database, Decorate, Error, ErrorExt, FFMPEG, Feature, FeatureBuilder,
-    Handler, HandlerCx, ReactionUtils, ResolvedBinary, SubscriptionModule, TrackMetadata,
-    VoiceUtils, YTDLP, genai, poise, reply, reqwest, say, send, serde, serenity, songbird, sqlx,
-    tokio,
+pub use core::{
+    AiAgent, AiUrl, AsSubscription, Client, CommandMeta, Context, ContextExt, Data, DataBuilder,
+    Database, Decorate, Error, ErrorExt, Feature, FeatureBuilder, Handler, HandlerCx,
+    ReactionUtils, SubscriptionModule, TrackMetadata, VoiceUtils, genai, poise, reply, reqwest,
+    say, send, serde, serenity, songbird, sqlx, tokio,
 };
-pub use disaity_handlers::{StatusHandler, WelcomeHandler};
-pub use disaity_subscriptions::FreeGamesSubscription;
+pub use handlers::{StatusHandler, WelcomeHandler};
+pub use subscriptions::FreeGamesSubscription;

@@ -1,26 +1,15 @@
-use anyhow::{Ok, Result};
-use clap::{Parser, Subcommand};
+use anyhow::{Error, Ok, Result};
+use clap::Parser;
 use tokio::sync::OnceCell;
 
-use super::{bin::BinAction, completions::Completions, logs::Logs};
+use super::{Action, logger::Logger};
 
 /// core cli can run from bot or framework
 #[derive(Debug, Parser)]
 #[command(name = "disaity", version)]
 pub struct Interface {
     #[command(subcommand)]
-    pub action: Option<Action>,
-}
-
-/// Every command can be used in in `commands/`.
-#[derive(Debug, Subcommand)]
-pub enum Action {
-    // Install or update bin files
-    #[command(subcommand)]
-    Bin(BinAction),
-
-    /// Print tab completion for your shell
-    Completions(Completions),
+    action: Option<Action>,
 }
 
 /// single instance
@@ -32,7 +21,7 @@ impl Interface {
             return Ok(false);
         };
 
-        Logs::init();
+        Logger::init();
 
         match action {
             Action::Bin(bin) => bin.run().await?,
@@ -46,6 +35,6 @@ impl Interface {
         DONE.get_or_init(|| async { Self::parse().run().await.map_err(|err| format!("{err:#}")) })
             .await
             .clone()
-            .map_err(anyhow::Error::msg)
+            .map_err(Error::msg)
     }
 }

@@ -39,6 +39,7 @@ pub enum CommandId {
     Help,
     Join,
     Leave,
+    Ping,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]

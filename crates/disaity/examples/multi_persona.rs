@@ -1,27 +1,18 @@
-//! Two personas from one process, each with its own token, prefix and database.
+//! Run multi clients with its own token, prefix and database.
 //!
 //! ```sh
 //! cargo run --example multi_persona
 //! ```
 //!
 //! Needs `CLIENT_TOKEN` and `CLIENT_TOKEN_ALT` in your `.env`. Set `LOG_LEVEL`
-//! there too — `debug` or `trace` — to watch both personas on stderr.
+//! `with_tracing()`, is need to show logs.
+//! `cargo run --example multi_persona -- -bi` # to install all bins
 
 use disaity::{FreeGamesSubscription, StatusHandler, WelcomeHandler, prelude::*, tokio};
 
 #[tokio::main(crate = "disaity::tokio")]
 async fn main() -> Result<(), Error> {
-    Binaries::ensure().await?;
-
-    let data = DataBuilder::new()
-        .with_config(
-            ConfigBuilder::new()
-                .with_persona(Persona::new(Preset::Emilia))
-                .build(),
-        )
-        .build()
-        .await?;
-
+    // default prefix is `!` and current default persona
     let client = Client::new()
         .with_tracing()
         .with_feature(Commands::music())
@@ -29,14 +20,13 @@ async fn main() -> Result<(), Error> {
         .with_feature(Commands::other())
         .with_handler(WelcomeHandler)
         .with_handler(StatusHandler)
-        .with_subscription(FreeGamesSubscription)
-        .with_data(data);
+        .with_subscription(FreeGamesSubscription);
 
-    let data_alt = DataBuilder::new()
+    let data = DataBuilder::new()
         .with_config(
             ConfigBuilder::new()
                 .with_env(Env::new().with_client_token("CLIENT_TOKEN_ALT"))
-                .with_info(Info::new().with_prefix("~"))
+                .with_info(Info::new().with_prefix("-"))
                 .with_persona(Persona::new(Preset::Rem))
                 .build(),
         )
@@ -49,7 +39,7 @@ async fn main() -> Result<(), Error> {
         .with_feature(Commands::chat())
         .with_feature(Commands::other())
         .with_handler(StatusHandler)
-        .with_data(data_alt);
+        .with_data(data);
 
     let handle_emilia = tokio::spawn(client.run());
     let handle_rem = tokio::spawn(client_alt.run());

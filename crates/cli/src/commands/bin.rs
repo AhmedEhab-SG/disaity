@@ -32,7 +32,7 @@ pub(crate) struct Target {
 
 impl Target {
     fn specs(&self) -> Vec<&'static BinarySpec> {
-        let all = self.names.is_empty() || self.names.contains(&Name::ALL);
+        let all = self.names.is_empty() || self.names.contains(&Name::All);
 
         ALL_BIN
             .iter()
@@ -50,7 +50,7 @@ impl Target {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub(crate) enum Name {
-    ALL,
+    All,
     Ffmpeg,
     YtDlp,
 }
@@ -58,7 +58,7 @@ pub(crate) enum Name {
 impl Name {
     fn specs(self) -> Option<&'static BinarySpec> {
         match self {
-            Self::ALL => None,
+            Self::All => None,
             Self::Ffmpeg => Some(&FFMPEG),
             Self::YtDlp => Some(&YTDLP),
         }
