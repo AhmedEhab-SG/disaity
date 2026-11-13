@@ -1,10 +1,11 @@
+use std::path::Path;
+
 use anyhow::Result;
 
 use super::{
     fetch::Fetch,
     resolve::{ResolvedBinary, Source},
     spec::BinarySpec,
-    utils::BinUtils,
 };
 
 /// What `bin install` and `bin update` do, without the command line around it.
@@ -17,9 +18,9 @@ pub(crate) enum Mode {
 pub(crate) struct Install(pub(crate) Mode);
 
 impl Install {
-    pub(crate) async fn run(&self, specs: &[&'static BinarySpec]) -> Result<()> {
+    pub(crate) async fn run(&self, specs: &[&'static BinarySpec], home: &Path) -> Result<()> {
         for &spec in specs {
-            match (ResolvedBinary::locate(spec), self.0) {
+            match (ResolvedBinary::locate(spec, home), self.0) {
                 (Ok(found), Mode::Get) if found.is_bundled() => {
                     tracing::info!("✅ {} is installed → {}", spec.name, found.path().display());
                 }
@@ -34,7 +35,7 @@ impl Install {
                 (Err(error), Mode::Update) => tracing::warn!("⏭️ {error}"),
 
                 (_, Mode::Get) => {
-                    Fetch::new(&BinUtils::home()?.join(spec.relative_path()))
+                    Fetch::new(&home.join(spec.relative_path()))
                         .download(spec)
                         .await?;
                 }

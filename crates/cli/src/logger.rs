@@ -24,6 +24,7 @@ impl Logger {
 
         let lines = fmt::layer()
             .without_time()
+            .with_target(false)
             .with_ansi(io::stderr().is_terminal())
             .fmt_fields(hide_indicatif_span_fields(DefaultFields::new()))
             .with_writer(bars.get_stderr_writer())

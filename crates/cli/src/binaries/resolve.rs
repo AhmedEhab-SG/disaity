@@ -6,7 +6,7 @@ use std::{
 use anyhow::{Result, bail};
 use strum::Display;
 
-use super::{spec::BinarySpec, utils::BinUtils};
+use super::spec::BinarySpec;
 
 /// Where a resolved binary came from, so a system copy shadowing an installed
 /// one is visible at startup.
@@ -63,7 +63,7 @@ impl ResolvedBinary {
 
     /// Search an override, then our one `bin/`, then `PATH` — first hit wins, so
     /// a copy we installed beats one the system happens to have.
-    pub(super) fn locate(spec: &'static BinarySpec) -> Result<Self> {
+    pub(super) fn locate(spec: &'static BinarySpec, home: &Path) -> Result<Self> {
         if let Some(path) = env::var_os(spec.override_var).map(PathBuf::from) {
             if path.is_file() {
                 return Ok(Self::new(spec, path, Source::Override));
@@ -74,17 +74,14 @@ impl ResolvedBinary {
             );
         }
 
-        let relative = spec.relative_path();
-        if let Some(path) = BinUtils::home()
-            .into_iter()
-            .map(|root| root.join(&relative))
-            .find(|path| path.is_file())
-        {
+        let path = home.join(spec.relative_path());
+
+        if path.is_file() {
             return Ok(Self::new(spec, path, Source::Bundled));
         }
 
-        if let Ok(path) = which::which(spec.name) {
-            return Ok(Self::new(spec, path, Source::System));
+        if let Ok(sys_path) = which::which(spec.name) {
+            return Ok(Self::new(spec, sys_path, Source::System));
         }
 
         bail!(

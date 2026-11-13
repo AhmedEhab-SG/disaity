@@ -1,27 +1,57 @@
 use std::{
     env,
-    path::{Path, PathBuf},
+    path::{self, Path, PathBuf},
 };
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail, ensure};
 
 use super::consts::HOME;
+
+/// If its global installed or the client
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Caller {
+    Global,
+    Client,
+}
+
+impl Caller {
+    pub(crate) fn home(self, path: Option<&Path>) -> Result<PathBuf> {
+        match (self, path) {
+            (Self::Global, Some(path)) => {
+                ensure!(path.is_dir(), "{} is not a folder", path.display());
+
+                Ok(path::absolute(path)?)
+            }
+
+            (Self::Global, None) => BinUtils::env_home()
+                .with_context(|| format!("need specific path use --path <DIR>, or set {HOME}")),
+
+            (Self::Client, None) => BinUtils::env_home().map_or_else(BinUtils::exe_dir, Ok),
+
+            (Self::Client, Some(_)) => {
+                bail!("bin has fixed place at root directory, drop --path or set {HOME}")
+            }
+        }
+    }
+}
 
 pub(super) struct BinUtils;
 
 impl BinUtils {
-    /// The one directory that holds `bin/`: `DISAITY_HOME`, or this user's data
-    /// directory. Installs go here and the search looks here, so the tool and
-    /// every bot always agree. Under cargo, `.cargo/config.toml` sets
-    /// `DISAITY_HOME` to the repo root.
-    pub(super) fn home() -> Result<PathBuf> {
-        if let Some(home) = env::var_os(HOME) {
-            return Ok(PathBuf::from(home));
-        }
+    /// `DISAITY_HOME`, when it's set to something.
+    fn env_home() -> Option<PathBuf> {
+        env::var_os(HOME)
+            .filter(|home| !home.is_empty())
+            .map(PathBuf::from)
+    }
 
-        dirs::data_local_dir()
-            .map(|dir| dir.join("disaity"))
-            .with_context(|| format!("this system has not data directory: set {HOME}"))
+    /// The folder this program's exe is in.
+    fn exe_dir() -> Result<PathBuf> {
+        let exe = env::current_exe().context("can't find where this program lives")?;
+
+        exe.parent()
+            .map(Path::to_path_buf)
+            .with_context(|| format!("{} has no parent folder: set {HOME}", exe.display()))
     }
 
     #[cfg(unix)]

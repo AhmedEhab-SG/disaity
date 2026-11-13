@@ -33,7 +33,7 @@ impl Logger {
     /// `RUST_LOG` replaces all of it, for when you'd rather write the filter.
     pub(super) fn init() {
         INIT.call_once(|| {
-            let layer = fmt::layer();
+            let layer = fmt::layer().with_target(false);
 
             let installed = match EnvFilter::try_from_default_env() {
                 Ok(manual) => tracing_subscriber::registry()

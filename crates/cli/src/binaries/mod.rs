@@ -14,6 +14,7 @@ pub use consts::{FFMPEG, YTDLP};
 pub(crate) use install::{Install, Mode};
 pub use resolve::ResolvedBinary;
 pub use spec::BinarySpec;
+pub(crate) use utils::Caller;
 
 pub struct Binaries {
     pub ffmpeg: ResolvedBinary,
@@ -29,9 +30,11 @@ impl Binaries {
     pub async fn ensure() -> Result<&'static Self> {
         BINARIES
             .get_or_try_init(|| async {
+                let home = Caller::Client.home(None)?;
+
                 let binaries = Self {
-                    ffmpeg: ResolvedBinary::locate(&FFMPEG)?,
-                    ytdlp: ResolvedBinary::locate(&YTDLP)?,
+                    ffmpeg: ResolvedBinary::locate(&FFMPEG, &home)?,
+                    ytdlp: ResolvedBinary::locate(&YTDLP, &home)?,
                 };
 
                 for resolved_bin in [&binaries.ffmpeg, &binaries.ytdlp] {

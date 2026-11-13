@@ -1,9 +1,11 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use clap::{Args, Subcommand, ValueEnum};
 
 use crate::{
     BinarySpec, FFMPEG, YTDLP,
-    binaries::{ALL_BIN, Install, Mode},
+    binaries::{ALL_BIN, Caller, Install, Mode},
 };
 
 #[derive(Debug, Subcommand)]
@@ -16,11 +18,15 @@ pub(crate) enum BinAction {
 }
 
 impl BinAction {
-    pub(crate) async fn run(&self) -> Result<()> {
-        match self {
-            Self::Install(target) => Install(Mode::Get).run(&target.specs()).await,
-            Self::Update(target) => Install(Mode::Update).run(&target.specs()).await,
-        }
+    pub(crate) async fn run(&self, caller: Caller) -> Result<()> {
+        let (mode, target) = match self {
+            Self::Install(target) => (Mode::Get, target),
+            Self::Update(target) => (Mode::Update, target),
+        };
+
+        let home = caller.home(target.path.as_deref())?;
+
+        Install(mode).run(&target.specs(), &home).await
     }
 }
 
@@ -28,6 +34,9 @@ impl BinAction {
 pub(crate) struct Target {
     #[arg(value_enum)]
     names: Vec<Name>,
+
+    #[arg(short, long, value_name = "DIR")]
+    path: Option<PathBuf>,
 }
 
 impl Target {
