@@ -16,7 +16,7 @@
 //!     .await?;
 //!
 //! Client::new()
-//!     .with_feature(Commands::new().with(CommandId::Ping))
+//!     .with_command(CommandId::Ping)
 //!     .with_data(data)
 //!     .run()
 //!     .await

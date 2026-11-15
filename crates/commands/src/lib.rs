@@ -70,12 +70,12 @@ impl Commands {
         })
     }
 
-    pub fn with(mut self, cmd: CommandId) -> Self {
+    pub fn with_id(mut self, cmd: CommandId) -> Self {
         self.picks.push(cmd);
         self
     }
 
-    pub fn with_all(mut self, cmds: impl IntoIterator<Item = CommandId>) -> Self {
+    pub fn with_ids(mut self, cmds: impl IntoIterator<Item = CommandId>) -> Self {
         self.picks.extend(cmds);
         self
     }
@@ -85,29 +85,13 @@ impl Commands {
         self
     }
 
-    pub fn music() -> Self {
-        Self::new().with_category(Category::Music)
-    }
-
-    pub fn manage() -> Self {
-        Self::new().with_category(Category::Manage)
-    }
-
-    pub fn chat() -> Self {
-        Self::new().with_category(Category::Chat)
-    }
-
-    pub fn other() -> Self {
-        Self::new().with_category(Category::Other)
-    }
-
-    pub fn with_all_categories(mut self) -> Self {
-        self.categories.extend(Category::VARIANTS.iter().cloned());
+    pub fn with_categories(mut self, cats: impl IntoIterator<Item = Category>) -> Self {
+        self.categories.extend(cats);
         self
     }
 
     pub fn all() -> Self {
-        Self::new().with_all_categories()
+        Self::new().with_categories(Category::VARIANTS.iter().cloned())
     }
 }
 
@@ -160,7 +144,7 @@ impl CommandsExt for Client {
     }
 
     fn with_command(self, id: CommandId) -> Self {
-        self.with_commands(Commands::new().with(id))
+        self.with_commands(Commands::new().with_id(id))
     }
 
     fn with_commands(self, commands: Commands) -> Self {

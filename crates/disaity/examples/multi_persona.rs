@@ -15,9 +15,11 @@ async fn main() -> Result<(), Error> {
     // default prefix is `!` and current default persona
     let client = Client::new()
         .with_tracing()
-        .with_commands(Commands::music())
-        .with_commands(Commands::chat())
-        .with_commands(Commands::other())
+        .with_commands(Commands::new().with_categories([
+            Category::Music,
+            Category::Chat,
+            Category::Other,
+        ]))
         .with_handlers(Handlers::new().with(StatusHandler).with(WelcomeHandler))
         .with_subscription(FreeGamesSubscription);
 
@@ -34,9 +36,11 @@ async fn main() -> Result<(), Error> {
 
     let client_alt = Client::new()
         .with_tracing()
-        .with_commands(Commands::manage())
-        .with_commands(Commands::chat())
-        .with_commands(Commands::other())
+        .with_commands(Commands::new().with_categories([
+            Category::Manage,
+            Category::Chat,
+            Category::Other,
+        ]))
         .with_handler(StatusHandler)
         .with_data(data);
 
