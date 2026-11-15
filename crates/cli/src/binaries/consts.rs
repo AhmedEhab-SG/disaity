@@ -41,6 +41,3 @@ pub const YTDLP: BinarySpec = BinarySpec {
         Download::new("windows", "x86", "yt-dlp_x86.exe"),
     ],
 };
-
-/// Every binary the framework resolves, in the order it reports them.
-pub(crate) const ALL_BIN: &[&BinarySpec] = &[&FFMPEG, &YTDLP];

@@ -11,13 +11,13 @@ use tracing::Instrument;
 
 use disaity_cli::{Binaries, Interface};
 
-use crate::client::tracer::Traced;
-
-use super::{AiAgent, AiUrl, Data, Database, Error, ErrorExt, Feature, context::DataBuilder};
+use super::{
+    AiAgent, AiUrl, CommandMeta, Data, Database, Error, ErrorExt, Feature, context::DataBuilder,
+};
 
 use event::{Handlers, dispatch};
 pub use handler::{Handler, HandlerCx};
-use tracer::Tracer;
+use tracer::{Traced, Tracer};
 
 pub struct Client {
     intents: GatewayIntents,
@@ -130,13 +130,25 @@ impl Client {
 
             let prefix = Some(data.config.info.prefix.to_owned());
 
+            for feature in &features {
+                if !feature.enabled(&data.config) {
+                    continue;
+                }
+
+                commands.extend(feature.commands(&data));
+
+                handlers.extend(feature.handlers());
+            }
+
+            let needs = CommandMeta::needs_of(&commands);
+
             // ensure bin on demand
-            if features.iter().any(|feature| feature.needs_bin()) {
-                Binaries::ensure().await?;
+            if !needs.bin.is_empty() {
+                Binaries::ensure(&needs.bin).await?;
             }
 
             // connect ai on demand
-            if features.iter().any(|feature| feature.needs_ai()) {
+            if needs.ai {
                 let url = data
                     .config
                     .env
@@ -149,7 +161,7 @@ impl Client {
             }
 
             // connect db on demand
-            if features.iter().any(|feature| feature.needs_db()) {
+            if needs.db {
                 let db_path = data
                     .config
                     .env
@@ -160,16 +172,6 @@ impl Client {
                 data.db = Some(
                     Database::connect(db_path, &data.config.persona.name.to_lowercase()).await?,
                 );
-            }
-
-            for feature in &features {
-                if !feature.enabled(&data) {
-                    continue;
-                }
-
-                commands.extend(feature.commands(&data));
-
-                handlers.extend(feature.handlers());
             }
 
             let event_handlers = handlers.clone();

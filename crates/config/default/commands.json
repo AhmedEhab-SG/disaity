@@ -5,7 +5,8 @@
     "category": "music",
     "description": "Play's an audio.",
     "timeout": 40,
-    "ai": "general",
+    "ai_access": "general",
+    "needs": { "bin": ["yt-dlp", "ffmpeg"] },
     "options": [
       {
         "name": "song",
@@ -21,7 +22,7 @@
     "keys": ["stop", "st"],
     "category": "music",
     "description": "Stop's playing.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "skip": {
@@ -29,7 +30,7 @@
     "keys": ["skip", "s"],
     "category": "music",
     "description": "Skip's the current song.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "seek": {
@@ -37,7 +38,7 @@
     "keys": ["seek", "sk"],
     "category": "music",
     "description": "Seek's the current song.",
-    "ai": "general",
+    "ai_access": "general",
     "options": [
       {
         "name": "time",
@@ -53,7 +54,7 @@
     "keys": ["clear", "c"],
     "category": "music",
     "description": "Clears the queue.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "join": {
@@ -61,7 +62,7 @@
     "keys": ["join", "j"],
     "category": "other",
     "description": "I will join your channel.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "leave": {
@@ -69,7 +70,7 @@
     "keys": ["leave", "l"],
     "category": "other",
     "description": "I will leave your channel.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "ping": {
@@ -77,7 +78,7 @@
     "keys": ["ping", "pg"],
     "category": "other",
     "description": "I will pong you back.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "pause": {
@@ -85,7 +86,7 @@
     "keys": ["pause", "ps"],
     "category": "music",
     "description": "Pause's the current song.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "resume": {
@@ -93,7 +94,7 @@
     "keys": ["resume", "r"],
     "category": "music",
     "description": "Resume's the current song.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "repeat": {
@@ -101,7 +102,7 @@
     "keys": ["repeat", "rp"],
     "category": "music",
     "description": "Repeat queue or song you are playing.",
-    "ai": "general",
+    "ai_access": "general",
     "options": [
       {
         "name": "repeat",
@@ -131,7 +132,7 @@
     "keys": ["queue", "q"],
     "category": "music",
     "description": "Displays the current queue.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "shuffle": {
@@ -139,7 +140,7 @@
     "keys": ["shuffle", "sh"],
     "category": "music",
     "description": "Shuffle's the queue.",
-    "ai": "general"
+    "ai_access": "general"
   },
 
   "volume": {
@@ -147,7 +148,7 @@
     "keys": ["volume", "v"],
     "category": "music",
     "description": "Change's the volume.",
-    "ai": "general",
+    "ai_access": "general",
     "options": [
       {
         "name": "percentage ",
@@ -165,7 +166,7 @@
     "keys": ["jump", "jp"],
     "category": "music",
     "description": "Jump's to the song.",
-    "ai": "general",
+    "ai_access": "general",
     "options": [
       {
         "name": "jump",
@@ -181,7 +182,8 @@
     "keys": ["ask", "a"],
     "category": "chat",
     "description": "Ask any question, I will answer you.",
-    "ai": "never",
+    "ai_access": "never",
+    "needs": { "ai": true },
     "options": [
       {
         "name": "chat",
@@ -198,7 +200,8 @@
     "category": "chat",
     "description": "Tell me what you need and I'll run the right commands.",
     "timeout": 60,
-    "ai": "never",
+    "ai_access": "never",
+    "needs": { "ai": true },
     "options": [
       {
         "name": "request",
@@ -215,7 +218,7 @@
     "category": "other",
     "description": "Displays all the commands. ⌘",
     "action": "help_menu",
-    "ai": "never"
+    "ai_access": "never"
   },
 
   "free_games": {
@@ -224,6 +227,7 @@
     "category": "subscription",
     "description": "Free games from every platform, posted in a channel.",
     "timeout": 40,
+    "needs": { "db": true },
     "options": [
       {
         "name": "channel",
@@ -244,19 +248,19 @@
         "name": "set",
         "keys": ["set", "s"],
         "description": "Post free games in a channel and ping a role.",
-        "ai": "general"
+        "ai_access": "general"
       },
       "clear": {
         "name": "clear",
         "keys": ["clear", "c"],
         "description": "Stop posting free games in this server.",
-        "ai": "general"
+        "ai_access": "general"
       },
       "status": {
         "name": "status",
         "keys": ["status", "st"],
         "description": "Show where free games are posted.",
-        "ai": "general"
+        "ai_access": "general"
       }
     }
   },
@@ -266,7 +270,7 @@
     "keys": ["kick", "k"],
     "category": "manage",
     "description": "Kick a member from the server.",
-    "ai": "general",
+    "ai_access": "general",
     "options": [
       {
         "name": "member",
@@ -288,7 +292,7 @@
     "keys": ["move_member", "mv"],
     "category": "manage",
     "description": "Move a member to another voice channel.",
-    "ai": "general",
+    "ai_access": "general",
     "options": [
       {
         "name": "member",
@@ -316,13 +320,13 @@
         "name": "add",
         "keys": ["add", "a"],
         "description": "Give a member a role.",
-        "ai": "general"
+        "ai_access": "general"
       },
       "remove": {
         "name": "remove",
         "keys": ["remove", "rm"],
         "description": "Take a role from a memeber.",
-        "ai": "general"
+        "ai_access": "general"
       }
     }
   }

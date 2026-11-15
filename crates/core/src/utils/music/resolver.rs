@@ -117,8 +117,7 @@ impl TrackResolver {
     }
 
     fn source(&self, query: String, search: bool) -> Result<YoutubeDl<'static>, Error> {
-        let binaries = Binaries::get()?;
-        let ytdlp = binaries.ytdlp.program();
+        let ytdlp = Binaries::ytdlp()?.program();
 
         let src = if search {
             YoutubeDl::new_search_ytdl_like(ytdlp, self.http.clone(), query)
@@ -126,7 +125,7 @@ impl TrackResolver {
             YoutubeDl::new_ytdl_like(ytdlp, self.http.clone(), query)
         };
 
-        Ok(src.user_args(binaries.ytdlp_args()))
+        Ok(src.user_args(Binaries::ytdlp_args()))
     }
 
     fn track_metadata(

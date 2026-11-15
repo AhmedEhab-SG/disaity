@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Debug, fs, path::Path, str::FromStr};
 
 use serde::Deserialize;
-use strum::{Display, EnumString, IntoStaticStr, VariantArray};
+use strum::{AsRefStr, Display, EnumString, IntoStaticStr, VariantArray};
 
 use super::utils::{ConfigError, Merge};
 
@@ -61,6 +61,14 @@ pub enum Category {
     Other,
 }
 
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, AsRefStr, VariantArray)]
+#[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
+#[serde(rename_all = "kebab-case")]
+pub enum Bin {
+    Ffmpeg,
+    YtDlp,
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct CommandChoice {
     pub name: String,
@@ -78,12 +86,20 @@ pub struct CommandOption {
     pub choices: Option<Vec<CommandChoice>>,
 }
 
+#[derive(Debug, Deserialize, Clone, Default, PartialEq, Eq)]
+#[serde(default, deny_unknown_fields)]
+pub struct Needs {
+    pub ai: bool,
+    pub db: bool,
+    pub bin: Vec<Bin>,
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct SubcommandEntry {
     pub name: String,
     pub keys: Vec<String>,
     pub description: String,
-    pub ai: Option<AiAccess>,
+    pub ai_access: Option<AiAccess>,
 
     #[serde(default)]
     pub options: Vec<CommandOption>,
@@ -97,7 +113,10 @@ pub struct CommandEntry {
     pub description: String,
     pub timeout: Option<u64>,
     pub action: Option<String>,
-    pub ai: Option<AiAccess>,
+    pub ai_access: Option<AiAccess>,
+
+    #[serde(default)]
+    pub needs: Needs,
 
     #[serde(default)]
     pub options: Vec<CommandOption>,
@@ -120,7 +139,25 @@ pub struct CommandRegistry {
 pub struct CommandDetailsOverride {
     pub keys: Option<Vec<String>>,
     pub description: Option<String>,
-    pub ai: Option<AiAccess>,
+    pub ai_access: Option<AiAccess>,
+}
+
+impl Needs {
+    /// it gets one struct from all self to call it once
+    pub fn merge(mut self, other: &Self) -> Self {
+        self.ai |= other.ai;
+
+        self.db |= other.db;
+
+        // drop dubs
+        for bin in &other.bin {
+            if !self.bin.contains(bin) {
+                self.bin.push(*bin);
+            }
+        }
+
+        self
+    }
 }
 
 impl CommandEntry {
@@ -218,8 +255,8 @@ impl CommandRegistry {
                 config.description = description;
             }
 
-            if let Some(ai) = over.ai {
-                config.ai = Some(ai);
+            if let Some(ai_access) = over.ai_access {
+                config.ai_access = Some(ai_access);
             }
         }
 

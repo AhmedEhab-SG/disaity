@@ -1,11 +1,14 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use clap::{Args, Subcommand, ValueEnum};
+use clap::{Args, Subcommand};
+use strum::VariantArray;
 
-use crate::{
-    BinarySpec, FFMPEG, YTDLP,
-    binaries::{ALL_BIN, Caller, Install, Mode},
+use disaity_config::Bin;
+
+use super::super::{
+    Binaries, BinarySpec,
+    binaries::{Caller, Install, Mode},
 };
 
 #[derive(Debug, Subcommand)]
@@ -33,7 +36,7 @@ impl BinAction {
 #[derive(Debug, Args)]
 pub(crate) struct Target {
     #[arg(value_enum)]
-    names: Vec<Name>,
+    names: Vec<Bin>,
 
     #[arg(short, long, value_name = "DIR")]
     path: Option<PathBuf>,
@@ -41,35 +44,12 @@ pub(crate) struct Target {
 
 impl Target {
     fn specs(&self) -> Vec<&'static BinarySpec> {
-        let all = self.names.is_empty() || self.names.contains(&Name::All);
+        let bins = if self.names.is_empty() {
+            Bin::VARIANTS
+        } else {
+            &self.names
+        };
 
-        ALL_BIN
-            .iter()
-            .copied()
-            .filter(|spec| {
-                all || self
-                    .names
-                    .iter()
-                    .filter_map(|name| name.specs())
-                    .any(|picked| picked.name == spec.name)
-            })
-            .collect()
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
-pub(crate) enum Name {
-    All,
-    Ffmpeg,
-    YtDlp,
-}
-
-impl Name {
-    fn specs(self) -> Option<&'static BinarySpec> {
-        match self {
-            Self::All => None,
-            Self::Ffmpeg => Some(&FFMPEG),
-            Self::YtDlp => Some(&YTDLP),
-        }
+        bins.iter().map(|&bin| Binaries::spec(bin)).collect()
     }
 }

@@ -34,8 +34,8 @@ use disaity_subscriptions as subscriptions;
 pub use cli::{Binaries, BinarySpec, FFMPEG, Interface, ResolvedBinary, YTDLP};
 pub use commands::{Commands, CommandsExt};
 pub use config::{
-    ActivityType, AiAccess, Assets, Category, CommandId, CommandRegistry, Config, ConfigBuilder,
-    Env, Info, LogLevel, Persona, Platform, Preset, Provider, Status,
+    ActivityType, AiAccess, Assets, Bin, Category, CommandId, CommandRegistry, Config,
+    ConfigBuilder, Env, Info, LogLevel, Needs, Persona, Platform, Preset, Provider, Status,
 };
 pub use core::{
     AiAgent, AiUrl, AsSubscription, Client, CommandMeta, Context, ContextExt, Data, DataBuilder,

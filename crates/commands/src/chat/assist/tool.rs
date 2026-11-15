@@ -51,10 +51,10 @@ impl<'a> Tool<'a> {
     fn leaf(tree: Vec<&'a Command<Data, Error>>) -> Option<Self> {
         let command = tree[tree.len() - 1];
 
-        let access = CommandMeta::of(command).map_or(AiAccess::Never, |meta| meta.ai);
+        let ai_access = CommandMeta::of(command).map_or(AiAccess::Never, |meta| meta.ai_access);
 
         // a match, so a new AiAccess level makes the compiler point here
-        let visible = match access {
+        let visible = match ai_access {
             AiAccess::General => true,
             AiAccess::Never => false,
         };

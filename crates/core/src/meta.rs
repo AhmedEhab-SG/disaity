@@ -4,14 +4,15 @@ use std::{
     mem,
 };
 
-use disaity_config::AiAccess;
+use disaity_config::{AiAccess, Needs};
 use poise::Command;
 
 use crate::{Data, Error};
 
 #[derive(Debug, Default)]
 pub struct CommandMeta {
-    pub ai: AiAccess,
+    pub ai_access: AiAccess,
+    pub needs: Needs,
     extensions: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
 }
 
@@ -20,9 +21,21 @@ impl CommandMeta {
         Self::default()
     }
 
-    pub fn ai(mut self, access: AiAccess) -> Self {
-        self.ai = access;
+    pub fn ai_access(mut self, ai_access: AiAccess) -> Self {
+        self.ai_access = ai_access;
         self
+    }
+
+    pub fn needs(mut self, needs: Needs) -> Self {
+        self.needs = needs;
+        self
+    }
+
+    pub fn needs_of(commands: &[Command<Data, Error>]) -> Needs {
+        commands
+            .iter()
+            .filter_map(Self::of)
+            .fold(Needs::default(), |all, meta| all.merge(&meta.needs))
     }
 
     /// attach any data, with the current data

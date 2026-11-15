@@ -1,22 +1,13 @@
 use std::{str::FromStr, sync::Arc};
 
-use disaity_config::{AiAccess, CommandId, CommandRegistry};
+use disaity_config::{AiAccess, CommandId, CommandRegistry, Config};
 use poise::{Command, command};
 
 use crate::{CommandMeta, Context, Data, Error, Handler};
 
 pub trait Feature: Send + Sync + 'static {
-    fn enabled(&self, _data: &Data) -> bool {
+    fn enabled(&self, _config: &Config) -> bool {
         true
-    }
-    fn needs_db(&self) -> bool {
-        false
-    }
-    fn needs_ai(&self) -> bool {
-        false
-    }
-    fn needs_bin(&self) -> bool {
-        false
     }
     fn commands(&self, _data: &Data) -> Vec<Command<Data, Error>> {
         Vec::new()
@@ -41,14 +32,14 @@ impl Decorate for Command<Data, Error> {
                      name: &str,
                      keys: &[String],
                      description: &str,
-                     ai: Option<AiAccess>| {
+                     ai_access: Option<AiAccess>| {
             cmd.name = name.to_owned().into();
             cmd.description = Some(description.to_owned().into());
             cmd.aliases = keys.iter().cloned().map(Into::into).collect();
 
             // apply custom data with disaity meta data
-            if let Some(access) = ai {
-                CommandMeta::in_slot(&mut cmd.custom_data).ai = access;
+            if let Some(ai_access) = ai_access {
+                CommandMeta::in_slot(&mut cmd.custom_data).ai_access = ai_access;
             }
         };
 
@@ -59,7 +50,7 @@ impl Decorate for Command<Data, Error> {
             &entry.name,
             &entry.keys,
             &entry.description,
-            entry.ai,
+            entry.ai_access,
         );
         self.category = Some(entry.category.clone().into());
 
@@ -72,7 +63,7 @@ impl Decorate for Command<Data, Error> {
                 &sub_entry.name,
                 &sub_entry.keys,
                 &sub_entry.description,
-                sub_entry.ai,
+                sub_entry.ai_access,
             );
             sub.category = self.category.clone();
         }
@@ -90,7 +81,7 @@ pub trait SubscriptionModule: Send + Sync + 'static {
     fn clear(&self) -> Command<Data, Error>;
     fn status(&self) -> Command<Data, Error>;
     fn handlers(&self) -> Vec<Arc<dyn Handler>>;
-    fn enabled(&self, _data: &Data) -> bool {
+    fn enabled(&self, _config: &Config) -> bool {
         true
     }
 }
@@ -109,12 +100,8 @@ impl<S: SubscriptionModule> AsSubscription<S> {
 }
 
 impl<S: SubscriptionModule> Feature for AsSubscription<S> {
-    fn enabled(&self, data: &Data) -> bool {
-        self.0.enabled(data)
-    }
-
-    fn needs_db(&self) -> bool {
-        true
+    fn enabled(&self, config: &Config) -> bool {
+        self.0.enabled(config)
     }
 
     fn commands(&self, data: &Data) -> Vec<Command<Data, Error>> {
@@ -134,7 +121,7 @@ impl<S: SubscriptionModule> Feature for AsSubscription<S> {
     }
 }
 
-type Gate = Box<dyn Fn(&Data) -> bool + Send + Sync>;
+type Gate = Box<dyn Fn(&Config) -> bool + Send + Sync>;
 type CommandFn = Box<dyn Fn() -> Command<Data, Error> + Send + Sync>;
 
 #[derive(Default)]
@@ -142,8 +129,6 @@ pub struct FeatureBuilder {
     commands: Vec<CommandFn>,
     handlers: Vec<Arc<dyn Handler>>,
     gate: Option<Gate>,
-    needs_ai: bool,
-    needs_bin: bool,
 }
 
 impl FeatureBuilder {
@@ -183,33 +168,15 @@ impl FeatureBuilder {
         self
     }
 
-    pub fn with_gate(mut self, gate: impl Fn(&Data) -> bool + Send + Sync + 'static) -> Self {
-        self.gate = Some(Box::new(gate));
-        self
-    }
-
-    pub fn requires_ai(mut self) -> Self {
-        self.needs_ai = true;
-        self
-    }
-
-    pub fn requires_bin(mut self) -> Self {
-        self.needs_bin = true;
+    pub fn with_gate(mut self, config: impl Fn(&Config) -> bool + Send + Sync + 'static) -> Self {
+        self.gate = Some(Box::new(config));
         self
     }
 }
 
 impl Feature for FeatureBuilder {
-    fn needs_ai(&self) -> bool {
-        self.needs_ai
-    }
-
-    fn needs_bin(&self) -> bool {
-        self.needs_bin
-    }
-
-    fn enabled(&self, data: &Data) -> bool {
-        self.gate.as_ref().is_none_or(|g| g(data))
+    fn enabled(&self, config: &Config) -> bool {
+        self.gate.as_ref().is_none_or(|gate| gate(config))
     }
 
     fn commands(&self, data: &Data) -> Vec<Command<Data, Error>> {

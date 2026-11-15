@@ -12,6 +12,7 @@ name = "disaity"
 path = "src/main.rs"
 
 [dependencies]
+disaity-config = { workspace = true, features = ["clap"] }
 anyhow = { workspace = true }
 clap = { workspace = true }
 clap_complete = { workspace = true }

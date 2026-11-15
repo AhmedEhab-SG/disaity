@@ -14,3 +14,7 @@ toml = { workspace = true }
 strum = { workspace = true }
 dotenv = { workspace = true }
 rand = { workspace = true }
+clap = { workspace = true, optional = true }
+
+[features]
+clap = ["dep:clap"]
