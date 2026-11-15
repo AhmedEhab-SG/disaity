@@ -1,8 +1,8 @@
-//! The `disaity` command, for installing without starting a bot.
+//! The `disaity` command
 //!
 //! ```sh
-//! cargo run -p disaity-cli -- bin install
-//! cargo install --path crates/cli     # then anywhere: disaity bin -u yt-dlp
+//! cargo run -p disaity-cli -- <cmd>               # in the repo: bin/ at its root
+//! cargo install --path crates/cli                 # then name the bot's folder:
 //! ```
 
 use clap::{CommandFactory, Parser};

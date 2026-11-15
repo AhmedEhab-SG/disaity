@@ -6,15 +6,15 @@
 //! cargo run --example default
 //! ```
 
-use disaity::{FreeGamesSubscription, StatusHandler, prelude::*, tokio};
+use disaity::{prelude::*, tokio};
 
 #[tokio::main(crate = "disaity::tokio")]
 async fn main() -> Result<(), Error> {
     Client::new()
         .with_tracing()
-        .with_feature(Commands::all())
-        .with_handler(StatusHandler)
-        .with_subscription(FreeGamesSubscription)
+        .with_commands(Commands::all())
+        .with_handlers(Handlers::all())
+        .with_subscriptions(Subscriptions::all())
         .run()
         .await
 }

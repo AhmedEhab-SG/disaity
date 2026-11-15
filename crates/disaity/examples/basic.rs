@@ -11,8 +11,5 @@ use disaity::{prelude::*, tokio};
 async fn main() -> Result<(), Error> {
     // default prefix is `!`
     // run your client and ping it
-    Client::new()
-        .with_feature(Commands::new().with(CommandId::Ping))
-        .run()
-        .await
+    Client::new().with_command(CommandId::Ping).run().await
 }

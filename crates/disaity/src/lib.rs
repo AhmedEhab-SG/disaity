@@ -32,7 +32,7 @@ use disaity_handlers as handlers;
 use disaity_subscriptions as subscriptions;
 
 pub use cli::{Binaries, BinarySpec, FFMPEG, Interface, ResolvedBinary, YTDLP};
-pub use commands::Commands;
+pub use commands::{Commands, CommandsExt};
 pub use config::{
     ActivityType, AiAccess, Assets, Category, CommandId, CommandRegistry, Config, ConfigBuilder,
     Env, Info, LogLevel, Persona, Platform, Preset, Provider, Status,
@@ -43,5 +43,5 @@ pub use core::{
     ReactionUtils, SubscriptionModule, TrackMetadata, VoiceUtils, genai, poise, reply, reqwest,
     say, send, serde, serenity, songbird, sqlx, tokio,
 };
-pub use handlers::{StatusHandler, WelcomeHandler};
-pub use subscriptions::FreeGamesSubscription;
+pub use handlers::{Handlers, HandlersExt, StatusHandler, WelcomeHandler};
+pub use subscriptions::{FreeGamesSubscription, Subscriptions, SubscriptionsExt};

@@ -12,7 +12,7 @@ use poise::Command as PoiseCommand;
 use strum::VariantArray;
 
 use disaity_config::{Category, CommandId};
-use disaity_core::{Data, Decorate, Error, Feature};
+use disaity_core::{Client, Data, Decorate, Error, Feature};
 
 pub use checks::Check;
 pub use guard::Guard;
@@ -171,5 +171,32 @@ impl Feature for Commands {
             .filter_map(|cmd| Self::ctor(&cmd))
             .map(|make| make().decorate(reg))
             .collect()
+    }
+}
+
+pub trait CommandsExt {
+    fn with_command(self, id: CommandId) -> Self;
+    fn with_commands(self, commands: Commands) -> Self;
+    fn with_raw_commands(
+        self,
+        commands: impl IntoIterator<Item = PoiseCommand<Data, Error>>,
+    ) -> Self;
+}
+
+impl CommandsExt for Client {
+    fn with_raw_commands(
+        mut self,
+        commands: impl IntoIterator<Item = PoiseCommand<Data, Error>>,
+    ) -> Self {
+        self.commands.extend(commands);
+        self
+    }
+
+    fn with_command(self, id: CommandId) -> Self {
+        self.with_commands(Commands::new().with(id))
+    }
+
+    fn with_commands(self, commands: Commands) -> Self {
+        self.with_feature(commands)
     }
 }

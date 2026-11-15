@@ -21,8 +21,8 @@ pub trait Feature: Send + Sync + 'static {
     fn commands(&self, _data: &Data) -> Vec<Command<Data, Error>> {
         Vec::new()
     }
-    fn handler(&self) -> Option<Arc<dyn Handler>> {
-        None
+    fn handlers(&self) -> Vec<Arc<dyn Handler>> {
+        Vec::new()
     }
 }
 
@@ -89,7 +89,7 @@ pub trait SubscriptionModule: Send + Sync + 'static {
     fn set(&self) -> Command<Data, Error>;
     fn clear(&self) -> Command<Data, Error>;
     fn status(&self) -> Command<Data, Error>;
-    fn handler(&self) -> Arc<dyn Handler>;
+    fn handlers(&self) -> Vec<Arc<dyn Handler>>;
     fn enabled(&self, _data: &Data) -> bool {
         true
     }
@@ -129,8 +129,8 @@ impl<S: SubscriptionModule> Feature for AsSubscription<S> {
         vec![parent.decorate(&data.config.commands_registry)]
     }
 
-    fn handler(&self) -> Option<Arc<dyn Handler>> {
-        Some(self.0.handler())
+    fn handlers(&self) -> Vec<Arc<dyn Handler>> {
+        self.0.handlers()
     }
 }
 
@@ -140,7 +140,7 @@ type CommandFn = Box<dyn Fn() -> Command<Data, Error> + Send + Sync>;
 #[derive(Default)]
 pub struct FeatureBuilder {
     commands: Vec<CommandFn>,
-    handler: Option<Arc<dyn Handler>>,
+    handlers: Vec<Arc<dyn Handler>>,
     gate: Option<Gate>,
     needs_ai: bool,
     needs_bin: bool,
@@ -170,7 +170,16 @@ impl FeatureBuilder {
     }
 
     pub fn with_handler(mut self, handler: impl Handler) -> Self {
-        self.handler = Some(Arc::new(handler));
+        self.handlers.push(Arc::new(handler));
+        self
+    }
+
+    pub fn with_hanlders(mut self, hanlders: impl IntoIterator<Item = impl Handler>) -> Self {
+        self.handlers.extend(
+            hanlders
+                .into_iter()
+                .map(|handler| Arc::new(handler) as Arc<dyn Handler>),
+        );
         self
     }
 
@@ -211,7 +220,7 @@ impl Feature for FeatureBuilder {
             .collect()
     }
 
-    fn handler(&self) -> Option<Arc<dyn Handler>> {
-        self.handler.clone()
+    fn handlers(&self) -> Vec<Arc<dyn Handler>> {
+        self.handlers.clone()
     }
 }

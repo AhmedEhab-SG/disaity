@@ -46,9 +46,6 @@ impl<'a> Archive<'a> {
     }
 
     /// `tar` reads both formats and ships with every Unix and with Windows since
-    /// 10 — cheaper than carrying two decompressors to run a command the user asks
-    /// for by hand. Everything is extracted, because GNU tar and the bsdtar on
-    /// Windows disagree about `--wildcards` and `--strip-components`.
     fn extract(&self, into: &Path) -> Result<()> {
         let status = Command::new("tar")
             .arg("-xf")

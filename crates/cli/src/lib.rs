@@ -1,7 +1,7 @@
 mod binaries;
 mod commands;
 mod interface;
-mod logger;
+mod tracer;
 
 pub use binaries::{Binaries, BinarySpec, FFMPEG, ResolvedBinary, YTDLP};
 pub(crate) use commands::Action;

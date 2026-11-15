@@ -26,7 +26,7 @@ impl SubscriptionModule for FreeGamesSubscription {
     fn status(&self) -> Command<Data, Error> {
         status::status()
     }
-    fn handler(&self) -> Arc<dyn Handler> {
-        Arc::new(handler::FreeGamesHandler)
+    fn handlers(&self) -> Vec<Arc<dyn Handler>> {
+        vec![Arc::new(handler::FreeGamesHandler)]
     }
 }

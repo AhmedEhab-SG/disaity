@@ -10,9 +10,9 @@ use tracing_subscriber::{
     prelude::*,
 };
 
-pub(crate) struct Logger;
+pub(crate) struct Tracer;
 
-impl Logger {
+impl Tracer {
     /// The subscriber for a command: install lines and warnings,
     /// progress bar for each span marked `indicatif.pb_show`.
     /// `RUST_LOG` replaces the filter.

@@ -21,7 +21,7 @@ impl<'a> Fetch<'a> {
     pub(super) async fn download(&self, spec: &BinarySpec) -> Result<()> {
         let url = spec.download_url()?;
 
-        tracing::info!("⬇️ {url}");
+        tracing::info!("⬇️  downlading from {url}");
 
         let parent = self
             .path
@@ -32,7 +32,7 @@ impl<'a> Fetch<'a> {
 
         let staged = parent.join(format!("{}.part", spec.name));
 
-        let result = match self.stream(&url, spec).await {
+        let result = match self.stream(&url, spec, &staged).await {
             Ok(()) if Archive::is_archive(&url) => Archive::new(&staged).unpack(spec, self.path),
 
             Ok(()) => fs::rename(&staged, self.path).map_err(Into::into),
@@ -53,13 +53,13 @@ impl<'a> Fetch<'a> {
 
     /// Write the response to disk as it arrives.
     /// The span is the progress bar: tracing-indicatif draws it on terminal only
-    async fn stream(&self, url: &str, spec: &BinarySpec) -> Result<()> {
+    async fn stream(&self, url: &str, spec: &BinarySpec, staged: &Path) -> Result<()> {
         let mut response = reqwest::get(url)
             .await
             .and_then(|res| res.error_for_status())
             .with_context(|| format!("couldn't download {}", spec.name))?;
 
-        let mut file = fs::File::create(self.path)?;
+        let mut file = fs::File::create(staged)?;
 
         let bar = tracing::info_span!("download", indicatif.pb_show = Empty);
 

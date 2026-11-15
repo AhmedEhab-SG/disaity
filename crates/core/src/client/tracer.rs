@@ -26,9 +26,9 @@ const TARGETS: &[&str] = &[
 
 static INIT: Once = Once::new();
 
-pub(super) struct Logger;
+pub(super) struct Tracer;
 
-impl Logger {
+impl Tracer {
     /// client with `with_tracing()`: `LOG_LEVEL` for the crates above
     /// `RUST_LOG` replaces all of it, for when you'd rather write the filter.
     pub(super) fn init() {

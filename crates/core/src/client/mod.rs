@@ -1,6 +1,6 @@
 mod event;
 mod handler;
-mod logger;
+mod tracer;
 
 use std::sync::Arc;
 
@@ -11,22 +11,19 @@ use tracing::Instrument;
 
 use disaity_cli::{Binaries, Interface};
 
-use crate::client::logger::Traced;
+use crate::client::tracer::Traced;
 
-use super::{
-    AiAgent, AiUrl, AsSubscription, Data, Database, Error, ErrorExt, Feature, SubscriptionModule,
-    context::DataBuilder,
-};
+use super::{AiAgent, AiUrl, Data, Database, Error, ErrorExt, Feature, context::DataBuilder};
 
 use event::{Handlers, dispatch};
 pub use handler::{Handler, HandlerCx};
-use logger::Logger;
+use tracer::Tracer;
 
 pub struct Client {
     intents: GatewayIntents,
-    commands: Vec<Command<Data, Error>>,
-    handlers: Vec<Arc<dyn Handler>>,
-    features: Vec<Box<dyn Feature>>,
+    pub commands: Vec<Command<Data, Error>>,
+    pub handlers: Vec<Arc<dyn Handler>>,
+    pub features: Vec<Box<dyn Feature>>,
     data: Option<Data>,
     traced: bool,
 }
@@ -64,25 +61,13 @@ impl Client {
         self
     }
 
-    pub fn with_raw_commands(
-        mut self,
-        commands: impl IntoIterator<Item = Command<Data, Error>>,
-    ) -> Self {
-        self.commands.extend(commands);
-        self
-    }
-
     pub fn with_feature(mut self, feature: impl Feature + 'static) -> Self {
         self.features.push(Box::new(feature));
         self
     }
 
-    pub fn with_subscription(self, sub: impl SubscriptionModule) -> Self {
-        self.with_feature(AsSubscription(sub))
-    }
-
-    pub fn with_handler(mut self, handler: impl Handler) -> Self {
-        self.handlers.push(Arc::new(handler));
+    pub fn with_features(mut self, features: impl IntoIterator<Item = Box<dyn Feature>>) -> Self {
+        self.features.extend(features);
         self
     }
 
@@ -118,7 +103,7 @@ impl Client {
         } = self;
 
         if traced {
-            Logger::init();
+            Tracer::init();
         }
 
         let mut data = match data {
@@ -183,9 +168,8 @@ impl Client {
                 }
 
                 commands.extend(feature.commands(&data));
-                if let Some(handler) = feature.handler() {
-                    handlers.push(handler);
-                }
+
+                handlers.extend(feature.handlers());
             }
 
             let event_handlers = handlers.clone();

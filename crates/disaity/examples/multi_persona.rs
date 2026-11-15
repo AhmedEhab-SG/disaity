@@ -15,11 +15,10 @@ async fn main() -> Result<(), Error> {
     // default prefix is `!` and current default persona
     let client = Client::new()
         .with_tracing()
-        .with_feature(Commands::music())
-        .with_feature(Commands::chat())
-        .with_feature(Commands::other())
-        .with_handler(WelcomeHandler)
-        .with_handler(StatusHandler)
+        .with_commands(Commands::music())
+        .with_commands(Commands::chat())
+        .with_commands(Commands::other())
+        .with_handlers(Handlers::new().with(StatusHandler).with(WelcomeHandler))
         .with_subscription(FreeGamesSubscription);
 
     let data = DataBuilder::new()
@@ -35,9 +34,9 @@ async fn main() -> Result<(), Error> {
 
     let client_alt = Client::new()
         .with_tracing()
-        .with_feature(Commands::manage())
-        .with_feature(Commands::chat())
-        .with_feature(Commands::other())
+        .with_commands(Commands::manage())
+        .with_commands(Commands::chat())
+        .with_commands(Commands::other())
         .with_handler(StatusHandler)
         .with_data(data);
 

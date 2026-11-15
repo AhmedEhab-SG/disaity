@@ -2,7 +2,7 @@ use anyhow::{Error, Ok, Result};
 use clap::Parser;
 use tokio::sync::OnceCell;
 
-use super::{Action, binaries::Caller, logger::Logger};
+use super::{Action, binaries::Caller, tracer::Tracer};
 
 /// core cli can run from bot or framework
 #[derive(Debug, Parser)]
@@ -37,7 +37,7 @@ impl Interface {
             return Ok(false);
         };
 
-        Logger::init();
+        Tracer::init();
 
         match action {
             Action::Bin(bin) => bin.run(caller).await?,
