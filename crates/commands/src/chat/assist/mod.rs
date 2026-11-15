@@ -1,3 +1,6 @@
+// FIXME: Remove after poise next update
+#![allow(unreachable_code)]
+
 mod call;
 mod confirm;
 mod consts;

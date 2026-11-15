@@ -1,3 +1,6 @@
+// FIXME: Remove after poise next update
+#![allow(unreachable_code)]
+
 use poise::command;
 use serenity::all::Member;
 
