@@ -52,7 +52,10 @@ impl Decorate for Command<Data, Error> {
             &entry.description,
             entry.ai_access,
         );
+
         self.category = Some(entry.category.clone().into());
+
+        CommandMeta::in_slot(&mut self.custom_data).needs = entry.needs.clone();
 
         // a parent's subcommands read the same entry, keyed by their function name
         for sub in &mut self.subcommands {
